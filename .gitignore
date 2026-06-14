@@ -1,0 +1,26 @@
+# dependencies
+node_modules/
+.pnpm-store/
+
+# builds
+dist/
+.next/
+.turbo/
+out/
+*.tsbuildinfo
+
+# env
+.env
+.env.local
+.env*.local
+
+# data scratch (raw downloads, tile build artifacts)
+.data/
+*.pmtiles
+*.mbtiles
+
+# misc
+.DS_Store
+*.log
+coverage/
+CLAUDE.md

@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8" />
+<title>Mandum Rimba — Rimba milik semua, rumah mereka</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    color: #212121; margin: 0; line-height: 1.65; font-size: 10.5pt;
+  }
+  .cover {
+    background: linear-gradient(135deg, #0d47a1 0%, #1565c0 55%, #1976d2 100%);
+    color: #ffffff; border-radius: 14px; padding: 34px 36px; margin-bottom: 26px;
+  }
+  .cover .kicker { font-size: 9pt; letter-spacing: 0.18em; text-transform: uppercase; opacity: 0.85; margin-bottom: 10px; }
+  .cover h1 { font-size: 23pt; margin: 0 0 8px; line-height: 1.25; }
+  .cover p { margin: 0; font-size: 11.5pt; opacity: 0.95; max-width: 38em; }
+  h2 { color: #0d47a1; font-size: 14pt; margin: 26px 0 8px; border-bottom: 2px solid #bbdefb; padding-bottom: 4px; }
+  h3 { color: #1565c0; font-size: 11pt; margin: 14px 0 4px; }
+  p { margin: 6px 0; }
+  blockquote {
+    margin: 12px 0; padding: 12px 18px; background: #e3f2fd; border-left: 4px solid #1976d2;
+    border-radius: 0 10px 10px 0; font-style: italic; color: #37474f;
+  }
+  ul { margin: 6px 0; padding-left: 20px; }
+  li { margin-bottom: 4px; }
+  table { width: 100%; border-collapse: collapse; font-size: 9.5pt; margin: 8px 0; }
+  th, td { text-align: left; padding: 6px 9px; border-bottom: 1px solid #e0e0e0; vertical-align: top; }
+  th { background: #e3f2fd; color: #0d47a1; }
+  .cards { display: flex; gap: 12px; margin: 10px 0; }
+  .card { flex: 1; background: #fafafa; border: 1px solid #e0e0e0; border-radius: 12px; padding: 12px 14px; }
+  .card h3 { margin-top: 0; }
+  .muted { color: #616161; font-size: 9pt; }
+  .footer { margin-top: 28px; padding-top: 10px; border-top: 1px solid #e0e0e0; color: #616161; font-size: 8.5pt; }
+  .page-break { page-break-before: always; }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <div class="kicker">Mandum Rimba &mdash; Dokumen Pengantar &mdash; Juni 2026</div>
+  <h1>Saat hutan hilang,<br/>mereka kehilangan rumah.</h1>
+  <p>Observatorium deforestasi &amp; akuntabilitas lingkungan Indonesia &mdash;
+     peta interaktif yang merangkum data satelit dan sumber publik kredibel,
+     untuk hutan Indonesia dan satwa yang tinggal di dalamnya.</p>
+  <p class="muted" style="color:#e3f2fd;margin-top:14px">
+    <strong>Mandum Rimba</strong> &mdash; "mandum" berarti <em>semua</em> dalam
+    bahasa Aceh, tempat pengawasan ini dimulai. Rimba ini milik semua orang,
+    dan menjadi rumah bagi mereka yang tak bisa bersuara.</p>
+</div>
+
+<h2>Latar Belakang: Kenapa Aplikasi Ini Dibuat</h2>
+<p>
+Semua ini bermula dari keresahan membaca berita demi berita tentang gajah,
+harimau, dan orangutan yang kehilangan tempat tinggalnya — hutan yang mereka
+huni dialihfungsikan menjadi kebun sawit, area tambang, dan lahan terbuka.
+Mereka tidak bisa bercerita tentang apa yang terjadi pada rumahnya.
+Tapi satelit bisa.
+</p>
+<blockquote>
+Saya ingin ikut berkontribusi lewat informasi: merangkum berbagai sumber yang
+kredibel ke dalam satu tempat, supaya kesadaran tumbuh dan siapa pun bisa
+melihat informasinya dengan mudah — lalu mengambil tindakan. Saya juga
+berharap mereka yang bekerja di lapangan memahami apa yang mereka kerjakan
+dan konsekuensi dari pekerjaan itu. Saya ingin memperlihatkan kepada semua
+orang kenapa kita harus menjaga hutan, dan apa yang bisa kita lakukan untuk
+melindungi satwa-satwa ini.
+</blockquote>
+<p>
+Aplikasi ini adalah jawaban atas keresahan itu: bukan kampanye yang menuduh,
+melainkan jendela yang memperlihatkan — dibangun sepenuhnya dari data yang
+bisa diverifikasi siapa saja.
+</p>
+
+<h2>Apa Itu Aplikasi Ini</h2>
+<p>
+Sebuah aplikasi web peta interaktif yang menampilkan, dalam satu layar:
+</p>
+<ul>
+  <li><strong>Peringatan deforestasi hampir-waktu-nyata</strong> dari sistem satelit RADD dan GLAD (resolusi 10&ndash;30 meter, diperbarui tiap hari).</li>
+  <li><strong>Batas konsesi</strong> sawit, hutan tanaman industri (HTI), dan logging dari dataset publik yang telah dipublikasikan.</li>
+  <li><strong>Kawasan lindung dan moratorium hutan</strong> (WDPA &amp; PIPPIB KLHK).</li>
+  <li><strong>Kejadian banjir dan longsor</strong> dari basis data bencana BNPB (DIBI), ditautkan dengan kehilangan hutan di hulu daerah aliran sungai yang sama.</li>
+  <li><strong>Lapisan diskrepansi</strong> &#9733; &mdash; pembukaan hutan yang terdeteksi <em>di dalam</em> kawasan lindung/moratorium, atau <em>di luar</em> konsesi yang terdaftar.</li>
+</ul>
+<p>
+Setiap titik, poligon, dan angka di layar dapat ditelusuri kembali ke dataset
+sumbernya dalam maksimal dua klik. Tampilan peta apa pun bisa dibagikan
+sebagai tautan, sehingga sebuah temuan mudah disebarkan dan diperiksa ulang.
+</p>
+
+<div class="cards">
+  <div class="card">
+    <h3>Untuk satwa</h3>
+    <p class="muted">Hutan adalah rumah terakhir gajah sumatera, harimau, dan
+    orangutan. Setiap hektare yang hilang memaksa mereka keluar — dan konflik
+    dengan manusia hampir selalu berakhir buruk bagi mereka.</p>
+  </div>
+  <div class="card">
+    <h3>Untuk manusia</h3>
+    <p class="muted">Hutan gundul di hulu berarti banjir dan longsor di hilir.
+    Data bencana dan kehilangan hutan ditautkan dalam satu DAS supaya
+    hubungannya terlihat jelas.</p>
+  </div>
+  <div class="card">
+    <h3>Untuk pekerja lapangan</h3>
+    <p class="muted">Banyak orang menggantungkan hidup pada lahan ini. Kami
+    tidak menghakimi — kami menunjukkan data apa adanya, agar konsekuensi
+    dari yang terjadi di lapangan dipahami semua pihak.</p>
+  </div>
+</div>
+
+<h2>Tujuan</h2>
+<ul>
+  <li><strong>Meningkatkan kesadaran (raising awareness).</strong> Informasi yang selama ini terpencar di laporan teknis dan portal pemerintah dirangkum menjadi peta yang bisa dipahami siapa saja, dalam Bahasa Indonesia.</li>
+  <li><strong>Memudahkan akses informasi.</strong> Satu alamat web, tanpa login, gratis, mobile-friendly — informasi keadaan hutan ada di genggaman.</li>
+  <li><strong>Mendorong tindakan.</strong> Dari membagikan temuan, mendukung organisasi konservasi, sampai menjadi bahan liputan jurnalis dan advokasi kebijakan.</li>
+  <li><strong>Menumbuhkan pemahaman konsekuensi.</strong> Termasuk bagi mereka yang bekerja di lahan-lahan tersebut: bukan untuk menyalahkan, tetapi agar setiap orang melihat dampak hilangnya hutan — pada satwa, pada tetangga di hilir sungai, pada masa depan anak-anaknya.</li>
+  <li><strong>Menjelaskan kenapa hutan harus dijaga</strong> — dengan bukti, bukan slogan.</li>
+</ul>
+
+<div class="page-break"></div>
+
+<h2>Prinsip Editorial (Tidak Bisa Ditawar)</h2>
+<ul>
+  <li><strong>Bukti, bukan tuduhan.</strong> Aplikasi tidak pernah menyatakan "pihak X berbohong". Kami menumpangkan data resmi dengan kenyataan satelit dan membiarkan selisihnya berbicara. Diskrepansi disajikan deskriptif: "terdeteksi pembukaan di luar batas konsesi terdaftar (sumber A vs sumber B)".</li>
+  <li><strong>Setiap klaim bisa diklik.</strong> Maksimal dua klik menuju dataset sumber, lengkap dengan tanggal pengambilan dan lisensinya.</li>
+  <li><strong>Dapat direproduksi.</strong> Seluruh pipeline data bersifat terbuka (open source, MIT). Siapa pun dapat menjalankan ulang dan memperoleh angka yang sama. Halaman metodologi dan changelog tersedia publik.</li>
+  <li><strong>Kehati-hatian hukum (sadar UU ITE).</strong> Tidak ada opini tentang individu. Perusahaan hanya dirujuk melalui data yang sudah dipublikasikan pihak lain (Trase, registri pemerintah, dataset GFW), selalu dengan sitasi.</li>
+  <li><strong>Dwibahasa.</strong> Bahasa Indonesia dahulu, Inggris kedua.</li>
+</ul>
+
+<h2>Sumber Data</h2>
+<table>
+  <tr><th>Data</th><th>Sumber</th><th>Pembaruan</th></tr>
+  <tr><td>Peringatan deforestasi (RADD, GLAD)</td><td>Global Forest Watch / Universitas Wageningen &amp; Maryland</td><td>Harian</td></tr>
+  <tr><td>Kehilangan tutupan pohon tahunan</td><td>Hansen/UMD via Global Forest Watch</td><td>Tahunan</td></tr>
+  <tr><td>Konsesi sawit, HTI, logging</td><td>Dataset publik GFW (garis keturunan data Greenpeace Kepo Hutan)</td><td>Mengikuti rilis sumber</td></tr>
+  <tr><td>Kawasan lindung</td><td>Protected Planet (WDPA)</td><td>Bulanan</td></tr>
+  <tr><td>Moratorium hutan (PIPPIB)</td><td>KLHK via GFW</td><td>Mengikuti rilis sumber</td></tr>
+  <tr><td>Bencana banjir &amp; longsor</td><td>BNPB DIBI via cermin resmi UNDRR DesInventar</td><td>Harian (cek perubahan)</td></tr>
+  <tr><td>Batas wilayah</td><td>GADM 4.1</td><td>Statis</td></tr>
+</table>
+<p class="muted">Salinan mentah setiap pengambilan data diarsipkan, sehingga setiap angka dapat diaudit ke kondisi sumber pada tanggal tersebut.</p>
+
+<h2>Apa yang Bisa Kamu Lakukan</h2>
+<ul>
+  <li><strong>Lihat dan pahami.</strong> Buka peta, telusuri provinsimu, nyalakan lapisan satelit, dan lihat sendiri perubahan yang terjadi.</li>
+  <li><strong>Bagikan.</strong> Setiap tampilan peta adalah tautan yang bisa dibagikan. Kesadaran menyebar lewat orang yang memperlihatkan, bukan hanya menceritakan.</li>
+  <li><strong>Gunakan untuk kerja-kerja kebaikan.</strong> Jurnalis, peneliti, guru, organisasi konservasi — data dan ekspor CSV/GeoJSON tersedia gratis dengan sitasi.</li>
+  <li><strong>Dukung yang di garis depan.</strong> Organisasi penyelamatan satwa dan masyarakat penjaga hutan membutuhkan dukungan publik yang terinformasi.</li>
+  <li><strong>Mulai percakapan.</strong> Termasuk dengan mereka yang bekerja di lahan-lahan ini — dengan data, bukan dengan amarah.</li>
+</ul>
+
+<h2>Arah ke Depan</h2>
+<ul>
+  <li>Cerita interaktif (story mode) — dimulai dari "Banjir Aceh &amp; Hutan yang Hilang": menautkan banjir di hilir dengan satu dekade kehilangan hutan di hulu DAS yang sama, dilengkapi citra satelit sebelum/sesudah.</li>
+  <li>Perluasan cakupan dari Aceh ke seluruh provinsi, termasuk ekspansi tambang nikel di Sulawesi, Maluku, dan Papua.</li>
+  <li>Halaman profil wilayah dan perusahaan (hanya dari data terpublikasi, dengan sitasi penuh).</li>
+  <li>Data habitat satwa kunci (gajah, harimau, orangutan) sebagai lapisan peta — supaya tumpang tindih antara habitat dan ekspansi lahan terlihat langsung.</li>
+</ul>
+
+<div class="footer">
+  Kode sumber terbuka (lisensi MIT). Data milik masing-masing sumber — lihat halaman metodologi di aplikasi.
+  Disajikan secara deskriptif dari data publik; bukan tuduhan terhadap pihak mana pun.
+</div>
+
+</body>
+</html>

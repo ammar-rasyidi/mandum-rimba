@@ -1,0 +1,5 @@
+{
+  "// note": "Tailwind uses @tailwind/@apply at-rules the default CSS linter doesn't know.",
+  "css.lint.unknownAtRules": "ignore",
+  "scss.lint.unknownAtRules": "ignore"
+}

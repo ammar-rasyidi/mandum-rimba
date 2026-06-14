@@ -1,0 +1,121 @@
+@tailwind base;
+@tailwind components;
+
+/* ===========================================================================
+   Theme variables — swap automatically on [data-theme] (light/dark). Tailwind
+   colour utilities (bg-surface, text-accent, …) read these, so utilities are
+   theme-aware without dark: variants. See tailwind.config.ts.
+   =========================================================================== */
+:root,
+:root[data-theme="dark"] {
+  --bg: #263238; /* blue-gray 900 */
+  --bg-raised: #37474f; /* blue-gray 800 */
+  --border: #455a64; /* blue-gray 700 */
+  --text: #eceff1; /* blue-gray 50 */
+  --text-dim: #90a4ae; /* blue-gray 300 */
+  --accent: #64b5f6; /* blue 300 */
+  --accent-dim: #1565c0; /* blue 800 */
+  --danger: #ff7043; /* deep-orange 400: color-blind-safe vs blue/teal */
+  --link: #81d4fa; /* light-blue 200 */
+  --overlay: rgba(38, 50, 56, 0.96);
+  --shadow: 0 6px 24px rgba(0, 0, 0, 0.45);
+  --glass-bg: rgba(38, 50, 56, 0.6);
+  --glass-border: rgba(236, 239, 241, 0.12);
+  --glass-highlight: rgba(236, 239, 241, 0.07);
+  --glass-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+  color-scheme: dark;
+}
+
+:root[data-theme="light"] {
+  --bg: #fafafa; /* gray 50 */
+  --bg-raised: #ffffff;
+  --border: #e0e0e0; /* gray 300 */
+  --text: #212121; /* gray 900 */
+  --text-dim: #616161; /* gray 700 */
+  --accent: #1976d2; /* blue 700 */
+  --accent-dim: #bbdefb; /* blue 100 */
+  --danger: #d84315; /* deep-orange 800 */
+  --link: #1565c0; /* blue 800 */
+  --overlay: rgba(255, 255, 255, 0.96);
+  --shadow: 0 6px 24px rgba(38, 50, 56, 0.18);
+  --glass-bg: rgba(255, 255, 255, 0.55);
+  --glass-border: rgba(33, 33, 33, 0.1);
+  --glass-highlight: rgba(255, 255, 255, 0.65);
+  --glass-shadow: 0 12px 40px rgba(38, 50, 56, 0.18);
+  color-scheme: light;
+}
+
+/* ===== Base (Preflight is off; keep the few resets we rely on) ===== */
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif;
+  line-height: 1.6;
+}
+a {
+  color: var(--link);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+@keyframes panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ===== Reusable primitives (composed with utilities in the JSX) ===== */
+@layer components {
+  /* Apple-style frosted glass surface (backdrop-filter + saturate isn't a
+     clean single utility, so it lives here and is paired with layout utils). */
+  .glass {
+    background: var(--glass-bg);
+    -webkit-backdrop-filter: blur(20px) saturate(1.7);
+    backdrop-filter: blur(20px) saturate(1.7);
+    border: 1px solid var(--glass-border);
+    box-shadow:
+      inset 0 1px 0 var(--glass-highlight),
+      var(--glass-shadow);
+  }
+
+  /* Long-form content typography (methodology, data, sources, credits, …). */
+  .prose {
+    max-width: 46rem;
+    padding: 2.5rem 0 4rem;
+  }
+  .prose h1 {
+    font-size: 2rem;
+  }
+  .prose h2 {
+    margin-top: 2.2rem;
+  }
+  .prose :is(p, li) {
+    color: var(--text-dim);
+  }
+}
+
+@layer utilities {
+  .scrollbar-hide {
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@tailwind utilities;

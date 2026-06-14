@@ -1,0 +1,166 @@
+{
+  "site": {
+    "name": "Mandum Rimba",
+    "tagline": "Observatorium deforestasi & akuntabilitas lingkungan Indonesia",
+    "description": "Peta deforestasi, ekspansi sawit & tambang, dan bencana yang menyertainya — dibangun dari data satelit dan data publik yang kredibel, untuk hutan Indonesia dan satwa yang tinggal di dalamnya."
+  },
+  "nav": {
+    "map": "Peta",
+    "stories": "Cerita",
+    "methodology": "Metodologi",
+    "data": "Data",
+    "sources": "Sumber Data",
+    "status": "Status",
+    "credits": "Apresiasi"
+  },
+  "home": {
+    "heroTitle": "Saat hutan hilang, mereka kehilangan rumah.",
+    "heroBody": "Gajah, harimau, dan orangutan tersingkir setiap kali hutan berubah menjadi kebun sawit, tambang, dan lahan terbuka. Kami merangkum data satelit dan sumber publik yang kredibel menjadi satu peta yang mudah dipahami — agar siapa pun bisa melihat apa yang sedang terjadi, memahami konsekuensinya, dan ikut bertindak.",
+    "openMap": "Buka peta",
+    "readMethodology": "Baca metodologi",
+    "principle1Title": "Bukti, bukan tuduhan",
+    "principle1Body": "Kami menumpangkan data resmi dengan kenyataan dari satelit, lalu membiarkan selisihnya berbicara sendiri.",
+    "principle2Title": "Setiap klaim bisa diklik",
+    "principle2Body": "Semua yang tampil di layar dapat ditelusuri ke dataset sumbernya dalam maksimal dua klik.",
+    "principle3Title": "Dapat direproduksi",
+    "principle3Body": "Pipeline data kami terbuka: siapa pun dapat menjalankan ulang dan mendapatkan angka yang sama.",
+    "missionTitle": "Kenapa ini penting",
+    "mission1Title": "Untuk satwa",
+    "mission1Body": "Hutan adalah rumah terakhir bagi gajah sumatera, harimau, dan orangutan. Setiap hektare yang hilang memaksa mereka keluar — dan konflik dengan manusia hampir selalu berakhir buruk bagi mereka.",
+    "mission2Title": "Untuk manusia",
+    "mission2Body": "Hutan yang gundul di hulu berarti banjir dan longsor di hilir. Kami menautkan data bencana dengan kehilangan hutan dalam satu daerah aliran sungai, supaya hubungannya terlihat jelas.",
+    "mission3Title": "Untuk yang bekerja di sana",
+    "mission3Body": "Banyak orang menggantungkan hidup pada lahan ini, dan kami tidak datang untuk menghakimi. Kami menunjukkan data apa adanya — agar setiap orang memahami konsekuensi dari apa yang terjadi di lapangan.",
+    "ctaTitle": "Mulai dari melihat",
+    "ctaBody": "Kesadaran dimulai dari informasi yang jelas. Buka peta, telusuri wilayahmu, dan bagikan apa yang kamu temukan.",
+    "aboutTitle": "Tentang Mandum Rimba",
+    "nameMandum": "‘semua’ dalam bahasa Aceh — tanah tempat pengawasan ini bermula",
+    "nameRimba": "hutan belantara, rumah bagi satwa kita",
+    "nameMeaning": "Mandum Rimba berarti rimba milik kita semua — bukan milik satu perusahaan, satu pemerintah, atau satu generasi, melainkan rumah bersama bagi manusia dan satwa yang hidup di dalamnya. Nama ini lahir dari Aceh, tempat data kami pertama kali bermula.",
+    "publicInterest": "Mandum Rimba adalah observatorium kepentingan publik yang independen dan nirlaba. Kami tidak menjual data, tidak beriklan, dan tidak berpihak. Kami hanya merangkum data satelit dan sumber publik yang kredibel menjadi satu peta terbuka yang bisa diperiksa siapa saja — seluruh kodenya sumber terbuka, dan setiap angka dapat ditelusuri ke sumbernya.",
+    "badgeIndependent": "Independen",
+    "badgeNonprofit": "Nirlaba",
+    "badgeOpenSource": "Sumber terbuka",
+    "badgeEvidence": "Berbasis bukti"
+  },
+  "map": {
+    "title": "Peta",
+    "layers": "Lapisan",
+    "source": "Sumber",
+    "retrieved": "Diambil",
+    "legend": "Legenda",
+    "onlyDiscrepancies": "Hanya diskrepansi",
+    "noData": "belum ada data",
+    "daysBack": "Rentang hari peringatan",
+    "reset": "Atur ulang",
+    "minimize": "Kecilkan",
+    "basemap": "Peta dasar",
+    "basemaps": {
+      "dark": "Peta",
+      "satellite": "Satelit"
+    },
+    "filterValues": {
+      "radd": "RADD (10m)",
+      "glad_l": "GLAD-L (30m)",
+      "glad_s2": "GLAD-S2",
+      "flood": "Banjir",
+      "flash_flood": "Banjir bandang",
+      "landslide": "Longsor",
+      "other": "Lainnya",
+      "palm_hgu": "Sawit (HGU)",
+      "pulp_hti": "HTI / pulp",
+      "logging": "Logging",
+      "mining": "Tambang (jejak satelit)",
+      "protected": "Kawasan lindung",
+      "moratorium": "Moratorium",
+      "CR": "Kritis (CR)",
+      "EN": "Genting (EN)",
+      "VU": "Rentan (VU)"
+    },
+    "close": "Tutup",
+    "viewEvidence": "Lihat bukti",
+    "detail": "Detail fitur",
+    "layerNames": {
+      "alerts": "Peringatan deforestasi (90 hari)",
+      "concessions": "Konsesi (sawit / HTI / logging / tambang)",
+      "protected": "Kawasan lindung & moratorium",
+      "habitat": "Habitat satwa (ekoregion)",
+      "species": "Satwa terancam",
+      "disasters": "Bencana (banjir, longsor)",
+      "discrepancies": "Diskrepansi ⭐"
+    }
+  },
+  "region": {
+    "lossPerYear": "Kehilangan tutupan pohon per tahun (ha)",
+    "alerts90d": "Peringatan 90 hari terakhir",
+    "disasters": "Bencana tercatat",
+    "concessions": "Konsesi beririsan",
+    "discrepancies": "Diskrepansi terdeteksi",
+    "notFound": "Wilayah tidak ditemukan, atau API tidak dapat dihubungi.",
+    "sourceNote": "Sumber: Global Forest Watch (UMD/Hansen), diambil otomatis setiap hari. Lihat metodologi."
+  },
+  "story": {
+    "sources": "Sumber",
+    "before": "Sebelum",
+    "after": "Sesudah",
+    "notFound": "Cerita tidak ditemukan."
+  },
+  "methodology": {
+    "title": "Metodologi",
+    "intro": "Setiap lapisan di Mandum Rimba memiliki sumber, tanggal pengambilan, dan metodologi. Halaman ini menjelaskan dari mana data berasal, bagaimana diolah, serta batasannya.",
+    "sourcesTitle": "Sumber data",
+    "deriveTitle": "Data turunan (diskrepansi)",
+    "deriveBody": "Setiap malam kami menandai titik peringatan deforestasi terhadap poligon konsesi, kawasan lindung, dan moratorium. Peringatan di luar konsesi terdaftar, atau di dalam kawasan lindung/moratorium, diagregasi sebagai \"diskrepansi\" — disajikan secara deskriptif (sumber A vs sumber B), tanpa tuduhan. Banjir/longsor dikaitkan dengan DAS HydroBASINS dan dijumlahkan dengan kehilangan hutan 10 tahun di hulu DAS yang sama; ini korelasi deskriptif, bukan atribusi kausal.",
+    "limitsTitle": "Batasan",
+    "limitsBody": "Peringatan satelit memiliki false positive; resolusi piksel 10–30 m; batas konsesi publik bisa kedaluwarsa; agregasi DAS adalah pendekatan berbasis wilayah administratif yang beririsan. Versi metodologi dicatat pada setiap rekaman turunan dan setiap perubahan dicatat di changelog ini.",
+    "changelogTitle": "Changelog metodologi"
+  },
+  "data": {
+    "title": "Data",
+    "intro": "Unduhan CSV/GeoJSON untuk dataset yang lisensinya mengizinkan redistribusi. Dataset lain ditautkan ke sumber aslinya.",
+    "download": "Unduh"
+  },
+  "sources": {
+    "title": "Sumber Data",
+    "intro": "Setiap dataset yang tampil di peta tercantum di sini agar bisa diverifikasi sendiri: organisasi sumber, tautan, lisensi, pembaruan terakhir, cakupan, dan deskripsi. Kami tidak pernah membuat koordinat, sebaran habitat, lokasi tambang, atau data konservasi secara mengada-ada.",
+    "activeTitle": "Dataset aktif di peta",
+    "gapsTitle": "Data tidak tersedia",
+    "gapsIntro": "Data terbuka yang kredibel tidak kami temukan untuk hal-hal berikut. Kami menyebutkan penyedia yang seharusnya, alih-alih menebak.",
+    "org": "Organisasi",
+    "license": "Lisensi",
+    "updated": "Pembaruan terakhir",
+    "coverage": "Cakupan",
+    "url": "Tautan sumber",
+    "unavailable": "Data Tidak Tersedia"
+  },
+  "status": {
+    "title": "Status pipeline",
+    "intro": "Waktu pembaruan terakhir setiap sumber data — sinyal kepercayaan publik. Pekerjaan dijalankan otomatis setiap hari (WIB).",
+    "job": "Pekerjaan",
+    "lastRun": "Terakhir berjalan",
+    "lastSuccess": "Terakhir sukses",
+    "state": "Status",
+    "unavailable": "Status tidak tersedia — API tidak dapat dihubungi."
+  },
+  "credits": {
+    "title": "Apresiasi & Kredit",
+    "intro": "Mandum Rimba berdiri di atas kerja banyak pihak: orang-orang yang membangunnya, organisasi yang membuka datanya, dan perangkat sumber terbuka yang menjalankannya. Terima kasih.",
+    "contributorsTitle": "Kontributor",
+    "openContribution": "Mandum Rimba bersifat sumber terbuka (lisensi MIT). Kontribusi terbuka untuk siapa saja —",
+    "openContributionLink": "ikut berkontribusi",
+    "dataTitle": "Terima kasih kepada penyedia data",
+    "dataIntro": "Data dibuka secara cuma-cuma oleh organisasi berikut. Rincian lengkap, lisensi, dan tautan verifikasi ada di",
+    "dataLink": "halaman Sumber Data",
+    "toolsTitle": "Teknologi sumber terbuka",
+    "toolsIntro": "Dibangun dengan perangkat dan peta dasar sumber terbuka berikut.",
+    "mediaTitle": "Foto & media",
+    "photoBy": "Foto oleh",
+    "photoOn": "di",
+    "licenseTitle": "Lisensi",
+    "licenseBody": "Kode sumber Mandum Rimba berlisensi MIT. Setiap dataset tetap milik sumbernya masing-masing dengan lisensinya sendiri — lihat halaman Sumber Data. Disajikan secara deskriptif dari data publik; bukan tuduhan terhadap pihak mana pun."
+  },
+  "footer": {
+    "license": "Kode sumber terbuka (MIT). Data milik masing-masing sumber — lihat metodologi.",
+    "disclaimer": "Disajikan secara deskriptif dari data publik; bukan tuduhan terhadap pihak mana pun."
+  }
+}

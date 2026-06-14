@@ -1,0 +1,217 @@
+"use client";
+
+import { useState } from "react";
+import { useTranslations } from "next-intl";
+import { LAYERS } from "@/lib/layers";
+import {
+  ALERT_SYSTEMS,
+  CONCESSION_TYPES,
+  DISASTER_TYPES,
+  PROTECTED_KINDS,
+  SPECIES_STATUS,
+  type Basemap,
+  type MapFilters,
+} from "./filters";
+
+interface Props {
+  /** tile names that actually exist on R2; others render disabled */
+  availableTiles: string[];
+  filters: MapFilters;
+  onChange: (next: MapFilters) => void;
+  onReset: () => void;
+}
+
+/** which sub-filter belongs under which layer row */
+const SUB_FILTERS: Record<
+  string,
+  | {
+      key:
+        | "systems"
+        | "disasterTypes"
+        | "concessionTypes"
+        | "protectedKinds"
+        | "speciesStatus";
+      options: string[];
+    }
+  | undefined
+> = {
+  alerts: { key: "systems", options: ALERT_SYSTEMS },
+  disasters: { key: "disasterTypes", options: DISASTER_TYPES },
+  concessions: { key: "concessionTypes", options: CONCESSION_TYPES },
+  protected: { key: "protectedKinds", options: PROTECTED_KINDS },
+  species: { key: "speciesStatus", options: SPECIES_STATUS },
+};
+
+export default function LayerPanel({
+  availableTiles,
+  filters,
+  onChange,
+  onReset,
+}: Props) {
+  const t = useTranslations("map");
+  const [minimized, setMinimized] = useState(false);
+
+  if (minimized) {
+    return (
+      <button
+        className="glass absolute right-3 top-[4.6rem] z-[5] cursor-pointer rounded-full px-[1.1rem] py-[0.55rem] text-[0.85rem] text-foreground transition-[transform,border-color] hover:-translate-y-px hover:border-accent max-[720px]:bottom-3 max-[720px]:top-auto"
+        onClick={() => setMinimized(false)}
+        aria-label={t("layers")}
+      >
+        ☰ {t("layers")}
+      </button>
+    );
+  }
+
+  const set = <K extends keyof MapFilters>(key: K, value: MapFilters[K]) =>
+    onChange({ ...filters, [key]: value });
+
+  const toggleIn = (list: string[], value: string): string[] =>
+    list.includes(value) ? list.filter((v) => v !== value) : [...list, value];
+
+  const panelBtn =
+    "cursor-pointer rounded-full border border-[var(--glass-border)] bg-[var(--glass-highlight)] px-[0.6rem] py-[0.18rem] text-[0.78rem] text-muted transition-[color,border-color] hover:border-[var(--text-dim)] hover:text-foreground";
+  const subFilters = "flex flex-wrap gap-[0.35rem] pl-[1.7rem] pt-[0.45rem]";
+  const chip =
+    "inline-flex cursor-pointer select-none items-center gap-[0.3rem] rounded-full border border-[var(--glass-border)] bg-[var(--glass-highlight)] py-[0.14rem] pl-[0.42rem] pr-[0.62rem] text-[0.76rem] text-muted transition-[color,border-color,background-color] has-[input:checked]:border-accent has-[input:checked]:text-foreground [&_input]:m-0 [&_input]:accent-[var(--accent)]";
+
+  return (
+    <aside
+      className="glass absolute right-3 top-[4.6rem] z-[5] max-h-[calc(100%-5.4rem)] w-[308px] animate-[panel-in_0.22s_ease] overflow-y-auto rounded-[18px] px-[0.9rem] pb-[0.9rem] pt-3 text-[0.88rem] [scrollbar-width:thin] max-[720px]:inset-x-0 max-[720px]:bottom-0 max-[720px]:top-auto max-[720px]:max-h-[48%] max-[720px]:w-full max-[720px]:rounded-[18px_18px_0_0]"
+      aria-label={t("layers")}
+    >
+      <header className="mb-[0.6rem] flex items-center justify-between">
+        <h2 className="m-0 text-[0.95rem] tracking-[0.02em]">{t("layers")}</h2>
+        <div className="flex gap-[0.35rem]">
+          <button className={panelBtn} onClick={onReset}>
+            {t("reset")}
+          </button>
+          <button
+            className={panelBtn}
+            onClick={() => setMinimized(true)}
+            aria-label={t("minimize")}
+            title={t("minimize")}
+          >
+            —
+          </button>
+        </div>
+      </header>
+
+      {/* basemap switcher */}
+      <div
+        className="mb-3 flex gap-[0.4rem]"
+        role="radiogroup"
+        aria-label={t("basemap")}
+      >
+        {(["dark", "satellite"] as Basemap[]).map((b) => (
+          <button
+            key={b}
+            role="radio"
+            aria-checked={filters.basemap === b}
+            className={`flex-1 cursor-pointer rounded-full border py-[0.38rem] text-[0.8rem] transition-[background-color,border-color,color] ${
+              filters.basemap === b
+                ? "border-accent bg-accent-dim text-foreground"
+                : "border-[var(--glass-border)] bg-[var(--glass-highlight)] text-muted"
+            }`}
+            onClick={() => set("basemap", b)}
+          >
+            {t(`basemaps.${b}`)}
+          </button>
+        ))}
+      </div>
+
+      {/* layers with per-layer sub-filters */}
+      {LAYERS.map((def) => {
+        const available = availableTiles.includes(def.tile);
+        const active = available && filters.layers.includes(def.id);
+        const sub = SUB_FILTERS[def.id];
+        return (
+          <section
+            className={`border-t border-border pb-[0.55rem] pt-2 ${
+              available ? "" : "opacity-[0.45]"
+            }`}
+            key={def.id}
+          >
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id={`layer-${def.id}`}
+                checked={active}
+                disabled={!available}
+                onChange={() => set("layers", toggleIn(filters.layers, def.id))}
+              />
+              <span
+                className="h-3 w-3 shrink-0 rounded-[3px]"
+                style={{ background: def.color }}
+              />
+              <label
+                className="flex-1 cursor-pointer"
+                htmlFor={`layer-${def.id}`}
+              >
+                {t(`layerNames.${def.id}`)}
+                {!available && <> — {t("noData")}</>}
+              </label>
+            </div>
+
+            {active && sub && (
+              <div className={subFilters}>
+                {sub.options.map((opt) => (
+                  <label className={chip} key={opt}>
+                    <input
+                      type="checkbox"
+                      checked={(filters[sub.key] as string[]).includes(opt)}
+                      onChange={() =>
+                        set(sub.key, toggleIn(filters[sub.key] as string[], opt))
+                      }
+                    />
+                    <span>{t(`filterValues.${opt}`)}</span>
+                  </label>
+                ))}
+              </div>
+            )}
+
+            {active && def.id === "alerts" && (
+              <div className={subFilters}>
+                <div className="w-full">
+                  <label
+                    className="mb-[0.3rem] block text-[0.78rem] text-muted"
+                    htmlFor="days-back"
+                  >
+                    {t("daysBack")}: {filters.days}
+                  </label>
+                  <input
+                    id="days-back"
+                    type="range"
+                    min={7}
+                    max={90}
+                    step={1}
+                    value={filters.days}
+                    onChange={(e) => set("days", Number(e.target.value))}
+                    className="w-full"
+                  />
+                </div>
+                <label className={`${chip} w-full !rounded-md`}>
+                  <input
+                    type="checkbox"
+                    checked={filters.onlyDiscrepancies}
+                    onChange={(e) => set("onlyDiscrepancies", e.target.checked)}
+                  />
+                  <span>{t("onlyDiscrepancies")}</span>
+                </label>
+              </div>
+            )}
+
+            <a
+              className="mt-1 block pl-[1.7rem] text-[0.72rem] text-muted"
+              href={def.sourceUrl}
+              target="_blank"
+              rel="noreferrer"
+            >
+              {t("source")}: {def.sourceName}
+            </a>
+          </section>
+        );
+      })}
+    </aside>
+  );
+}

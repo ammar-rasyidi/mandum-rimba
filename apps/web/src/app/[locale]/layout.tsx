@@ -32,6 +32,17 @@ export async function generateMetadata({
     title: { default: `${name} — ${t("tagline")}`, template: `%s — ${name}` },
     description,
     applicationName: name,
+    icons: {
+      // SVG first (scalable, theme-crisp); PNG as the broad fallback. These
+      // live at the public root, so the browser's default /favicon request and
+      // the declared links both resolve.
+      icon: [
+        { url: "/favicon.svg", type: "image/svg+xml" },
+        { url: "/favicon.png", type: "image/png" },
+      ],
+      shortcut: "/favicon.png",
+      apple: "/favicon.png",
+    },
     keywords: [
       "deforestasi",
       "deforestation",

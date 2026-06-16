@@ -26,6 +26,7 @@ import {
 } from "../common/schemas";
 import { JobLockService } from "../common/job-lock.service";
 import { ArchiverService } from "../common/archiver.service";
+import { FLAGSHIP_SPECIES } from "../ingest/data/flagship-species";
 import {
   JobRegistryService,
   cronEnabled,
@@ -170,20 +171,10 @@ export class TilesService implements OnModuleInit {
       },
       {
         name: "alerts",
-        // count alone misses derive re-flags (same docs, new discrepancy
-        // properties) — fold in the latest flaggedAt epoch
-        changeKey: async () => {
-          const count = await this.alertModel.countDocuments({
+        changeKey: async () =>
+          this.alertModel.countDocuments({
             alertDate: { $gte: alertsSince },
-          });
-          const latest = await this.alertModel
-            .findOne({ flaggedAt: { $ne: null } })
-            .sort({ flaggedAt: -1 })
-            .select("flaggedAt");
-          return (
-            count + Math.floor((latest?.flaggedAt?.getTime() ?? 0) / 1000)
-          );
-        },
+          }),
         export: (path) =>
           this.streamCursor(
             path,
@@ -199,14 +190,6 @@ export class TilesService implements OnModuleInit {
                 date: d.alertDate?.toISOString().slice(0, 10),
                 system: d.system,
                 confidence: d.confidence,
-                insideConcession: d.insideConcessionId ? 1 : 0,
-                insideProtected: d.insideProtected ? 1 : 0,
-                insideMoratorium: d.insideMoratorium ? 1 : 0,
-                // a discrepancy pixel: clearing where none should be
-                discrepancy:
-                  !d.insideConcessionId || d.insideProtected || d.insideMoratorium
-                    ? 1
-                    : 0,
               },
             }),
           ),
@@ -243,7 +226,18 @@ export class TilesService implements OnModuleInit {
       },
       {
         name: "protected",
-        changeKey: async () => this.protectedModel.estimatedDocumentCount(),
+        // estimatedDocumentCount misses in-place field updates (re-ingest with
+        // new category/area); fold the latest retrievedAt epoch in too
+        changeKey: async () => {
+          const count = await this.protectedModel.estimatedDocumentCount();
+          const latest = await this.protectedModel
+            .findOne()
+            .sort({ retrievedAt: -1 })
+            .select("retrievedAt");
+          return (
+            count + Math.floor((latest?.retrievedAt?.getTime() ?? 0) / 1000)
+          );
+        },
         export: (path) =>
           this.streamCursor(
             path,
@@ -254,7 +248,13 @@ export class TilesService implements OnModuleInit {
               properties: {
                 id: String(d._id),
                 kind: d.kind,
+                cat: d.category, // TN | HL | CA | SM | KK | moratorium
                 name: d.name,
+                nameAlt: d.nameAlt ?? "",
+                desig: d.desig ?? "",
+                iucn: d.iucnCat ?? "",
+                areaHa: d.areaHa ?? 0,
+                year: d.statusYear ?? 0,
                 source: d.source,
               },
             }),
@@ -308,8 +308,16 @@ export class TilesService implements OnModuleInit {
       {
         name: "species",
         changeKey: async () => this.occModel.estimatedDocumentCount(),
-        export: (path) =>
-          this.streamCursor(
+        export: (path) => {
+          // slug → common name (id/en) from the curated flagship list, so the
+          // popup shows a familiar name, not the scientific name alone
+          const names = new Map(
+            FLAGSHIP_SPECIES.map((s) => [
+              s.slug,
+              { id: s.commonNameId, en: s.commonNameEn },
+            ]),
+          );
+          return this.streamCursor(
             path,
             this.occModel.find().lean().cursor(),
             (d: Record<string, any>) => ({
@@ -317,14 +325,16 @@ export class TilesService implements OnModuleInit {
               geometry: d.geom,
               properties: {
                 id: String(d._id),
-                species: d.speciesSlug,
+                name: names.get(d.speciesSlug)?.id ?? d.speciesSlug,
+                nameEn: names.get(d.speciesSlug)?.en ?? d.speciesSlug,
                 sci: d.scientificName,
                 status: d.iucnStatus, // CR | EN | VU — drives the status filters
                 year: d.year ?? 0,
                 basis: d.basisOfRecord,
               },
             }),
-          ),
+          );
+        },
         tippecanoeArgs: [
           "-zg",
           "--drop-densest-as-needed",

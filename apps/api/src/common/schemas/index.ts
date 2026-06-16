@@ -4,7 +4,6 @@ export * from "./forest-loss.schema";
 export * from "./alert.schema";
 export * from "./disaster.schema";
 export * from "./watershed.schema";
-export * from "./discrepancy.schema";
 export * from "./company.schema";
 export * from "./story.schema";
 export * from "./job-run.schema";

@@ -191,19 +191,8 @@ export class ConcessionsService implements OnModuleInit {
       const mining = await this.ingestMiningConcessions();
       upserted += mining;
 
-      // polygon reference data changed → existing spatial flags are stale;
-      // unset flaggedAt so the next derive run re-checks every alert
-      let flagsInvalidated = 0;
-      if (upserted > 0) {
-        const res = await this.alertModel.updateMany(
-          {},
-          { $set: { flaggedAt: null } },
-        );
-        flagsInvalidated = res.modifiedCount;
-      }
-
       return {
-        stats: { upserted, mining, flagsInvalidated, sources: SOURCES.length },
+        stats: { upserted, mining, sources: SOURCES.length },
       };
     });
   }

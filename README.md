@@ -21,9 +21,8 @@ Cloudflare R2 ◄── tile build ── MongoDB Atlas (2dsphere)  External sou
 ```
 
 - `apps/web` — Next.js 14 App Router, MapLibre GL + PMTiles, next-intl (ID/EN), Recharts.
-- `apps/api` — NestJS 10: daily staggered ingest crons (01:00–06:00 WIB), the
-  derive pipeline (spatial flags → discrepancies → watershed links), tippecanoe
-  tile builds, and the public REST API under `/v1`.
+- `apps/api` — NestJS 10: daily staggered ingest crons (01:00–06:00 WIB),
+  tippecanoe tile builds, and the public REST API under `/v1`.
 - `packages/shared` — shared TypeScript domain types.
 - `scripts/gee` — manual Earth Engine before/after imagery exports per story.
 
@@ -42,12 +41,11 @@ Trigger any job manually (instead of waiting for its cron):
 
 ```bash
 curl -X POST -H "x-api-key: $ADMIN_API_KEY" localhost:4000/v1/admin/jobs/gfw-alerts/run
-curl -X POST -H "x-api-key: $ADMIN_API_KEY" localhost:4000/v1/admin/jobs/derive/run
 curl -X POST -H "x-api-key: $ADMIN_API_KEY" localhost:4000/v1/admin/jobs/tiles/run
 ```
 
 Job names: `gfw-alerts`, `gfw-annual`, `bnpb-dibi`, `concessions`, `modi-esdm`,
-`wdpa`, `trase`, `nusantara-atlas`, `derive`, `tiles`, `status`.
+`wdpa`, `trase`, `nusantara-atlas`, `tiles`, `status`.
 
 ## Source configuration
 
@@ -95,8 +93,8 @@ cleanly when empty:
 
 ## Editorial principles (non-negotiable)
 
-1. Evidence over accusation — discrepancies are presented descriptively
-   ("detected clearing outside registered concession boundary, source A vs B").
+1. Evidence over accusation — we gather and show the data as it is, and never
+   draw conclusions or make claims on the user's behalf.
 2. Every claim is clickable — ≤ 2 clicks to the source dataset.
 3. Reproducible — open pipeline, public methodology + changelog (`/metodologi`, `/status`).
 4. Legal safety (UU ITE) — companies referenced only via already-published

@@ -171,7 +171,6 @@ export class BnpbDibiService implements OnModuleInit {
                 sourceUrl: url,
                 retrievedAt,
                 geom: match?.centroid ?? null,
-                watershedLinkedAt: null,
               },
             },
             { upsert: true },

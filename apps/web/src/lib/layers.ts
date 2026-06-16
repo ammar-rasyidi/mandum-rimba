@@ -48,7 +48,7 @@ export const LAYERS: LayerDef[] = [
     tile: "protected",
     kind: "fill",
     color: "#26a69a", // teal 400
-    defaultOn: false,
+    defaultOn: true,
     sourceName: "Protected Planet (WDPA) + KLHK PIPPIB",
     sourceUrl: "https://www.protectedplanet.net",
   },
@@ -59,7 +59,7 @@ export const LAYERS: LayerDef[] = [
     kind: "circle",
     color: "#ffc107", // amber 500
     strokeColor: "#263238",
-    defaultOn: true,
+    defaultOn: false,
     sourceName: "GFW — RADD / GLAD (UMD, WUR)",
     sourceUrl: "https://www.globalforestwatch.org/map/",
   },
@@ -83,15 +83,5 @@ export const LAYERS: LayerDef[] = [
     defaultOn: false,
     sourceName: "GBIF occurrence records (per dataset license)",
     sourceUrl: "https://www.gbif.org",
-  },
-  {
-    id: "discrepancies",
-    tile: "alerts", // same tileset, filtered on the precomputed discrepancy flag
-    kind: "circle",
-    color: "#ff5722", // deep-orange 500
-    strokeColor: "#ffffff",
-    defaultOn: false,
-    sourceName: "Mandum Rimba derive pipeline (see methodology)",
-    sourceUrl: "/metodologi",
   },
 ];

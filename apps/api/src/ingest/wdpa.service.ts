@@ -23,38 +23,111 @@ import {
 } from "./util/gfw-vector";
 import { repairRings } from "./util/geo";
 
+interface ProtectedFields {
+  name: string;
+  nameAlt: string;
+  ref: string;
+  category: string;
+  desig: string;
+  desigEng: string;
+  iucnCat: string;
+  areaHa: number;
+  statusYear: number;
+}
+
 interface ProtectedSource extends GfwVectorSource {
   kind: "protected" | "moratorium";
   license: string;
-  pick: (row: Record<string, unknown>) => { name: string; ref: string };
+  pick: (row: Record<string, unknown>) => ProtectedFields;
+}
+
+const num = (v: unknown): number => {
+  const n = Number(v);
+  return Number.isFinite(n) ? n : 0;
+};
+
+/**
+ * Map a WDPA designation to one of our conservation-category chips. Match on
+ * the Indonesian `desig` first (most specific), English as fallback. Marine
+ * "Laut" variants fold into their base category (e.g. Taman Nasional Laut→TN).
+ */
+function classifyProtected(desig: string, desigEng: string): string {
+  const d = desig.toLowerCase();
+  const e = desigEng.toLowerCase();
+  if (d.includes("taman nasional") || e.includes("national park")) return "TN";
+  if (d.includes("hutan lindung") || e.includes("protected forest")) return "HL";
+  if (d.includes("cagar alam") || e.includes("nature reserve")) return "CA";
+  if (
+    d.includes("suaka margasatwa") ||
+    e.includes("wildlife reserve") ||
+    e.includes("wildlife sanctuary") ||
+    e.includes("game reserve")
+  ) {
+    return "SM";
+  }
+  return "KK"; // Kawasan konservasi lain (TWA, Tahura, Taman Buru, …)
 }
 
 // Versions pinned for reproducibility; row counts verified live:
-// WDPA IDN 688 sites, PIPPIB moratorium 42,028 polygons (paged).
+// WDPA IDN ~961 national designations, PIPPIB moratorium polygons (paged).
 const SOURCES: ProtectedSource[] = [
   {
     dataset: "wdpa_protected_areas",
     version: "v202512",
     kind: "protected",
     where: "iso3='IDN'",
-    fields: ["gfw_fid", "site_id", "name", "desig_eng", "iucn_cat"],
+    fields: [
+      "gfw_fid",
+      "site_pid", // WDPA parcel id (v202512 has site_pid, not wdpa_pid)
+      "name",
+      "name_eng",
+      "desig",
+      "desig_eng",
+      "iucn_cat",
+      "gfw_area__ha",
+      "status_yr",
+    ],
     pageSize: 100, // park polygons are huge; keep pages small
     license: "Protected Planet / WDPA terms — no commercial redistribution",
-    pick: (r) => ({
-      name: String(r.name ?? r.site_id ?? "Unknown"),
-      ref: String(r.site_id ?? r.gfw_fid),
-    }),
+    pick: (r) => {
+      const desig = String(r.desig ?? "");
+      const desigEng = String(r.desig_eng ?? "");
+      // WDPA Indonesia: `name_eng` holds the recognizable/gazetted park name
+      // (e.g. "Tesso Nilo"); `name` is sometimes an obscure local block name
+      // (e.g. "Air Sawan"). Lead with name_eng, keep the other as an alias.
+      const nm = String(r.name ?? "");
+      const nmEng = String(r.name_eng ?? "");
+      const name = nmEng || nm || String(r.site_pid ?? "Unknown");
+      return {
+        name,
+        nameAlt: nm && nm !== name ? nm : "",
+        ref: String(r.site_pid ?? r.gfw_fid),
+        category: classifyProtected(desig, desigEng),
+        desig,
+        desigEng,
+        iucnCat: String(r.iucn_cat ?? ""),
+        areaHa: Math.round(num(r.gfw_area__ha)),
+        statusYear: num(r.status_yr),
+      };
+    },
   },
   {
     dataset: "idn_forest_moratorium",
     version: "v20200923",
     kind: "moratorium",
-    fields: ["gfw_fid", "pippib_en"],
+    fields: ["gfw_fid", "pippib_en", "gfw_area__ha"],
     pageSize: 500,
     license: "KLHK PIPPIB — public data (via GFW, CC BY 4.0)",
     pick: (r) => ({
       name: String(r.pippib_en ?? "Forest moratorium (PIPPIB)"),
+      nameAlt: "",
       ref: String(r.gfw_fid),
+      category: "moratorium",
+      desig: "",
+      desigEng: "",
+      iucnCat: "",
+      areaHa: Math.round(num(r.gfw_area__ha)),
+      statusYear: 0,
     }),
   },
 ];
@@ -117,10 +190,18 @@ export class WdpaService implements OnModuleInit {
               ) {
                 continue;
               }
-              const { name, ref } = src.pick(row);
+              const picked = src.pick(row);
+              const { ref } = picked;
               const set = {
                 kind: src.kind,
-                name,
+                category: picked.category,
+                name: picked.name,
+                nameAlt: picked.nameAlt,
+                desig: picked.desig,
+                desigEng: picked.desigEng,
+                iucnCat: picked.iucnCat,
+                areaHa: picked.areaHa,
+                statusYear: picked.statusYear,
                 sourceUrl: gfwDatasetUrl(src),
                 retrievedAt,
                 license: src.license,
@@ -156,19 +237,8 @@ export class WdpaService implements OnModuleInit {
         }
       }
 
-      // polygon reference data changed → existing spatial flags are stale;
-      // unset flaggedAt so the next derive run re-checks every alert
-      let flagsInvalidated = 0;
-      if (upserted > 0) {
-        const res = await this.alertModel.updateMany(
-          {},
-          { $set: { flaggedAt: null } },
-        );
-        flagsInvalidated = res.modifiedCount;
-      }
-
       return {
-        stats: { upserted, invalid, flagsInvalidated, sources: SOURCES.length },
+        stats: { upserted, invalid, sources: SOURCES.length },
       };
     });
   }

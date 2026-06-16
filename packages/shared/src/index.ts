@@ -61,9 +61,6 @@ export interface Alert {
   confidence: string;
   geom: Point;
   regionId: string | null;
-  insideConcessionId: string | null;
-  insideProtected: boolean;
-  insideMoratorium: boolean;
 }
 
 export type DisasterType = "flood" | "landslide" | "flash_flood" | "other";
@@ -84,26 +81,6 @@ export interface Watershed {
   name: string;
   basinLevel: number;
   geom?: MultiPolygon | Polygon;
-}
-
-export type DiscrepancyKind =
-  | "clearing_outside_concession"
-  | "clearing_in_protected"
-  | "clearing_in_moratorium"
-  | "flood_downstream_of_loss";
-
-export interface DerivedDiscrepancy {
-  _id: string;
-  kind: DiscrepancyKind;
-  alertCount: number;
-  areaHa: number;
-  regionId: string;
-  concessionId?: string | null;
-  watershedId?: string | null;
-  periodStart: string;
-  periodEnd: string;
-  methodologyVersion: string;
-  computedAt: string;
 }
 
 export interface Company {
@@ -165,6 +142,5 @@ export interface RegionSummary {
   lossByYear: ForestLossAnnual[];
   alertCount90d: number;
   disasterCount: number;
-  discrepancies: DerivedDiscrepancy[];
   concessionCount: number;
 }

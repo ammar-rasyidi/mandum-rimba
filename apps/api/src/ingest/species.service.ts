@@ -15,7 +15,8 @@ import {
   JobRegistryService,
   cronEnabled,
 } from "../common/job-registry.service";
-import { FLAGSHIP_SPECIES } from "./data/flagship-species";
+import { FLAGSHIP_SPECIES, realmOf } from "./data/flagship-species";
+import { keepByRealm } from "./util/land-mask";
 
 const GBIF_BASE = "https://api.gbif.org/v1";
 
@@ -85,10 +86,12 @@ export class SpeciesService implements OnModuleInit {
         );
       }
 
-      // 2) ingest occurrences per species
+      // 2) ingest occurrences per species (coordinates validated against the
+      //    Indonesia land mask in upsertBatch — see util/land-mask)
       const retrievedAt = new Date();
       let upserted = 0;
       let fetched = 0;
+      let dropped = 0;
 
       for (const s of FLAGSHIP_SPECIES) {
         let offset = 0;
@@ -104,6 +107,10 @@ export class SpeciesService implements OnModuleInit {
                 country: "ID",
                 hasCoordinate: true,
                 hasGeospatialIssue: false,
+                // recent enough to indicate present-day occurrence — old museum
+                // specimens (e.g. a 1927 record) don't reflect where the
+                // species lives now
+                year: "1990,2026",
                 limit: SpeciesService.PAGE,
                 offset,
               },
@@ -119,12 +126,14 @@ export class SpeciesService implements OnModuleInit {
             offset += SpeciesService.PAGE;
             fetched += occ.length;
             if (occ.length === 0 || res.endOfRecords) {
-              await this.upsertBatch(s, occ, retrievedAt).then(
-                (n) => (upserted += n),
-              );
+              const r = await this.upsertBatch(s, occ, retrievedAt);
+              upserted += r.upserted;
+              dropped += r.dropped;
               break;
             }
-            upserted += await this.upsertBatch(s, occ, retrievedAt);
+            const r = await this.upsertBatch(s, occ, retrievedAt);
+            upserted += r.upserted;
+            dropped += r.dropped;
           } catch (err) {
             this.logger.error(`${s.slug} GBIF fetch failed: ${err}`);
             break;
@@ -132,7 +141,9 @@ export class SpeciesService implements OnModuleInit {
         }
       }
 
-      return { stats: { species: FLAGSHIP_SPECIES.length, fetched, upserted } };
+      return {
+        stats: { species: FLAGSHIP_SPECIES.length, fetched, upserted, dropped },
+      };
     });
   }
 
@@ -140,14 +151,19 @@ export class SpeciesService implements OnModuleInit {
     s: (typeof FLAGSHIP_SPECIES)[number],
     occ: GbifOccurrence[],
     retrievedAt: Date,
-  ): Promise<number> {
-    const ops = occ
-      .filter(
-        (o) =>
-          typeof o.decimalLatitude === "number" &&
-          typeof o.decimalLongitude === "number" &&
-          !(o.decimalLatitude === 0 && o.decimalLongitude === 0),
-      )
+  ): Promise<{ upserted: number; dropped: number }> {
+    const realm = realmOf(s.slug);
+    const valid = occ.filter(
+      (o) =>
+        typeof o.decimalLatitude === "number" &&
+        typeof o.decimalLongitude === "number" &&
+        !(o.decimalLatitude === 0 && o.decimalLongitude === 0),
+    );
+    const onRealm = valid.filter((o) =>
+      keepByRealm(o.decimalLongitude!, o.decimalLatitude!, realm),
+    );
+    const dropped = valid.length - onRealm.length;
+    const ops = onRealm
       .map((o) => ({
         updateOne: {
           filter: { gbifId: String(o.key) },
@@ -174,10 +190,10 @@ export class SpeciesService implements OnModuleInit {
           upsert: true,
         },
       }));
-    if (ops.length === 0) return 0;
+    if (ops.length === 0) return { upserted: 0, dropped };
     const res = await this.occModel.bulkWrite(ops as never[], {
       ordered: false,
     });
-    return res.upsertedCount;
+    return { upserted: res.upsertedCount, dropped };
   }
 }

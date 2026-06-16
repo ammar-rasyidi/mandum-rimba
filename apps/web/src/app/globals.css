@@ -6,42 +6,44 @@
    colour utilities (bg-surface, text-accent, …) read these, so utilities are
    theme-aware without dark: variants. See tailwind.config.ts.
    =========================================================================== */
+/* Material Design palette. Background is gray-900 (#212121) in dark and pure
+   white in light; accent is Material green (forest brand). */
 :root,
 :root[data-theme="dark"] {
-  --bg: #263238; /* blue-gray 900 */
-  --bg-raised: #37474f; /* blue-gray 800 */
-  --border: #455a64; /* blue-gray 700 */
-  --text: #eceff1; /* blue-gray 50 */
-  --text-dim: #90a4ae; /* blue-gray 300 */
-  --accent: #64b5f6; /* blue 300 */
-  --accent-dim: #1565c0; /* blue 800 */
-  --danger: #ff7043; /* deep-orange 400: color-blind-safe vs blue/teal */
-  --link: #81d4fa; /* light-blue 200 */
-  --overlay: rgba(38, 50, 56, 0.96);
+  --bg: #212121; /* gray 900 */
+  --bg-raised: #2a2a2a; /* just above bg — subtle card surface */
+  --border: #424242; /* gray 800 */
+  --text: #fafafa; /* gray 50 */
+  --text-dim: #9e9e9e; /* gray 500 */
+  --accent: #81c784; /* green 300 */
+  --accent-dim: rgba(129, 199, 132, 0.14); /* green 300 @ low alpha */
+  --danger: #ff7043; /* deep-orange 400: color-blind-safe vs green */
+  --link: #a5d6a7; /* green 200 */
+  --overlay: rgba(33, 33, 33, 0.96);
   --shadow: 0 6px 24px rgba(0, 0, 0, 0.45);
-  --glass-bg: rgba(38, 50, 56, 0.6);
-  --glass-border: rgba(236, 239, 241, 0.12);
-  --glass-highlight: rgba(236, 239, 241, 0.07);
-  --glass-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+  --glass-bg: rgba(42, 42, 42, 0.55);
+  --glass-border: rgba(250, 250, 250, 0.1);
+  --glass-highlight: rgba(250, 250, 250, 0.06);
+  --glass-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
   color-scheme: dark;
 }
 
 :root[data-theme="light"] {
-  --bg: #fafafa; /* gray 50 */
+  --bg: #ffffff; /* white */
   --bg-raised: #ffffff;
   --border: #e0e0e0; /* gray 300 */
   --text: #212121; /* gray 900 */
   --text-dim: #616161; /* gray 700 */
-  --accent: #1976d2; /* blue 700 */
-  --accent-dim: #bbdefb; /* blue 100 */
+  --accent: #388e3c; /* green 700 */
+  --accent-dim: rgba(56, 142, 60, 0.1); /* green 700 @ low alpha */
   --danger: #d84315; /* deep-orange 800 */
-  --link: #1565c0; /* blue 800 */
+  --link: #2e7d32; /* green 800 */
   --overlay: rgba(255, 255, 255, 0.96);
-  --shadow: 0 6px 24px rgba(38, 50, 56, 0.18);
-  --glass-bg: rgba(255, 255, 255, 0.55);
-  --glass-border: rgba(33, 33, 33, 0.1);
-  --glass-highlight: rgba(255, 255, 255, 0.65);
-  --glass-shadow: 0 12px 40px rgba(38, 50, 56, 0.18);
+  --shadow: 0 6px 24px rgba(33, 33, 33, 0.1);
+  --glass-bg: rgba(255, 255, 255, 0.6);
+  --glass-border: rgba(33, 33, 33, 0.08);
+  --glass-highlight: rgba(255, 255, 255, 0.7);
+  --glass-shadow: 0 12px 40px rgba(33, 33, 33, 0.12);
   color-scheme: light;
 }
 
@@ -91,6 +93,47 @@ a:hover {
     box-shadow:
       inset 0 1px 0 var(--glass-highlight),
       var(--glass-shadow);
+  }
+
+  /* Range slider — Preflight is off, so we reset the native track/thumb chrome
+     ourselves and paint it in the brand accent to match the buttons. */
+  .range {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 4px;
+    border-radius: 9999px;
+    background: var(--border);
+    outline: none;
+    cursor: pointer;
+  }
+  .range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 9999px;
+    background: var(--accent);
+    border: 2px solid var(--bg);
+    box-shadow: var(--shadow);
+    cursor: grab;
+  }
+  .range::-webkit-slider-thumb:active {
+    cursor: grabbing;
+  }
+  .range::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 9999px;
+    background: var(--accent);
+    border: 2px solid var(--bg);
+    box-shadow: var(--shadow);
+    cursor: grab;
+  }
+  .range::-moz-range-track {
+    height: 4px;
+    border-radius: 9999px;
+    background: var(--border);
   }
 
   /* Long-form content typography (methodology, data, sources, credits, …). */

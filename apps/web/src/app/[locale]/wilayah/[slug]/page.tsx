@@ -12,7 +12,6 @@ interface RegionSummary {
   alertCount90d: number;
   disasterCount: number;
   concessionCount: number;
-  discrepancies: { kind: string; areaHa: number; alertCount: number }[];
 }
 
 export default async function RegionPage({
@@ -43,7 +42,6 @@ export default async function RegionPage({
           [summary.alertCount90d, t("alerts90d")],
           [summary.disasterCount, t("disasters")],
           [summary.concessionCount, t("concessions")],
-          [summary.discrepancies.length, t("discrepancies")],
         ].map(([value, label]) => (
           <div
             key={label}

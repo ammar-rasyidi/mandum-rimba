@@ -23,7 +23,6 @@ export class AlertsController {
     @Query("to") to?: string,
     @Query("system") system?: string,
     @Query("region") region?: string,
-    @Query("onlyDiscrepancies") onlyDiscrepancies?: string,
     @Query("limit") limit?: string,
   ) {
     const filter: Record<string, unknown> = {};
@@ -40,13 +39,6 @@ export class AlertsController {
     }
     if (system) filter.system = system;
     if (region) filter.regionId = region;
-    if (onlyDiscrepancies === "true") {
-      filter.$or = [
-        { insideConcessionId: null },
-        { insideProtected: true },
-        { insideMoratorium: true },
-      ];
-    }
 
     const docs = await this.alertModel
       .find(filter)

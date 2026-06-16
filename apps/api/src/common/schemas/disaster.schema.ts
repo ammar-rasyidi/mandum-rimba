@@ -34,10 +34,6 @@ export class Disaster {
 
   @Prop({ type: MongooseSchema.Types.Mixed, default: null })
   geom: { type: "Point"; coordinates: [number, number] } | null;
-
-  // null until the watershedLink derive job has processed this event
-  @Prop({ type: Date, default: null })
-  watershedLinkedAt: Date | null;
 }
 
 export const DisasterSchema = SchemaFactory.createForClass(Disaster);

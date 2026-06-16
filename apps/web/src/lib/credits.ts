@@ -75,6 +75,14 @@ export const DATA_ACKNOWLEDGEMENTS: CreditItem[] = [
     url: "https://www.gbif.org",
   },
   {
+    name: "IUCN Red List of Threatened Species",
+    what: {
+      id: "Status terancam (CR/EN/VU) satwa unggulan",
+      en: "Threatened status (CR/EN/VU) of the flagship species",
+    },
+    url: "https://www.iucnredlist.org",
+  },
+  {
     name: "BNPB DIBI · UNDRR DesInventar",
     what: {
       id: "Kejadian bencana banjir & longsor",

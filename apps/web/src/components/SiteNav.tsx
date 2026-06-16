@@ -1,58 +1,259 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { useTranslations, useLocale } from "next-intl";
-import { Link } from "@/i18n/navigation";
-import ThemeToggle from "./ThemeToggle";
+import { Link, usePathname } from "@/i18n/navigation";
+
+/** Static (param-free) routes usable as a plain Link href. */
+type StaticPath =
+  | "/peta"
+  | "/metodologi"
+  | "/sumber-data"
+  | "/data"
+  | "/status"
+  | "/apresiasi";
+
+type Theme = "light" | "dark";
+
+function readTheme(): Theme {
+  if (typeof document === "undefined") return "dark";
+  return document.documentElement.dataset.theme === "light" ? "light" : "dark";
+}
+
+/* ── tiny inline icons (no icon dependency) ── */
+const MenuIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
+    <path
+      d="M4 7h16M4 12h16M4 17h16"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+    />
+  </svg>
+);
+const CloseIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
+    <path
+      d="M6 6l12 12M18 6L6 18"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+    />
+  </svg>
+);
+const SunIcon = () => (
+  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden>
+    <circle cx="12" cy="12" r="4.2" stroke="currentColor" strokeWidth="1.7" />
+    <path
+      d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M19.1 4.9l-1.8 1.8M6.7 17.3l-1.8 1.8"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinecap="round"
+    />
+  </svg>
+);
+const MoonIcon = () => (
+  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden>
+    <path
+      d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5Z"
+      stroke="currentColor"
+      strokeWidth="1.7"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
 
 const navLink =
-  "text-muted text-[0.92rem] px-[0.45rem] py-1 rounded-full transition-colors hover:text-foreground hover:bg-[var(--glass-highlight)] hover:no-underline";
+  "rounded-lg px-3.5 py-2 text-[0.95rem] text-muted transition-colors hover:bg-[var(--accent-dim)] hover:text-foreground hover:no-underline";
+const navLinkActive = "bg-[var(--accent-dim)] !text-accent";
+// bordered glass chip — matches the button language used across the app
+const iconBtn =
+  "glass flex items-center justify-center rounded-xl text-muted transition-[color,border-color,transform] hover:border-accent hover:text-foreground active:scale-90";
 
 export default function SiteNav() {
   const t = useTranslations("nav");
   const tSite = useTranslations("site");
   const locale = useLocale();
+  const pathname = usePathname();
+
+  const [theme, setTheme] = useState<Theme>("dark");
+  const [mounted, setMounted] = useState(false);
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    setTheme(readTheme());
+  }, []);
+
+  // lock body scroll while the mobile sheet is open
+  useEffect(() => {
+    document.body.style.overflow = open ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [open]);
+
+  // close the sheet when resizing up to desktop
+  useEffect(() => {
+    const onResize = () => {
+      if (window.innerWidth >= 768 && open) setOpen(false);
+    };
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [open]);
+
+  const toggleTheme = () => {
+    const next: Theme = theme === "dark" ? "light" : "dark";
+    document.documentElement.dataset.theme = next;
+    try {
+      localStorage.setItem("fw-theme", next);
+    } catch {
+      /* private mode: theme just won't persist */
+    }
+    setTheme(next);
+  };
+
+  const links: { href: StaticPath; label: string }[] = [
+    { href: "/peta", label: t("map") },
+    { href: "/metodologi", label: t("methodology") },
+    { href: "/sumber-data", label: t("sources") },
+    { href: "/data", label: t("data") },
+    { href: "/status", label: t("status") },
+    { href: "/apresiasi", label: t("credits") },
+  ];
+
+  const Logo = ({ h }: { h: number }) => (
+    <Link
+      href="/"
+      onClick={() => setOpen(false)}
+      className="flex shrink-0 items-center hover:no-underline"
+      aria-label={tSite("name")}
+    >
+      <img
+        src="/images/mandum_rimba_dark.svg"
+        alt={tSite("name")}
+        className="hidden w-auto dark:block"
+        style={{ height: h }}
+      />
+      <img
+        src="/images/mandum_rimba_light.svg"
+        alt={tSite("name")}
+        className="block w-auto dark:hidden"
+        style={{ height: h }}
+      />
+    </Link>
+  );
+
+  const ThemeBtn = ({ className = "h-9 w-9" }: { className?: string }) => (
+    <button
+      onClick={toggleTheme}
+      aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+      title={theme === "dark" ? "Light mode" : "Dark mode"}
+      className={`${iconBtn} ${className}`}
+    >
+      {mounted && theme === "dark" ? <SunIcon /> : <MoonIcon />}
+    </button>
+  );
+
+  const LocaleSwitch = ({ large = false }: { large?: boolean }) => (
+    <span
+      className={`flex items-center gap-1.5 ${large ? "text-base" : "text-[0.9rem]"}`}
+    >
+      {(["id", "en"] as const).map((l, i) => (
+        <span key={l} className="flex items-center gap-1.5">
+          {i === 1 && <span className="text-border">/</span>}
+          <Link
+            href="/"
+            locale={l}
+            onClick={() => setOpen(false)}
+            aria-current={locale === l}
+            className={`rounded-md px-1.5 py-0.5 uppercase transition-colors hover:no-underline ${
+              locale === l
+                ? "font-semibold text-accent"
+                : "text-muted hover:text-foreground"
+            }`}
+          >
+            {l}
+          </Link>
+        </span>
+      ))}
+    </span>
+  );
 
   return (
-    <nav className="glass scrollbar-hide fixed left-1/2 top-3 z-50 flex max-w-[calc(100vw-1.5rem)] -translate-x-1/2 items-center gap-[1.1rem] overflow-x-auto whitespace-nowrap rounded-full px-[1.35rem] py-[0.55rem] max-[720px]:gap-[0.7rem] max-[720px]:px-[0.9rem] max-[720px]:py-[0.45rem]">
-      <Link href="/" className="mr-1 text-base font-bold text-accent">
-        {tSite("name")}
-      </Link>
-      <Link href="/peta" className={navLink}>
-        {t("map")}
-      </Link>
-      <Link href="/metodologi" className={navLink}>
-        {t("methodology")}
-      </Link>
-      <Link href="/sumber-data" className={navLink}>
-        {t("sources")}
-      </Link>
-      <Link href="/data" className={navLink}>
-        {t("data")}
-      </Link>
-      <Link href="/status" className={navLink}>
-        {t("status")}
-      </Link>
-      <Link href="/apresiasi" className={navLink}>
-        {t("credits")}
-      </Link>
-      <span className="ml-auto flex items-center gap-2 text-[0.85rem]">
-        <Link
-          href="/"
-          locale="id"
-          aria-current={locale === "id"}
-          className={navLink}
+    <>
+      {/* ── Desktop island ── */}
+      <div className="pointer-events-none fixed inset-x-0 top-0 z-50 hidden justify-center pt-4 md:flex">
+        <nav
+          aria-label={tSite("name")}
+          className="glass pointer-events-auto flex max-w-[calc(100vw-2rem)] items-center gap-1 rounded-2xl px-4 py-2.5"
         >
-          ID
-        </Link>
-        <span className="text-muted">/</span>
-        <Link
-          href="/"
-          locale="en"
-          aria-current={locale === "en"}
-          className={navLink}
-        >
-          EN
-        </Link>
-        <ThemeToggle />
-      </span>
-    </nav>
+          <Logo h={28} />
+          <span className="mx-2 h-5 w-px bg-border" />
+          <div className="flex items-center gap-0.5">
+            {links.map(({ href, label }) => (
+              <Link
+                key={href}
+                href={href}
+                className={`${navLink} ${pathname === href ? navLinkActive : ""}`}
+              >
+                {label}
+              </Link>
+            ))}
+          </div>
+          <span className="mx-2 h-5 w-px bg-border" />
+          <div className="flex items-center gap-1.5">
+            <LocaleSwitch />
+            <ThemeBtn />
+          </div>
+        </nav>
+      </div>
+
+      {/* ── Mobile: two pills ── */}
+      <div className="pointer-events-none fixed inset-x-0 top-0 z-50 flex items-center justify-between px-4 pt-4 md:hidden">
+        <div className="glass pointer-events-auto flex items-center rounded-2xl px-4 py-2.5">
+          <Logo h={26} />
+        </div>
+        <div className="pointer-events-auto flex items-center gap-2">
+          <ThemeBtn className="h-11 w-11" />
+          <button
+            onClick={() => setOpen((o) => !o)}
+            aria-label={open ? "Close menu" : "Open menu"}
+            aria-expanded={open}
+            className={`${iconBtn} h-11 w-11`}
+          >
+            {open ? <CloseIcon /> : <MenuIcon />}
+          </button>
+        </div>
+      </div>
+
+      {/* ── Mobile full-screen sheet ── */}
+      {open && (
+        <div className="fixed inset-0 z-40 flex flex-col bg-[var(--overlay)] backdrop-blur-xl animate-[panel-in_0.2s_ease] md:hidden">
+          <div className="h-20 shrink-0" onClick={() => setOpen(false)} />
+          <div className="flex flex-1 flex-col px-6 pb-12 pt-4">
+            <div className="flex flex-col">
+              {links.map(({ href, label }) => (
+                <Link
+                  key={href}
+                  href={href}
+                  onClick={() => setOpen(false)}
+                  className={`flex items-center justify-between border-b border-border py-4 text-2xl font-semibold transition-colors hover:text-accent hover:no-underline ${
+                    pathname === href ? "text-accent" : "text-foreground"
+                  }`}
+                >
+                  {label}
+                  <span className="text-muted">→</span>
+                </Link>
+              ))}
+            </div>
+            <div className="mt-8 flex items-center justify-between">
+              <LocaleSwitch large />
+              <ThemeBtn className="h-11 w-11" />
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

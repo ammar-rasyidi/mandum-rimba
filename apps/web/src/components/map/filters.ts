@@ -9,9 +9,8 @@ export interface MapFilters {
   systems: string[]; // radd | glad_l | glad_s2
   disasterTypes: string[]; // flood | flash_flood | landslide | other
   concessionTypes: string[]; // palm_hgu | pulp_hti | logging | mining
-  protectedKinds: string[]; // protected | moratorium
+  protectedCategories: string[]; // TN | HL | CA | SM | other | moratorium
   speciesStatus: string[]; // CR | EN | VU
-  onlyDiscrepancies: boolean;
 }
 
 export const ALERT_SYSTEMS = ["radd", "glad_l", "glad_s2"];
@@ -20,8 +19,17 @@ export const DISASTER_TYPES = ["flood", "flash_flood", "landslide", "other"];
 // Aceh→Papua) carried as a concession type. Official IUP permit *boundaries*
 // are not openly published (MOMI login-locked) — see /sumber-data.
 export const CONCESSION_TYPES = ["palm_hgu", "pulp_hti", "logging", "mining"];
-export const PROTECTED_KINDS = ["protected", "moratorium"];
-export const SPECIES_STATUS = ["CR", "EN", "VU"];
+// WDPA conservation categories (mapped from desig) + KLHK PIPPIB moratorium
+export const PROTECTED_CATEGORIES = [
+  "TN",
+  "HL",
+  "CA",
+  "SM",
+  "KK",
+  "moratorium",
+];
+// CR/EN/VU = terancam (IUCN); NT/LC = dilindungi UU/CITES walau belum terancam
+export const SPECIES_STATUS = ["CR", "EN", "VU", "NT", "LC"];
 
 export const DEFAULT_FILTERS: MapFilters = {
   basemap: "dark",
@@ -30,7 +38,6 @@ export const DEFAULT_FILTERS: MapFilters = {
   systems: [...ALERT_SYSTEMS],
   disasterTypes: [...DISASTER_TYPES],
   concessionTypes: [...CONCESSION_TYPES],
-  protectedKinds: [...PROTECTED_KINDS],
+  protectedCategories: [...PROTECTED_CATEGORIES],
   speciesStatus: [...SPECIES_STATUS],
-  onlyDiscrepancies: false,
 };

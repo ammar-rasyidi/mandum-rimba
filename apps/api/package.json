@@ -6,13 +6,12 @@
     "build": "nest build",
     "dev": "nest start --watch",
     "start": "node dist/main.js",
+    "job": "node dist/jobs-cli.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "seed:regions": "ts-node -T src/scripts/seed-regions.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.700.0",
-    "adm-zip": "^0.5.16",
-    "dotenv": "^16.4.7",
     "@mandumrimba/shared": "workspace:*",
     "@nestjs/common": "^10.4.15",
     "@nestjs/config": "^3.3.0",
@@ -21,8 +20,11 @@
     "@nestjs/platform-express": "^10.4.15",
     "@nestjs/schedule": "^4.1.2",
     "@turf/turf": "^7.1.0",
+    "adm-zip": "^0.5.16",
     "axios": "^1.7.9",
     "cheerio": "^1.0.0",
+    "dotenv": "^16.4.7",
+    "express": "^4.22.1",
     "mongoose": "^8.9.2",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1"

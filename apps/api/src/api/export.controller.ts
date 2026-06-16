@@ -12,8 +12,6 @@ import type { Response } from "express";
 import {
   Alert,
   AlertDocument,
-  DerivedDiscrepancy,
-  DerivedDiscrepancyDocument,
   Disaster,
   DisasterDocument,
   ForestLossAnnual,
@@ -36,8 +34,6 @@ export class ExportController {
     @InjectModel(Disaster.name) private disasterModel: Model<DisasterDocument>,
     @InjectModel(ForestLossAnnual.name)
     private lossModel: Model<ForestLossAnnualDocument>,
-    @InjectModel(DerivedDiscrepancy.name)
-    private discrepancyModel: Model<DerivedDiscrepancyDocument>,
   ) {}
 
   @Get()
@@ -91,11 +87,9 @@ export class ExportController {
         return this.disasterModel.find(regionFilter).limit(limit).lean();
       case "forest-loss":
         return this.lossModel.find(regionFilter).limit(limit).lean();
-      case "discrepancies":
-        return this.discrepancyModel.find(regionFilter).limit(limit).lean();
       default:
         throw new BadRequestException(
-          "dataset must be one of: alerts, disasters, forest-loss, discrepancies",
+          "dataset must be one of: alerts, disasters, forest-loss",
         );
     }
   }

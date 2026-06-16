@@ -20,9 +20,9 @@ COPY apps/api/package.json apps/api/
 RUN pnpm install --frozen-lockfile=false
 COPY packages/shared packages/shared
 COPY apps/api apps/api
-RUN pnpm --filter @forest-watch/shared build \
-    && pnpm --filter @forest-watch/api build \
-    && pnpm --filter @forest-watch/api --prod deploy /app
+RUN pnpm --filter @mandumrimba/shared build \
+    && pnpm --filter @mandumrimba/api build \
+    && pnpm --filter @mandumrimba/api --prod deploy /app
 
 # --- runtime ---
 FROM node:22-bookworm-slim

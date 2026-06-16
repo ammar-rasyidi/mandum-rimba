@@ -52,6 +52,29 @@ export default async function CreditsPage({
       <h1>{t("title")}</h1>
       <p>{t("intro")}</p>
 
+      <h2>{t("partnersTitle")}</h2>
+      <div className="my-4">
+        <a
+          href="https://dahono.com/"
+          target="_blank"
+          rel="noreferrer"
+          aria-label="Dahono Labs"
+          className="inline-flex items-center rounded-xl border border-border bg-surface px-6 py-5 transition-[transform,border-color] hover:-translate-y-0.5 hover:border-accent hover:no-underline"
+        >
+          {/* logo swaps with the theme: white on dark, black on light */}
+          <img
+            src="/images/dahono-labs-logo-white.svg"
+            alt="Dahono Labs"
+            className="hidden h-9 w-auto dark:block"
+          />
+          <img
+            src="/images/dahono-labs-logo-black.svg"
+            alt="Dahono Labs"
+            className="block h-9 w-auto dark:hidden"
+          />
+        </a>
+      </div>
+
       <h2>{t("contributorsTitle")}</h2>
       <div className="my-4 grid gap-[0.8rem] [grid-template-columns:repeat(auto-fit,minmax(220px,1fr))]">
         {CONTRIBUTORS.map((c) => (

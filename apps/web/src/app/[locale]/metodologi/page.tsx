@@ -32,9 +32,24 @@ const SOURCES = [
     license: "CC BY 4.0",
   },
   {
-    name: "GBIF — threatened-species occurrence records (flagship species)",
+    name: "GBIF — protected-wildlife occurrence records (30 flagship species, Sumatra–Papua; land, sea & freshwater)",
     url: "https://www.gbif.org",
     license: "Per-dataset (CC0 / CC BY / CC BY-NC)",
+  },
+  {
+    name: "IUCN Red List of Threatened Species — conservation status (CR/EN/VU/NT/LC) of each flagship species",
+    url: "https://www.iucnredlist.org",
+    license: "IUCN Red List terms (non-commercial use, attribution)",
+  },
+  {
+    name: "Permen LHK P.106/2018 — Indonesia's official list of protected animals & plants (species selection)",
+    url: "https://peraturan.go.id/id/permen-lhk-no-p-106-menlhk-setjen-kum-1-12-2018-tahun-2018",
+    license: "Public regulation",
+  },
+  {
+    name: "CITES Appendices — internationally protected/traded species (species selection)",
+    url: "https://cites.org/eng/app/appendices.php",
+    license: "Public (CITES Secretariat)",
   },
   {
     name: "RESOLVE Ecoregions 2017 — wildlife habitat units, via UNEP-WCMC",
@@ -75,8 +90,12 @@ const SOURCES = [
 
 const CHANGELOG = [
   {
+    version: "2026.06.1",
+    note: "Wildlife coverage expanded from 10 to 30 flagship species — every biogeographic region (Sundaland, Wallacea, Papua) and ecosystem (land, sea, freshwater), not just western Indonesia. Species now selected from Indonesia's protected-species law (Permen LHK P.106/2018), KKP marine rules & CITES, with IUCN Red List status and GBIF occurrences (filtered to 1990–present, removing stale museum specimens). Every occurrence coordinate is validated against an Indonesia land mask (Natural Earth 1:50m) and the species' realm, so marine animals mis-plotted inland (or land animals offshore) are dropped as gross coordinate errors — legitimate coastal records are kept. The layer was renamed from 'threatened' to 'protected' wildlife to match.",
+  },
+  {
     version: "2026.06.0",
-    note: "Initial derive pipeline: spatial flags (alerts × concessions/protected/moratorium), 90-day + calendar-year discrepancy aggregation, watershed flood↔loss linkage.",
+    note: "Initial data pipeline: ingest and publish deforestation alerts, concessions, protected & moratorium areas, disasters, wildlife habitat and occurrences.",
   },
 ];
 
@@ -103,9 +122,6 @@ export default async function MethodologyPage({
           </li>
         ))}
       </ul>
-
-      <h2>{t("deriveTitle")}</h2>
-      <p>{t("deriveBody")}</p>
 
       <h2>{t("limitsTitle")}</h2>
       <p>{t("limitsBody")}</p>

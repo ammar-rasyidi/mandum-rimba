@@ -142,18 +142,7 @@ export class MiningService implements OnModuleInit {
         this.logger.error(`mining ingest failed at page ${page}: ${err}`);
       }
 
-      // mining polygons joined the concession set → re-flag alerts so the
-      // derive pipeline re-checks "inside concession" against them too
-      let flagsInvalidated = 0;
-      if (upserted > 0) {
-        const res = await this.alertModel.updateMany(
-          {},
-          { $set: { flaggedAt: null } },
-        );
-        flagsInvalidated = res.modifiedCount;
-      }
-
-      return { stats: { upserted, flagsInvalidated, pages: page } };
+      return { stats: { upserted, pages: page } };
     });
   }
 }

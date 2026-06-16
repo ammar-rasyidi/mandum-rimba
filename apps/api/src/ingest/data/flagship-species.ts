@@ -20,7 +20,9 @@ export interface FlagshipSpecies {
   scientificName: string;
   commonNameId: string;
   commonNameEn: string;
-  iucnStatus: "CR" | "EN" | "VU";
+  // IUCN Red List category. CR/EN/VU are "threatened"; NT/LC are included only
+  // for species that Indonesian law / CITES protects regardless of IUCN status.
+  iucnStatus: "CR" | "EN" | "VU" | "NT" | "LC";
   iucnAssessmentUrl: string;
   gbifTaxonKey: number;
   habitatEcoregions: string[];
@@ -29,6 +31,30 @@ export interface FlagshipSpecies {
 
 const iucnSearch = (name: string) =>
   `https://www.iucnredlist.org/search?query=${encodeURIComponent(name)}&searchType=species`;
+
+/**
+ * Ecological realm — drives land/sea coordinate validation so GBIF noise
+ * (a turtle plotted inland, a bear plotted offshore) is dropped.
+ *   sea     — open water / reef (whale shark, manta, napoleon, dugong)
+ *   coastal — beach + sea (turtles): keep near the coast, drop deep inland
+ *   any     — river + coast (pesut): no land/sea filter
+ *   land    — everything else (terrestrial)
+ */
+export type SpeciesRealm = "land" | "sea" | "coastal" | "any";
+
+const SEA_SLUGS = new Set(["hiu-paus", "pari-manta", "ikan-napoleon", "dugong"]);
+const COASTAL_SLUGS = new Set([
+  "penyu-sisik",
+  "penyu-belimbing",
+  "penyu-hijau",
+]);
+
+export function realmOf(slug: string): SpeciesRealm {
+  if (SEA_SLUGS.has(slug)) return "sea";
+  if (COASTAL_SLUGS.has(slug)) return "coastal";
+  if (slug === "pesut") return "any";
+  return "land";
+}
 
 export const FLAGSHIP_SPECIES: FlagshipSpecies[] = [
   {
@@ -169,6 +195,255 @@ export const FLAGSHIP_SPECIES: FlagshipSpecies[] = [
       "Western Java montane rain forests",
     ],
     islandGroup: "Jawa",
+  },
+
+  // ── Wallacea: Sulawesi ──
+  {
+    slug: "yaki",
+    scientificName: "Macaca nigra",
+    commonNameId: "Yaki (Monyet hitam Sulawesi)",
+    commonNameEn: "Celebes crested macaque",
+    iucnStatus: "CR",
+    iucnAssessmentUrl: iucnSearch("Macaca nigra"),
+    gbifTaxonKey: 2436616, // ~385 IDN records
+    habitatEcoregions: [
+      "Sulawesi lowland rain forests",
+      "Sulawesi montane rain forests",
+    ],
+    islandGroup: "Sulawesi",
+  },
+  {
+    slug: "maleo",
+    scientificName: "Macrocephalon maleo",
+    commonNameId: "Maleo",
+    commonNameEn: "Maleo",
+    iucnStatus: "CR",
+    iucnAssessmentUrl: iucnSearch("Macrocephalon maleo"),
+    gbifTaxonKey: 2482154, // ~641 IDN records
+    habitatEcoregions: [
+      "Sulawesi lowland rain forests",
+      "Sulawesi montane rain forests",
+    ],
+    islandGroup: "Sulawesi",
+  },
+  {
+    slug: "anoa",
+    scientificName: "Bubalus depressicornis",
+    commonNameId: "Anoa dataran rendah",
+    commonNameEn: "Lowland anoa",
+    iucnStatus: "EN",
+    iucnAssessmentUrl: iucnSearch("Bubalus depressicornis"),
+    gbifTaxonKey: 8085503, // ~31 IDN records
+    habitatEcoregions: [
+      "Sulawesi lowland rain forests",
+      "Sulawesi montane rain forests",
+    ],
+    islandGroup: "Sulawesi",
+  },
+  {
+    slug: "babirusa",
+    scientificName: "Babyrousa celebensis",
+    commonNameId: "Babirusa Sulawesi",
+    commonNameEn: "North Sulawesi babirusa",
+    iucnStatus: "VU",
+    iucnAssessmentUrl: iucnSearch("Babyrousa celebensis"),
+    gbifTaxonKey: 4262912, // ~43 IDN records
+    habitatEcoregions: ["Sulawesi lowland rain forests"],
+    islandGroup: "Sulawesi",
+  },
+  {
+    slug: "tarsius",
+    scientificName: "Tarsius tarsier",
+    commonNameId: "Tarsius",
+    commonNameEn: "Spectral tarsier",
+    iucnStatus: "VU",
+    iucnAssessmentUrl: iucnSearch("Tarsius tarsier"),
+    gbifTaxonKey: 4266949, // ~21 IDN records
+    habitatEcoregions: ["Sulawesi lowland rain forests"],
+    islandGroup: "Sulawesi",
+  },
+
+  // ── Wallacea: Nusa Tenggara & Bali ──
+  {
+    slug: "komodo",
+    scientificName: "Varanus komodoensis",
+    commonNameId: "Komodo",
+    commonNameEn: "Komodo dragon",
+    iucnStatus: "EN",
+    iucnAssessmentUrl: iucnSearch("Varanus komodoensis"),
+    gbifTaxonKey: 2470854, // ~1061 IDN records
+    habitatEcoregions: ["Lesser Sundas deciduous forests"],
+    islandGroup: "Nusa Tenggara",
+  },
+  {
+    slug: "jalak-bali",
+    scientificName: "Leucopsar rothschildi",
+    commonNameId: "Jalak Bali",
+    commonNameEn: "Bali myna",
+    iucnStatus: "CR",
+    iucnAssessmentUrl: iucnSearch("Leucopsar rothschildi"),
+    gbifTaxonKey: 2489068, // ~458 IDN records
+    habitatEcoregions: ["Eastern Java-Bali rain forests"],
+    islandGroup: "Bali",
+  },
+
+  // ── Maluku ──
+  {
+    slug: "kakatua-maluku",
+    scientificName: "Cacatua moluccensis",
+    commonNameId: "Kakatua Maluku",
+    commonNameEn: "Salmon-crested cockatoo",
+    iucnStatus: "EN",
+    iucnAssessmentUrl: iucnSearch("Cacatua moluccensis"),
+    gbifTaxonKey: 2479898, // ~32 IDN records
+    habitatEcoregions: ["Seram rain forests"],
+    islandGroup: "Maluku",
+  },
+
+  // ── Papua ──
+  {
+    slug: "kanguru-pohon",
+    scientificName: "Dendrolagus inustus",
+    commonNameId: "Kanguru pohon kelabu",
+    commonNameEn: "Grizzled tree-kangaroo",
+    iucnStatus: "VU",
+    iucnAssessmentUrl: iucnSearch("Dendrolagus inustus"),
+    gbifTaxonKey: 2440217, // ~12 IDN records
+    habitatEcoregions: [
+      "Vogelkop montane rain forests",
+      "Vogelkop-Aru lowland rain forests",
+    ],
+    islandGroup: "Papua",
+  },
+  {
+    slug: "nuri-pesquet",
+    scientificName: "Psittrichas fulgidus",
+    commonNameId: "Nuri Pesquet (Kasturi raja)",
+    commonNameEn: "Pesquet's parrot",
+    iucnStatus: "VU",
+    iucnAssessmentUrl: iucnSearch("Psittrichas fulgidus"),
+    gbifTaxonKey: 2479860, // ~50 IDN records
+    habitatEcoregions: ["Central Range montane rain forests"],
+    islandGroup: "Papua",
+  },
+  {
+    slug: "nokdiak",
+    scientificName: "Zaglossus bruijnii",
+    commonNameId: "Nokdiak moncong panjang",
+    commonNameEn: "Western long-beaked echidna",
+    iucnStatus: "CR",
+    iucnAssessmentUrl: iucnSearch("Zaglossus bruijnii"),
+    gbifTaxonKey: 2433391, // ~32 IDN records
+    habitatEcoregions: ["Vogelkop montane rain forests"],
+    islandGroup: "Papua",
+  },
+
+  // ── Satwa laut & perairan (dilindungi: Permen LHK / KKP / CITES) ──
+  // habitatEcoregions empty: RESOLVE units are terrestrial, so marine ranges
+  // are not represented there (honest gap, not fabricated).
+  {
+    slug: "penyu-sisik",
+    scientificName: "Eretmochelys imbricata",
+    commonNameId: "Penyu sisik",
+    commonNameEn: "Hawksbill turtle",
+    iucnStatus: "CR",
+    iucnAssessmentUrl: iucnSearch("Eretmochelys imbricata"),
+    gbifTaxonKey: 8841716, // ~1018 IDN records
+    habitatEcoregions: [],
+    islandGroup: "Perairan Indonesia",
+  },
+  {
+    slug: "penyu-belimbing",
+    scientificName: "Dermochelys coriacea",
+    commonNameId: "Penyu belimbing",
+    commonNameEn: "Leatherback turtle",
+    iucnStatus: "VU",
+    iucnAssessmentUrl: iucnSearch("Dermochelys coriacea"),
+    gbifTaxonKey: 9789983, // ~117 IDN records
+    habitatEcoregions: [],
+    islandGroup: "Perairan Indonesia",
+  },
+  {
+    slug: "penyu-hijau",
+    scientificName: "Chelonia mydas",
+    commonNameId: "Penyu hijau",
+    commonNameEn: "Green turtle",
+    iucnStatus: "LC", // IUCN global LC, tapi dilindungi UU & CITES App. I
+    iucnAssessmentUrl: iucnSearch("Chelonia mydas"),
+    gbifTaxonKey: 2442225, // ~1320 IDN records
+    habitatEcoregions: [],
+    islandGroup: "Perairan Indonesia",
+  },
+  {
+    slug: "hiu-paus",
+    scientificName: "Rhincodon typus",
+    commonNameId: "Hiu paus",
+    commonNameEn: "Whale shark",
+    iucnStatus: "EN",
+    iucnAssessmentUrl: iucnSearch("Rhincodon typus"),
+    gbifTaxonKey: 2417522, // ~585 IDN records
+    habitatEcoregions: [],
+    islandGroup: "Perairan Indonesia",
+  },
+  {
+    slug: "pari-manta",
+    scientificName: "Mobula birostris",
+    commonNameId: "Pari manta oseanik",
+    commonNameEn: "Oceanic manta ray",
+    iucnStatus: "EN",
+    iucnAssessmentUrl: iucnSearch("Mobula birostris"),
+    gbifTaxonKey: 9548142, // ~134 IDN records
+    habitatEcoregions: [],
+    islandGroup: "Perairan Indonesia",
+  },
+  {
+    slug: "ikan-napoleon",
+    scientificName: "Cheilinus undulatus",
+    commonNameId: "Ikan napoleon",
+    commonNameEn: "Humphead (Napoleon) wrasse",
+    iucnStatus: "EN",
+    iucnAssessmentUrl: iucnSearch("Cheilinus undulatus"),
+    gbifTaxonKey: 2383313, // ~417 IDN records
+    habitatEcoregions: [],
+    islandGroup: "Perairan Indonesia",
+  },
+  {
+    slug: "dugong",
+    scientificName: "Dugong dugon",
+    commonNameId: "Dugong",
+    commonNameEn: "Dugong",
+    iucnStatus: "VU",
+    iucnAssessmentUrl: iucnSearch("Dugong dugon"),
+    gbifTaxonKey: 9729967, // ~26 IDN records
+    habitatEcoregions: [],
+    islandGroup: "Perairan Indonesia",
+  },
+  {
+    slug: "pesut",
+    scientificName: "Orcaella brevirostris",
+    commonNameId: "Pesut (Lumba-lumba Irrawaddy)",
+    commonNameEn: "Irrawaddy dolphin",
+    iucnStatus: "EN",
+    iucnAssessmentUrl: iucnSearch("Orcaella brevirostris"),
+    gbifTaxonKey: 2440460, // ~3 IDN records (mis. Mahakam)
+    habitatEcoregions: [],
+    islandGroup: "Sungai & pesisir",
+  },
+
+  // ── Trenggiling (dilindungi; tersebar di Indonesia barat) ──
+  {
+    slug: "trenggiling",
+    scientificName: "Manis javanica",
+    commonNameId: "Trenggiling",
+    commonNameEn: "Sunda pangolin",
+    iucnStatus: "CR",
+    iucnAssessmentUrl: iucnSearch("Manis javanica"),
+    gbifTaxonKey: 5219628, // ~42 IDN records
+    habitatEcoregions: [
+      "Sumatran lowland rain forests",
+      "Borneo lowland rain forests",
+    ],
+    islandGroup: "Sumatera, Kalimantan & Jawa",
   },
 ];
 

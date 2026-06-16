@@ -52,9 +52,8 @@ function readUrlState(): { filters: MapFilters } {
   filters.systems = list("sys") ?? filters.systems;
   filters.disasterTypes = list("dis") ?? filters.disasterTypes;
   filters.concessionTypes = list("con") ?? filters.concessionTypes;
-  filters.protectedKinds = list("pro") ?? filters.protectedKinds;
+  filters.protectedCategories = list("pro") ?? filters.protectedCategories;
   filters.speciesStatus = list("spc") ?? filters.speciesStatus;
-  filters.onlyDiscrepancies = p.get("disc") === "1";
 
   return { filters };
 }
@@ -80,6 +79,7 @@ function fitIndonesia(map: maplibregl.Map) {
 export default function MapView() {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
+  const searchMarkerRef = useRef<maplibregl.Marker | null>(null);
   const [ready, setReady] = useState(false);
   const [availableTiles, setAvailableTiles] = useState<string[]>([]);
   const [filters, setFilters] = useState<MapFilters>(
@@ -87,6 +87,42 @@ export default function MapView() {
   );
   const [selected, setSelected] = useState<SelectedFeature | null>(null);
   const theme = useSiteTheme();
+
+  // pan/zoom to a searched place and drop a green marker at its center. bbox is
+  // [west, south, east, north]; the padding mirrors fitIndonesia so the panel
+  // doesn't cover the target.
+  const flyToBounds = useCallback(
+    (bbox: [number, number, number, number], center: [number, number]) => {
+      const map = mapRef.current;
+      if (!map) return;
+      const mobile = window.innerWidth <= 720;
+      map.fitBounds(
+        [
+          [bbox[0], bbox[1]],
+          [bbox[2], bbox[3]],
+        ],
+        {
+          padding: mobile
+            ? { top: 96, right: 16, bottom: Math.round(window.innerHeight * 0.4), left: 16 }
+            : { top: 96, right: 360, bottom: 40, left: 32 },
+          maxZoom: 13,
+          duration: 900,
+        },
+      );
+
+      // green dot marking the searched place (replaces any previous one)
+      searchMarkerRef.current?.remove();
+      const el = document.createElement("div");
+      el.style.cssText =
+        "width:16px;height:16px;border-radius:9999px;background:#4caf50;" +
+        "border:2px solid #ffffff;box-shadow:0 0 0 4px rgba(76,175,80,0.35)," +
+        "0 1px 5px rgba(0,0,0,0.5);cursor:default;";
+      searchMarkerRef.current = new maplibregl.Marker({ element: el })
+        .setLngLat(center)
+        .addTo(map);
+    },
+    [],
+  );
 
   // every view is shareable: state lives in the URL
   const syncUrl = useCallback((f: MapFilters) => {
@@ -101,9 +137,8 @@ export default function MapView() {
     p.set("sys", f.systems.join(","));
     p.set("dis", f.disasterTypes.join(","));
     p.set("con", f.concessionTypes.join(","));
-    p.set("pro", f.protectedKinds.join(","));
+    p.set("pro", f.protectedCategories.join(","));
     p.set("spc", f.speciesStatus.join(","));
-    p.set("disc", f.onlyDiscrepancies ? "1" : "0");
     window.history.replaceState(null, "", `?${p.toString()}`);
   }, []);
 
@@ -276,20 +311,9 @@ export default function MapView() {
       ["get", "system"],
       ["literal", filters.systems],
     ];
-    const discFilter = ["==", ["get", "discrepancy"], 1];
 
     if (map.getLayer("lyr-alerts")) {
-      const all: unknown[] = ["all", dateFilter, systemFilter];
-      if (filters.onlyDiscrepancies) all.push(discFilter);
-      map.setFilter("lyr-alerts", all as never);
-    }
-    if (map.getLayer("lyr-discrepancies")) {
-      map.setFilter("lyr-discrepancies", [
-        "all",
-        dateFilter,
-        systemFilter,
-        discFilter,
-      ] as never);
+      map.setFilter("lyr-alerts", ["all", dateFilter, systemFilter] as never);
     }
     if (map.getLayer("lyr-disasters")) {
       map.setFilter("lyr-disasters", [
@@ -308,8 +332,8 @@ export default function MapView() {
     if (map.getLayer("lyr-protected")) {
       map.setFilter("lyr-protected", [
         "in",
-        ["get", "kind"],
-        ["literal", filters.protectedKinds],
+        ["get", "cat"],
+        ["literal", filters.protectedCategories],
       ] as never);
     }
     if (map.getLayer("lyr-species")) {
@@ -331,6 +355,7 @@ export default function MapView() {
         filters={filters}
         onChange={setFilters}
         onReset={() => setFilters({ ...DEFAULT_FILTERS })}
+        onGoTo={flyToBounds}
       />
       {selected && (
         <DetailDrawer feature={selected} onClose={() => setSelected(null)} />
@@ -400,9 +425,9 @@ function buildLayer(
             ["linear"],
             ["zoom"],
             4,
-            def.id === "discrepancies" ? 2.5 : 1.5,
+            1.5,
             12,
-            def.id === "discrepancies" ? 7 : 5,
+            5,
           ],
           "circle-opacity": 0.9,
           // halo keeps points legible over satellite imagery

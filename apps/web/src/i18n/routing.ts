@@ -5,6 +5,8 @@ export const routing = defineRouting({
   defaultLocale: "id",
   pathnames: {
     "/": "/",
+    "/tentang": { id: "/tentang", en: "/about" },
+    "/kampanye": { id: "/kampanye", en: "/campaign" },
     "/peta": { id: "/peta", en: "/map" },
     "/wilayah/[slug]": { id: "/wilayah/[slug]", en: "/regions/[slug]" },
     "/cerita/[slug]": { id: "/cerita/[slug]", en: "/stories/[slug]" },

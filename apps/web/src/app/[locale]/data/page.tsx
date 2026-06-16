@@ -15,7 +15,6 @@ const EXPORTS = [
   { dataset: "alerts", formats: ["csv", "geojson"] },
   { dataset: "disasters", formats: ["csv", "geojson"] },
   { dataset: "forest-loss", formats: ["csv"] },
-  { dataset: "discrepancies", formats: ["csv"] },
 ];
 
 export default async function DataPage({

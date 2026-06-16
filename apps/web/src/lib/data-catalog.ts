@@ -128,17 +128,20 @@ export const DATA_CATALOG: DatasetEntry[] = [
   {
     layer: "species",
     name: {
-      id: "Catatan keberadaan satwa terancam (GBIF)",
-      en: "Threatened wildlife occurrence records (GBIF)",
+      id: "Catatan keberadaan satwa dilindungi (GBIF + IUCN + pemerintah)",
+      en: "Protected-wildlife occurrence records (GBIF + IUCN + government)",
     },
-    org: "Global Biodiversity Information Facility (GBIF)",
+    org: "GBIF (titik perjumpaan) · IUCN Red List (status) · Permen LHK P.106/2018, KKP & CITES (status dilindungi)",
     url: "https://www.gbif.org",
-    license: "Per-dataset (CC0 / CC BY / CC BY-NC)",
+    license: "GBIF per-dataset (CC0 / CC BY / CC BY-NC); status: IUCN Red List",
     updated: "Live API",
-    coverage: { id: "10 spesies unggulan, ~1.974 catatan", en: "10 flagship species, ~1,974 records" },
+    coverage: {
+      id: "30 spesies unggulan dari Sumatera sampai Papua — darat, laut & perairan (mamalia, burung, reptil, ikan), ~7.300 catatan",
+      en: "30 flagship species from Sumatra to Papua — land, sea & freshwater (mammals, birds, reptiles, fish), ~7,300 records",
+    },
     description: {
-      id: "Titik catatan keberadaan satwa (‘tercatat di sini’), BUKAN batas habitat. Status IUCN dan sumber tiap titik diungkap; banyak berasal dari observasi komunitas terverifikasi. Disaring ke catatan bergeoreferensi tanpa masalah spasial.",
-      en: "Occurrence points (‘recorded here’), NOT habitat boundaries. IUCN status and the source of each point are disclosed; many come from verified community observations. Filtered to georeferenced records with no geospatial issues.",
+      id: "Titik catatan keberadaan satwa (‘tercatat di sini’) dari GBIF (1990–kini), BUKAN batas habitat. Daftar spesies dipilih dari satwa yang DILINDUNGI hukum Indonesia (Permen LHK P.106/2018), peraturan KKP untuk satwa laut, dan CITES — sengaja mewakili tiap wilayah dan ekosistem: Sundaland, Wallacea (anoa, maleo, komodo), Papua (kanguru pohon, nokdiak), serta laut & sungai (penyu, hiu paus, dugong, pesut). Status keterancaman mengikuti IUCN Red List; sebagian dilindungi walau status IUCN-nya belum terancam (mis. penyu hijau). Disaring ke catatan bergeoreferensi tanpa masalah spasial, lalu koordinat tiap titik divalidasi terhadap peta daratan Indonesia dan realm spesiesnya, sehingga satwa laut yang salah terplot di darat (atau satwa darat di tengah laut) dibuang.",
+      en: "Occurrence points (‘recorded here’) from GBIF (1990–present), NOT habitat boundaries. Species are drawn from those PROTECTED under Indonesian law (Minister of Environment & Forestry Reg. P.106/2018), KKP marine regulations, and CITES — deliberately spanning every region and ecosystem: Sundaland, Wallacea (anoa, maleo, Komodo), Papua (tree-kangaroo, echidna), and the sea & rivers (turtles, whale shark, dugong, Irrawaddy dolphin). Threat status follows the IUCN Red List; some are protected even where their IUCN status isn't threatened (e.g. green turtle). Filtered to georeferenced records with no geospatial issues, then each point's coordinates are validated against an Indonesia land mask and the species' realm, so marine animals mis-plotted on land (or land animals out at sea) are dropped.",
     },
     status: "active",
   },

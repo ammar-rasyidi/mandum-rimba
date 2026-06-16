@@ -1,105 +1,104 @@
 # Mandum Rimba
 
-**Indonesia Deforestation & Environmental Accountability Observatory** — a
-map-first public-interest web app visualizing deforestation, palm oil & mining
-expansion, and linked disasters (floods, landslides) across Indonesia, built
-entirely on verifiable satellite and public data.
+**An independent, non-profit observatory for Indonesia's forests, land, and
+protected wildlife.** A map-first public-interest web app that distills credible
+satellite and public data — deforestation, palm oil & mining expansion, linked
+disasters, and the wildlife losing its home — into one open map anyone can check.
 
-> Evidence over accusation. The app never states "the government lied" — it
-> overlays official data vs. satellite reality and lets the gap speak. Every
-> layer has a source, a date, and a methodology link.
+🌳 Live at **[mandumrimba.org](https://mandumrimba.org)** · bilingual (Indonesia / English)
 
-## Architecture
+> **Evidence over accusation.** We gather and show the data as it is, and never
+> draw conclusions on anyone's behalf. We overlay official data against
+> satellite reality and let the gap speak. Every layer has a source, a date,
+> and a methodology link.
 
-```
-Next.js (Vercel) ──HTTPS──► NestJS API + cron workers (Railway/Render/VPS)
-   │ static PMTiles                 │                        │
-   ▼                                ▼                        ▼
-Cloudflare R2 ◄── tile build ── MongoDB Atlas (2dsphere)  External sources
-(PMTiles, raw archives,                                   (GFW, BNPB, Kepo
- imagery, status JSON)                                     Hutan, WDPA, …)
-```
+## What's on the map
 
-- `apps/web` — Next.js 14 App Router, MapLibre GL + PMTiles, next-intl (ID/EN), Recharts.
-- `apps/api` — NestJS 10: daily staggered ingest crons (01:00–06:00 WIB),
-  tippecanoe tile builds, and the public REST API under `/v1`.
-- `packages/shared` — shared TypeScript domain types.
-- `scripts/gee` — manual Earth Engine before/after imagery exports per story.
+- **Deforestation alerts** — near-real-time forest-clearing points from satellite
+  radar and optical sensors (10–30 m).
+- **Annual tree-cover loss** — per-year loss aggregated by region, behind the
+  region-page charts.
+- **Concessions** — oil palm, pulpwood, and logging concession boundaries.
+- **Mining footprint** — satellite-mapped mined land for all minerals,
+  peer-reviewed (physical footprint, not permit boundaries).
+- **Protected areas & forest moratorium** — national parks, nature reserves,
+  wildlife sanctuaries, and moratorium polygons.
+- **Protected wildlife** — occurrence records for 30 flagship species spanning
+  every region and ecosystem: Sundaland, Wallacea (anoa, maleo, Komodo), Papua
+  (tree-kangaroo, echidna), and the sea & rivers (turtles, whale shark, dugong,
+  Irrawaddy dolphin) — with IUCN status and a habitat-ecoregion layer.
+- **Disasters** — event-level floods and landslides.
 
-## Quick start
+### "Yang Tinggal di Dekatmu" (Who lives near you)
+
+A small campaign tool that takes a city, finds the nearest recorded protected
+animal and the nearest protected area, and renders a shareable card — so a
+distant statistic becomes a neighbour. **Photos and location stay in the browser
+and are never uploaded or stored.**
+
+## Data & sources
+
+Every dataset is public and independently verifiable; the in-app
+[methodology](https://mandumrimba.org/metodologi) and
+[data-sources](https://mandumrimba.org/sumber-data) pages carry per-dataset
+licenses, coverage, and update dates, plus an honest list of the gaps where
+credible open data does not yet exist.
+
+- **Global Forest Watch** (UMD / Wageningen) — deforestation alerts, annual
+  tree-cover loss, concession layers — CC BY 4.0
+- **Maus et al. 2022** — global mining land use — CC BY 4.0
+- **Protected Planet (WDPA)** + **KLHK PIPPIB** — protected areas & moratorium
+- **GBIF** occurrences + **IUCN Red List** status + **Permen LHK P.106/2018**,
+  **KKP** marine rules & **CITES** — protected-species selection
+- **RESOLVE Ecoregions 2017** — wildlife habitat units
+- **BNPB DIBI** (via UNDRR DesInventar) — disaster events
+- **Trase** — palm exporter ↔ deforestation linkage
+- **GADM** — administrative boundaries · **HydroBASINS** — watersheds
+- **OpenStreetMap / Nominatim** — location search (© OpenStreetMap contributors, ODbL)
+
+Occurrence coordinates are validated against an Indonesia land mask and the
+species' realm, so marine animals mis-plotted inland (or land animals offshore)
+are dropped as gross errors while legitimate coastal records are kept. Museum
+specimens older than 1990 are excluded so the map reflects present-day presence.
+
+## How it's built
+
+A [pnpm](https://pnpm.io) + [Turborepo](https://turbo.build) monorepo:
+
+- **`apps/web`** — Next.js 14 (App Router), MapLibre GL with vector tiles,
+  `next-intl` (Indonesian / English), Recharts.
+- **`apps/api`** — NestJS: scheduled daily ingest jobs that pull from the public
+  sources above, build vector tiles, and expose a public read-only REST API.
+- **`packages/shared`** — shared TypeScript domain types.
+
+## Local development
 
 ```bash
 pnpm install
-cp apps/api/.env.example apps/api/.env   # fill MONGODB_URI, GFW_API_KEY, R2_*
+
+# each app ships an .env.example — copy and fill in source API keys + service
+# connection strings (a database and an object store), then:
+cp apps/api/.env.example apps/api/.env
 cp apps/web/.env.example apps/web/.env.local
 
-pnpm seed:regions          # GADM → Aceh province + kabupaten (-- --all for everything)
-pnpm dev                   # web :3000, api :4000
+pnpm dev          # web on :3000, api on :4000
 ```
 
-Trigger any job manually (instead of waiting for its cron):
-
-```bash
-curl -X POST -H "x-api-key: $ADMIN_API_KEY" localhost:4000/v1/admin/jobs/gfw-alerts/run
-curl -X POST -H "x-api-key: $ADMIN_API_KEY" localhost:4000/v1/admin/jobs/tiles/run
-```
-
-Job names: `gfw-alerts`, `gfw-annual`, `bnpb-dibi`, `concessions`, `modi-esdm`,
-`wdpa`, `trase`, `nusantara-atlas`, `tiles`, `status`.
-
-## Source configuration
-
-One `GFW_API_KEY` (free, data-api.globalforestwatch.org) powers **all** the
-geometric sources — alerts, annual loss, concessions, protected areas, and the
-moratorium. The concession layers are the Greenpeace-lineage data (the
-original Kepo Hutan downloads no longer exist; GFW hosts the maintained
-copies). Dataset versions are pinned in code for reproducibility:
-
-| Job | GFW dataset (pinned) | IDN rows (verified 2026-06) |
-|---|---|---|
-| gfw-alerts | wur_radd_alerts, umd_glad_landsat_alerts, umd_glad_sentinel2_alerts (latest) | streaming |
-| gfw-annual | umd_tree_cover_loss (latest) | per region/year |
-| concessions | gfw_oil_palm v2025, gfw_wood_fiber v2025, gfw_logging v202106 | 1,855 / 295 / 259 |
-| wdpa | wdpa_protected_areas v202512, idn_forest_moratorium v20200923 | 688 / 42,028 |
-
-`bnpb-dibi` ingests event-level floods/landslides from the **UNDRR DesInventar
-mirror of DIBI** (desinventar.net `DI_export_idn.zip`, no key needed) — DIBI
-itself is a Superset UI without a machine endpoint. Events carry kabupaten
-names but no coordinates; geom is the centroid of the matching seeded
-kabupaten, so events outside seeded provinces stay ungeocodied until you seed
-them (then re-trigger the job).
-
-GFW's mining layer (`gfw_mining_concessions`) has **zero** Indonesia rows —
-mining comes later via MODI/Minerba (Phase 4).
-
-Sources **without** stable machine endpoints stay env-configured and skip
-cleanly when empty:
-
-| Env var | Job | Note |
-|---|---|---|
-| `TRASE_CSV_URL` | trase | download from trase.earth/open-data (CC BY 4.0), host the CSV, point here |
-| `MODI_CSV_URL` | modi-esdm | CSV export of the MODI IUP registry |
-
-## Deployment
-
-- **web → Vercel** (hobby). Set `NEXT_PUBLIC_API_BASE_URL`, `NEXT_PUBLIC_TILES_BASE_URL`.
-- **api → Railway/Render/Fly/VPS** using `apps/api/Dockerfile` (builds
-  tippecanoe into the image — Vercel serverless cannot run the cron/tile jobs).
-- **MongoDB Atlas**: whitelist the API host's static egress IP (Railway static
-  IP add-on or VPS IP). Decide this on day 1 — do not fall back to
-  `0.0.0.0/0` unless credentials are strong and TLS is enforced.
-- **Cloudflare R2**: one bucket (`forest-watch`) with a public custom domain
-  for `tiles/*` and `status/*`; raw archives stay private.
+The ingest jobs run on a daily schedule; data sources without a stable machine
+endpoint are skipped cleanly when unconfigured, so the app runs with whatever
+subset you have keys for.
 
 ## Editorial principles (non-negotiable)
 
-1. Evidence over accusation — we gather and show the data as it is, and never
-   draw conclusions or make claims on the user's behalf.
-2. Every claim is clickable — ≤ 2 clicks to the source dataset.
-3. Reproducible — open pipeline, public methodology + changelog (`/metodologi`, `/status`).
-4. Legal safety (UU ITE) — companies referenced only via already-published
-   datasets (Trase, Kepo Hutan, MODI), always with citation.
-5. Bilingual — Indonesian first, English second.
+1. **Evidence over accusation** — show the data as it is; never draw conclusions
+   or make claims on the user's behalf.
+2. **Every claim is clickable** — at most two clicks to the source dataset.
+3. **Reproducible** — open pipeline, public methodology and changelog.
+4. **Never fabricate** — data we cannot obtain is marked unavailable and the real
+   provider is named; we never invent coordinates, ranges, or figures.
+5. **Bilingual** — Indonesian first, English second.
 
-License: MIT (code). Data belongs to its respective sources — see the
-methodology page for per-dataset licenses.
+## License
+
+MIT (code). Data belongs to its respective sources — see the methodology page
+for per-dataset licenses.

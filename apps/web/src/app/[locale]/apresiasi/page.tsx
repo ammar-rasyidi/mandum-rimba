@@ -112,7 +112,7 @@ export default async function CreditsPage({
 
       <h2>{t("mediaTitle")}</h2>
       <ul className="m-0 mb-6 mt-[0.8rem] list-none p-0">
-        {MEDIA_CREDITS.map((m) => (
+        {/* {MEDIA_CREDITS.map((m) => (
           <li
             key={m.sourceUrl}
             className="border-b border-border py-[0.35rem]"
@@ -127,7 +127,7 @@ export default async function CreditsPage({
             </a>
             <span className="text-[0.85rem] text-muted"> — {m.what[loc]}</span>
           </li>
-        ))}
+        ))} */}
       </ul>
 
       <h2>{t("licenseTitle")}</h2>

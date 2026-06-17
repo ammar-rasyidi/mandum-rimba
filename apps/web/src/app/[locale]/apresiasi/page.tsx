@@ -53,7 +53,9 @@ export default async function CreditsPage({
       <p>{t("intro")}</p>
 
       <h2>{t("partnersTitle")}</h2>
-      <div className="my-4">
+      <div className="my-4 flex flex-wrap items-center gap-3">
+        {/* each logo swaps with the theme: the _dark variant (white art) shows
+            on the dark theme, the _light variant (dark art) on the light theme */}
         <a
           href="https://dahono.com/"
           target="_blank"
@@ -61,7 +63,6 @@ export default async function CreditsPage({
           aria-label="Dahono Labs"
           className="inline-flex items-center rounded-xl border border-border bg-surface px-6 py-5 transition-[transform,border-color] hover:-translate-y-0.5 hover:border-accent hover:no-underline"
         >
-          {/* logo swaps with the theme: white on dark, black on light */}
           <img
             src="/images/dahono-labs-logo-white.svg"
             alt="Dahono Labs"
@@ -70,6 +71,42 @@ export default async function CreditsPage({
           <img
             src="/images/dahono-labs-logo-black.svg"
             alt="Dahono Labs"
+            className="block h-9 w-auto dark:hidden"
+          />
+        </a>
+        <a
+          href="https://suaraai.id"
+          target="_blank"
+          rel="noreferrer"
+          aria-label="Suara AI"
+          className="inline-flex items-center rounded-xl border border-border bg-surface px-6 py-5 transition-[transform,border-color] hover:-translate-y-0.5 hover:border-accent hover:no-underline"
+        >
+          <img
+            src="/images/suaraai_logo_dark.svg"
+            alt="Suara AI"
+            className="hidden h-9 w-auto dark:block"
+          />
+          <img
+            src="/images/suaraai_logo_light.svg"
+            alt="Suara AI"
+            className="block h-9 w-auto dark:hidden"
+          />
+        </a>
+        <a
+          href="https://voicelyf.com"
+          target="_blank"
+          rel="noreferrer"
+          aria-label="Voicelyf"
+          className="inline-flex items-center rounded-xl border border-border bg-surface px-6 py-5 transition-[transform,border-color] hover:-translate-y-0.5 hover:border-accent hover:no-underline"
+        >
+          <img
+            src="/images/voicelyf_logo_dark.svg"
+            alt="Voicelyf"
+            className="hidden h-9 w-auto dark:block"
+          />
+          <img
+            src="/images/voicelyf_logo_light.svg"
+            alt="Voicelyf"
             className="block h-9 w-auto dark:hidden"
           />
         </a>

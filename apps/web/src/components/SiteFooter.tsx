@@ -9,9 +9,8 @@ type StaticPath =
   | "/data"
   | "/sumber-data"
   | "/status"
-  | "/apresiasi";
-
-const REPO_URL = "https://github.com";
+  | "/apresiasi"
+  | "/proyek";
 
 const colTitle =
   "mb-3 text-[0.72rem] font-semibold uppercase tracking-[0.14em] text-muted";
@@ -99,24 +98,14 @@ export default async function SiteFooter({ locale }: { locale: string }) {
             <h3 className={colTitle}>{t("projectTitle")}</h3>
             <ul className="m-0 flex list-none flex-col gap-2.5 p-0">
               <li>
-                <a
-                  href={REPO_URL}
-                  target="_blank"
-                  rel="noreferrer"
-                  className={footLink}
-                >
+                <Link href="/proyek" className={footLink}>
                   {t("sourceCode")}
-                </a>
+                </Link>
               </li>
               <li>
-                <a
-                  href={REPO_URL}
-                  target="_blank"
-                  rel="noreferrer"
-                  className={footLink}
-                >
+                <Link href="/proyek" className={footLink}>
                   {t("contribute")}
-                </a>
+                </Link>
               </li>
             </ul>
           </nav>

@@ -241,6 +241,24 @@
     "licenseTitle": "Lisensi",
     "licenseBody": "Kode sumber Mandum Rimba berlisensi MIT. Setiap dataset tetap milik sumbernya masing-masing dengan lisensinya sendiri, lihat halaman Sumber Data. Disajikan secara deskriptif dari data publik; bukan tuduhan terhadap pihak mana pun."
   },
+  "project": {
+    "title": "Proyek",
+    "intro": "Mandum Rimba dibangun terbuka, sebagai proyek nirlaba untuk kepentingan publik. Halaman ini menjelaskan status kode sumbernya dan bagaimana kamu bisa ikut terlibat.",
+    "sourceTitle": "Kode sumber",
+    "sourceBody": "Seluruh kode Mandum Rimba berlisensi terbuka (MIT). Tujuannya sederhana, siapa pun bisa memeriksa cara kerjanya, menyalinnya, dan ikut memperbaikinya.",
+    "sourceStatus": "Saat ini repositorinya sedang kami siapkan untuk dibuka ke publik, lengkap dengan panduan kontribusi agar siapa pun nyaman ikut membangun. Tautan repositori akan muncul di sini begitu siap.",
+    "involveTitle": "Ikut berkontribusi",
+    "involveIntro": "Kamu tidak perlu bisa menulis kode untuk membantu. Yang paling kami butuhkan sekarang:",
+    "involveItems": [
+      { "title": "Koreksi data", "body": "kalau ada koordinat, status, atau sumber yang keliru, kabari kami dengan tautan ke sumber aslinya." },
+      { "title": "Usulan lapisan atau spesies", "body": "data publik yang kredibel dan layak masuk ke peta." },
+      { "title": "Masukan tampilan & metodologi", "body": "apa yang membingungkan, atau yang bisa dibuat lebih jelas." },
+      { "title": "Sebarkan", "body": "bagikan peta ini ke orang-orang yang peduli pada hutan dan satwa Indonesia." },
+      { "title": "Kontribusi kode", "body": "akan dibuka begitu repositori publik dan panduan kontribusinya siap." }
+    ],
+    "contactTitle": "Hubungi kami",
+    "contactBody": "Punya koreksi, usulan, atau pertanyaan? Kirim email ke"
+  },
   "footer": {
     "license": "Kode sumber terbuka (MIT). Data milik masing-masing sumber, lihat metodologi.",
     "disclaimer": "Disajikan secara deskriptif dari data publik; bukan tuduhan terhadap pihak mana pun.",

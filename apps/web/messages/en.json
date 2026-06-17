@@ -241,6 +241,24 @@
     "licenseTitle": "License",
     "licenseBody": "The Mandum Rimba source code is MIT licensed. Each dataset remains the property of its source under its own license, see the Data Sources page. Presented descriptively from public data; not an accusation against any party."
   },
+  "project": {
+    "title": "The project",
+    "intro": "Mandum Rimba is built in the open, as a non-profit, public-interest project. This page explains where its source code stands and how you can get involved.",
+    "sourceTitle": "Source code",
+    "sourceBody": "All of Mandum Rimba's code is open-source (MIT). The intent is simple: anyone can inspect how it works, copy it, and help improve it.",
+    "sourceStatus": "The repository is currently being prepared for public release, together with contribution guidelines so anyone can take part comfortably. The repository link will appear here once it's ready.",
+    "involveTitle": "Get involved",
+    "involveIntro": "You don't need to write code to help. What we need most right now:",
+    "involveItems": [
+      { "title": "Data corrections", "body": "if a coordinate, status, or source is wrong, tell us with a link to the original source." },
+      { "title": "Layer or species suggestions", "body": "credible public data that deserves a place on the map." },
+      { "title": "Design & methodology feedback", "body": "what's confusing, or what could be made clearer." },
+      { "title": "Spread the word", "body": "share the map with people who care about Indonesia's forests and wildlife." },
+      { "title": "Code contributions", "body": "open as soon as the public repository and its contribution guide are ready." }
+    ],
+    "contactTitle": "Contact us",
+    "contactBody": "Have a correction, a suggestion, or a question? Email us at"
+  },
   "footer": {
     "license": "Open source (MIT). Data belongs to its respective sources, see methodology.",
     "disclaimer": "Presented descriptively from public data; not an accusation against any party.",

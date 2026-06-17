@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 
-// Contact address is config, not hard-coded data — set NEXT_PUBLIC_CONTACT_EMAIL
-// in the web project to override the default.
-const CONTACT_EMAIL =
-  process.env.NEXT_PUBLIC_CONTACT_EMAIL || "halo@mandumrimba.org";
+// No dedicated inbox yet — contact goes to the maintainer's Threads DMs.
+const CONTACT_THREADS = "https://www.threads.com/@r.rasyidi";
+const CONTACT_HANDLE = "@r.rasyidi";
 
 export async function generateMetadata({
   params: { locale },
@@ -45,7 +44,10 @@ export default async function ProjectPage({
       <h2>{t("contactTitle")}</h2>
       <p>
         {t("contactBody")}{" "}
-        <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.
+        <a href={CONTACT_THREADS} target="_blank" rel="noreferrer">
+          {CONTACT_HANDLE}
+        </a>
+        .
       </p>
     </main>
   );

@@ -67,7 +67,7 @@ export default function LayerPanel({
   if (minimized) {
     return (
       <button
-        className="glass absolute right-3 top-[5.75rem] z-[5] cursor-pointer rounded-full px-[1.1rem] py-[0.55rem] text-[0.85rem] text-foreground transition-[transform,border-color] hover:-translate-y-px hover:max-[720px]:bottom-3 max-[720px]:top-auto"
+        className="glass absolute right-3 top-[5.75rem] z-[5] cursor-pointer rounded-full px-[1.1rem] py-[0.55rem] text-[0.85rem] text-foreground transition-[transform,border-color] hover:-translate-y-px max-[720px]:bottom-5 max-[720px]:top-auto"
         onClick={() => setMinimized(false)}
         aria-label={t("layers")}
       >

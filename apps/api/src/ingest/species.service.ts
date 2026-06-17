@@ -92,9 +92,11 @@ export class SpeciesService implements OnModuleInit {
       let upserted = 0;
       let fetched = 0;
       let dropped = 0;
+      let removed = 0;
 
       for (const s of FLAGSHIP_SPECIES) {
         let offset = 0;
+        let ok = true;
         for (;;) {
           let occ: GbifOccurrence[];
           try {
@@ -125,24 +127,41 @@ export class SpeciesService implements OnModuleInit {
             }
             offset += SpeciesService.PAGE;
             fetched += occ.length;
-            if (occ.length === 0 || res.endOfRecords) {
-              const r = await this.upsertBatch(s, occ, retrievedAt);
-              upserted += r.upserted;
-              dropped += r.dropped;
-              break;
-            }
             const r = await this.upsertBatch(s, occ, retrievedAt);
             upserted += r.upserted;
             dropped += r.dropped;
+            if (occ.length === 0 || res.endOfRecords) break;
           } catch (err) {
             this.logger.error(`${s.slug} GBIF fetch failed: ${err}`);
+            ok = false;
             break;
           }
+        }
+
+        // Self-healing sweep: once a species is fully refreshed, drop any of its
+        // occurrences NOT touched this run. That removes (a) points GBIF no
+        // longer returns and (b) points that now fail the land/sea realm check
+        // — so the daily cron converges to exactly GBIF ∩ realm, the same state
+        // a clean manual ingest produces (no stale "sun bear in the sea"). It is
+        // skipped when the fetch errored, so a transient GBIF outage never wipes
+        // an existing species' data.
+        if (ok) {
+          const del = await this.occModel.deleteMany({
+            speciesSlug: s.slug,
+            retrievedAt: { $lt: retrievedAt },
+          });
+          removed += del.deletedCount ?? 0;
         }
       }
 
       return {
-        stats: { species: FLAGSHIP_SPECIES.length, fetched, upserted, dropped },
+        stats: {
+          species: FLAGSHIP_SPECIES.length,
+          fetched,
+          upserted,
+          dropped,
+          removed,
+        },
       };
     });
   }

@@ -126,14 +126,7 @@ export default async function CreditsPage({
       </div>
       <p className="text-[0.9rem]">
         {t("openContribution")}{" "}
-        <a
-          href="https://github.com"
-          target="_blank"
-          rel="noreferrer"
-        >
-          {t("openContributionLink")}
-        </a>
-        .
+        <Link href="/proyek">{t("openContributionLink")}</Link>.
       </p>
 
       <h2>{t("dataTitle")}</h2>

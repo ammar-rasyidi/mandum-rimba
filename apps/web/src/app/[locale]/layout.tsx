@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages, getTranslations } from "next-intl/server";
 import { GoogleAnalytics } from "@next/third-parties/google";
+import { Analytics } from "@vercel/analytics/next";
 import { routing } from "@/i18n/routing";
 import SiteNav from "@/components/SiteNav";
 import SiteFooter from "@/components/SiteFooter";
@@ -159,6 +160,8 @@ export default async function LocaleLayout({
         </NextIntlClientProvider>
         {/* GA only when configured, so dev builds never report into prod */}
         {GA_ID && <GoogleAnalytics gaId={GA_ID} />}
+        {/* Vercel Web Analytics — privacy-friendly, no cookies, inert off-Vercel */}
+        <Analytics />
       </body>
     </html>
   );

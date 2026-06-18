@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages, getTranslations } from "next-intl/server";
@@ -112,6 +113,15 @@ export default async function LocaleLayout({
   const messages = await getMessages();
   const t = await getTranslations({ locale, namespace: "site" });
 
+  // Theme is persisted in a cookie so it survives every navigation — including
+  // a locale switch, which re-renders the document from the server. Rendering
+  // data-theme here (not just client-side) means the server always emits the
+  // chosen theme, so it never flips or flashes. First visit (no cookie) renders
+  // "dark"; the pre-paint script below refines it to the OS preference and
+  // seeds the cookie, so the next render is already correct.
+  const theme =
+    cookies().get("fw-theme")?.value === "light" ? "light" : "dark";
+
   // Structured data — Organization + WebSite so Google can identify the brand
   // and make the site eligible for rich results / sitelinks.
   const jsonLd = {
@@ -138,12 +148,14 @@ export default async function LocaleLayout({
   };
 
   return (
-    <html lang={locale} suppressHydrationWarning>
+    <html lang={locale} data-theme={theme} suppressHydrationWarning>
       <head>
-        {/* set theme before paint to avoid a flash of wrong theme */}
+        {/* Pre-paint: prefer the cookie, else a stored choice, else the OS
+            preference on first visit — and seed the cookie so the server gets
+            it right on the next render. Avoids any flash of the wrong theme. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `try{var t=localStorage.getItem("fw-theme");if(!t){t=window.matchMedia("(prefers-color-scheme: light)").matches?"light":"dark"}document.documentElement.dataset.theme=t}catch(e){document.documentElement.dataset.theme="dark"}`,
+            __html: `try{var c=document.cookie.match(/(?:^|; )fw-theme=(light|dark)/);var t=c?c[1]:(localStorage.getItem("fw-theme")||(window.matchMedia("(prefers-color-scheme: light)").matches?"light":"dark"));document.documentElement.dataset.theme=t;if(!c){document.cookie="fw-theme="+t+";path=/;max-age=31536000;samesite=lax"}}catch(e){}`,
           }}
         />
         {/* JSON-LD via raw <script> so embedded URLs survive serialisation */}

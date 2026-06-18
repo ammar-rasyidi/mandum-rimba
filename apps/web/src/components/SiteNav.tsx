@@ -105,6 +105,9 @@ export default function SiteNav() {
   const toggleTheme = () => {
     const next: Theme = theme === "dark" ? "light" : "dark";
     document.documentElement.dataset.theme = next;
+    // cookie so the server renders the right theme on the next navigation;
+    // localStorage as a belt-and-braces fallback for the pre-paint script
+    document.cookie = `fw-theme=${next};path=/;max-age=31536000;samesite=lax`;
     try {
       localStorage.setItem("fw-theme", next);
     } catch {

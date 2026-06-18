@@ -21,6 +21,7 @@ export default function ThemeToggle() {
   const toggle = () => {
     const next: Theme = theme === "dark" ? "light" : "dark";
     document.documentElement.dataset.theme = next;
+    document.cookie = `fw-theme=${next};path=/;max-age=31536000;samesite=lax`;
     try {
       localStorage.setItem("fw-theme", next);
     } catch {

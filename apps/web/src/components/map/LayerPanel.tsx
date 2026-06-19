@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { LAYERS } from "@/lib/layers";
+import { LAYERS, LAYER_SUBCOLORS, swatchColor } from "@/lib/layers";
 import PlaceSearch from "./PlaceSearch";
 import {
   ALERT_SYSTEMS,
@@ -185,6 +185,12 @@ export default function LayerPanel({
                         set(sub.key, toggleIn(filters[sub.key] as string[], opt))
                       }
                     />
+                    {LAYER_SUBCOLORS[def.id] && (
+                      <span
+                        className="h-2 w-2 shrink-0 rounded-full"
+                        style={{ background: swatchColor(def.id, opt) }}
+                      />
+                    )}
                     <span>{t(`filterValues.${opt}`)}</span>
                   </label>
                 ))}

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import maplibregl from "maplibre-gl";
 import { Protocol } from "pmtiles";
-import { LAYERS, type LayerDef } from "@/lib/layers";
+import { LAYERS, colorExpression, type LayerDef } from "@/lib/layers";
 import { TILES_BASE } from "@/lib/api";
 import LayerPanel from "./LayerPanel";
 import DetailDrawer, { type SelectedFeature } from "./DetailDrawer";
@@ -384,32 +384,17 @@ function buildLayer(
         paint: { "line-color": def.color, "line-width": 1, "line-opacity": 0.8 },
       };
     case "fill": {
-      // concessions carry several types in one layer — colour by type so palm
-      // / pulp / logging / mining are distinguishable (brown = mining footprint)
-      const fillColor =
-        def.id === "concessions"
-          ? ([
-              "match",
-              ["get", "type"],
-              "palm_hgu",
-              "#42a5f5", // blue 400
-              "pulp_hti",
-              "#7e57c2", // deep-purple 400
-              "logging",
-              "#26c6da", // cyan 400
-              "mining",
-              "#8d6e63", // brown 400 — mined land
-              def.color,
-            ] as unknown as string)
-          : def.color;
-      // raised opacity + same-color outline so polygons survive the bright,
-      // textured satellite basemap
+      // colour each feature by its category (concessions by type, protected by
+      // cat); flat colour for habitat. Same on every basemap.
+      const fillColor = colorExpression(def.id, def.color) as unknown as string;
+      // habitat is a broad backdrop — keep it faint; the others sit a touch more
+      // opaque so polygons survive the bright, textured satellite basemap
       return {
         ...base,
         type: "fill",
         paint: {
           "fill-color": fillColor,
-          "fill-opacity": 0.38,
+          "fill-opacity": def.id === "habitat" ? 0.3 : 0.45,
           "fill-outline-color": fillColor,
         },
       };
@@ -419,7 +404,8 @@ function buildLayer(
         ...base,
         type: "circle",
         paint: {
-          "circle-color": def.color,
+          // species: colour by IUCN status (CR→LC ramp); others flat
+          "circle-color": colorExpression(def.id, def.color) as unknown as string,
           "circle-radius": [
             "interpolate",
             ["linear"],

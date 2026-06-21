@@ -13,7 +13,7 @@ import {
 import { parseCsv, slugify } from "./util/geo";
 
 /**
- * 04:00 WIB — Trase palm-oil exporter ↔ deforestation linkage (CC-licensed
+ * 04:00 WIB, Trase palm-oil exporter ↔ deforestation linkage (CC-licensed
  * bulk downloads from trase.earth). Configure TRASE_CSV_URL with the
  * Indonesia palm oil flows export. Company profiles are built ONLY from
  * published datasets like this one (editorial principle #4).
@@ -45,7 +45,7 @@ export class TraseService implements OnModuleInit {
     await this.locks.withLock(TraseService.JOB, async (): Promise<JobResult> => {
       const url = process.env.TRASE_CSV_URL;
       if (!url) {
-        this.logger.warn("TRASE_CSV_URL not configured — skipping");
+        this.logger.warn("TRASE_CSV_URL not configured, skipping");
         return { skipped: true };
       }
 
@@ -79,7 +79,7 @@ export class TraseService implements OnModuleInit {
                 sourceId: "trase",
                 sourceUrl: url,
                 retrievedAt,
-                license: "Trase — CC BY 4.0",
+                license: "Trase, CC BY 4.0",
                 contentHash: hash,
               },
             },

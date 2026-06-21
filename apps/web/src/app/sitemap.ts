@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 
 /**
- * Sitemap — every page exists in both locales (id default, en), and both
+ * Sitemap, every page exists in both locales (id default, en), and both
  * locale URLs are always prefixed (localePrefix: "always"). Each entry carries
  * `alternates.languages` so crawlers get correct hreflang pairing between the
  * Indonesian and English versions. Dynamic region/story pages are omitted (no

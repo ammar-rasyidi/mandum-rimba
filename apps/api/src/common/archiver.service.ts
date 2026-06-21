@@ -9,7 +9,7 @@ import { stat } from "node:fs/promises";
 
 /**
  * Cloudflare R2 (S3-compatible) writer. Used for:
- *  - raw source archives  (raw/<job>/<date>/<name>)      — reproducibility
+ *  - raw source archives  (raw/<job>/<date>/<name>) for reproducibility
  *  - PMTiles              (tiles/<layer>.pmtiles)
  *  - pipeline status JSON (status/pipeline.json)
  * Falls back to a no-op (with warning) when R2 env vars are absent, so local
@@ -35,7 +35,7 @@ export class ArchiverService {
       });
     } else {
       this.client = null;
-      this.logger.warn("R2 credentials missing — archiving is a no-op");
+      this.logger.warn("R2 credentials missing, archiving is a no-op");
     }
   }
 
@@ -43,7 +43,7 @@ export class ArchiverService {
     return this.client !== null;
   }
 
-  /** sha256 of a payload — used by ingest jobs to skip unchanged sources. */
+  /** sha256 of a payload, used by ingest jobs to skip unchanged sources. */
   hash(payload: string | Buffer): string {
     return createHash("sha256").update(payload).digest("hex");
   }

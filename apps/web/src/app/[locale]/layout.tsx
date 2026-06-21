@@ -31,7 +31,7 @@ export async function generateMetadata({
 
   return {
     metadataBase: new URL(SITE_URL),
-    title: { default: `${name} — ${t("tagline")}`, template: `%s — ${name}` },
+    title: { default: `${name}, ${t("tagline")}`, template: `%s, ${name}` },
     description,
     applicationName: name,
     icons: {
@@ -75,7 +75,7 @@ export async function generateMetadata({
     openGraph: {
       type: "website",
       siteName: name,
-      title: `${name} — ${t("tagline")}`,
+      title: `${name}, ${t("tagline")}`,
       description,
       url: `${SITE_URL}/${locale}`,
       locale: locale === "en" ? "en_US" : "id_ID",
@@ -83,7 +83,7 @@ export async function generateMetadata({
     },
     twitter: {
       card: "summary_large_image",
-      title: `${name} — ${t("tagline")}`,
+      title: `${name}, ${t("tagline")}`,
       description,
     },
     robots: {
@@ -113,7 +113,7 @@ export default async function LocaleLayout({
   const messages = await getMessages();
   const t = await getTranslations({ locale, namespace: "site" });
 
-  // Theme is persisted in a cookie so it survives every navigation — including
+  // Theme is persisted in a cookie so it survives every navigation, including
   // a locale switch, which re-renders the document from the server. Rendering
   // data-theme here (not just client-side) means the server always emits the
   // chosen theme, so it never flips or flashes. First visit (no cookie) renders
@@ -122,7 +122,7 @@ export default async function LocaleLayout({
   const theme =
     cookies().get("fw-theme")?.value === "light" ? "light" : "dark";
 
-  // Structured data — Organization + WebSite so Google can identify the brand
+  // Structured data, Organization + WebSite so Google can identify the brand
   // and make the site eligible for rich results / sitelinks.
   const jsonLd = {
     "@context": "https://schema.org",
@@ -151,7 +151,7 @@ export default async function LocaleLayout({
     <html lang={locale} data-theme={theme} suppressHydrationWarning>
       <head>
         {/* Pre-paint: prefer the cookie, else a stored choice, else the OS
-            preference on first visit — and seed the cookie so the server gets
+            preference on first visit, and seed the cookie so the server gets
             it right on the next render. Avoids any flash of the wrong theme. */}
         <script
           dangerouslySetInnerHTML={{
@@ -172,7 +172,7 @@ export default async function LocaleLayout({
         </NextIntlClientProvider>
         {/* GA only when configured, so dev builds never report into prod */}
         {GA_ID && <GoogleAnalytics gaId={GA_ID} />}
-        {/* Vercel Web Analytics — privacy-friendly, no cookies, inert off-Vercel */}
+        {/* Vercel Web Analytics, privacy-friendly, no cookies, inert off-Vercel */}
         <Analytics />
       </body>
     </html>

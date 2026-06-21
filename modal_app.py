@@ -1,9 +1,9 @@
 """
-Mandum Rimba — heavy data pipeline on Modal.
+Mandum Rimba, heavy data pipeline on Modal.
 
 This runs everything Vercel can't: the nightly ingest jobs, and the tiles job
 that shells out to the native `tippecanoe` binary. It writes to the SAME
-MongoDB Atlas + Cloudflare R2 that the Vercel API/web read from — Modal and
+MongoDB Atlas + Cloudflare R2 that the Vercel API/web read from, Modal and
 Vercel never call each other, the datastores are the handoff.
 
 Deploy:        modal deploy modal_app.py
@@ -119,7 +119,7 @@ def _run_many(jobs: list[str]) -> None:
     for job in jobs:
         try:
             _run(job)
-        except Exception as exc:  # noqa: BLE001 — keep going, report at end
+        except Exception as exc:  # noqa: BLE001, keep going, report at end
             print(f"[mandumrimba] ✗ job {job} FAILED: {exc}", flush=True)
             failed.append(job)
     if failed:

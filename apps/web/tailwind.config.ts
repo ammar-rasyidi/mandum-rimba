@@ -6,7 +6,7 @@ import type { Config } from "tailwindcss";
  *
  * - Colours read the CSS theme variables (set per `[data-theme]` on <html>),
  *   so utilities like `bg-surface` / `text-accent` swap automatically between
- *   light and dark — no `dark:` variants needed for colour.
+ *   light and dark, no `dark:` variants needed for colour.
  * - Preflight (Tailwind's global reset) is OFF: the existing CSS depends on
  *   default browser styling for unclassed headings/lists, so enabling it would
  *   regress the current pages. All other utilities still work normally.

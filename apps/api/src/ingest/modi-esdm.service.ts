@@ -13,10 +13,10 @@ import {
 import { parseCsv, slugify } from "./util/geo";
 
 /**
- * 03:00 WIB — ESDM MODI / Minerba One Map mining permit registry (IUP).
+ * 03:00 WIB, ESDM MODI / Minerba One Map mining permit registry (IUP).
  * Phase 4 source. Expects MODI_CSV_URL pointing at a CSV export with columns
  * including company name, commodity, status, province. Registry attributes
- * only — concession *geometries* for mining come from Kepo Hutan / Minerba
+ * only, concession *geometries* for mining come from Kepo Hutan / Minerba
  * One Map WFS in a later iteration.
  */
 @Injectable()
@@ -46,7 +46,7 @@ export class ModiEsdmService implements OnModuleInit {
     await this.locks.withLock(ModiEsdmService.JOB, async () => {
       const url = process.env.MODI_CSV_URL;
       if (!url) {
-        this.logger.warn("MODI_CSV_URL not configured — skipping");
+        this.logger.warn("MODI_CSV_URL not configured, skipping");
         return { skipped: true };
       }
 
@@ -73,7 +73,7 @@ export class ModiEsdmService implements OnModuleInit {
                 sourceId: "modi_esdm",
                 sourceUrl: url,
                 retrievedAt,
-                license: "ESDM MODI — public registry",
+                license: "ESDM MODI, public registry",
               },
             },
           },

@@ -16,6 +16,13 @@ export interface Contributor {
   url?: string;
 }
 
+/** People who support the work (shown on the support page and credits). */
+export interface Supporter {
+  name: string;
+  social?: string; // handle, e.g. "@budi"
+  socialUrl?: string; // optional link to the account
+}
+
 export interface CreditItem {
   name: string;
   what: Bilingual;
@@ -55,6 +62,13 @@ export const CONTRIBUTORS: Contributor[] = [
     },
   },
 ];
+
+/**
+ * Supporters who help fund the work. Updated manually every Friday, with each
+ * person's permission. Add { name, social?, socialUrl? }. Shared with the
+ * support page (/dukung) so both stay in sync.
+ */
+export const SUPPORTERS: Supporter[] = [];
 
 /** Organizations whose open data powers the map (full detail on /sumber-data). */
 export const DATA_ACKNOWLEDGEMENTS: CreditItem[] = [

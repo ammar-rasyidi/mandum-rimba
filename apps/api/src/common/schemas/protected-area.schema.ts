@@ -27,7 +27,7 @@ export class ProtectedArea {
   })
   category: string;
 
-  /** primary name (WDPA name_eng — the recognizable/gazetted name) */
+  /** primary name (WDPA name_eng, the recognizable/gazetted name) */
   @Prop({ required: true })
   name: string;
 

@@ -21,7 +21,7 @@ export interface GfwVectorSource {
 /**
  * Page through a GFW Data API *vector* dataset, yielding rows with geometry
  * as a GeoJSON string (`SELECT ..., ST_AsGeoJSON(geom) AS geometry`).
- * Ordered by gfw_fid with LIMIT/OFFSET — verified supported by the API.
+ * Ordered by gfw_fid with LIMIT/OFFSET, verified supported by the API.
  */
 export async function* fetchGfwVector(
   http: HttpService,

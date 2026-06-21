@@ -5,7 +5,7 @@
  *
  * Order matters: fills are listed before circles so points draw on top.
  * Colours are bright Material hues chosen to read on the dark/light street
- * basemap AND satellite imagery — deliberately NO green/teal (those vanish into
+ * basemap AND satellite imagery, deliberately NO green/teal (those vanish into
  * vegetation). The SAME colour is used on every basemap. Layers with sub-filters
  * are coloured per category (see LAYER_SUBCOLORS), so e.g. each protected-area
  * type or each IUCN status has its own swatch in both the map and the legend.
@@ -31,7 +31,7 @@ export const LAYERS: LayerDef[] = [
     id: "habitat",
     tile: "habitat",
     kind: "fill",
-    color: "#ffca28", // amber 400 — recessive backdrop (drawn at low opacity)
+    color: "#ffca28", // amber 400, recessive backdrop (drawn at low opacity)
     defaultOn: false,
     sourceName: "RESOLVE Ecoregions 2017 (UNEP-WCMC)",
     sourceUrl:
@@ -41,7 +41,7 @@ export const LAYERS: LayerDef[] = [
     id: "concessions",
     tile: "concessions",
     kind: "fill",
-    color: "#fb8c00", // orange 600 — extractive (coloured by type below)
+    color: "#fb8c00", // orange 600, extractive (coloured by type below)
     defaultOn: false,
     sourceName: "GFW concession layers (Greenpeace-derived)",
     sourceUrl:
@@ -51,7 +51,7 @@ export const LAYERS: LayerDef[] = [
     id: "protected",
     tile: "protected",
     kind: "fill",
-    color: "#3949ab", // indigo 600 — conservation (coloured by category below)
+    color: "#3949ab", // indigo 600, conservation (coloured by category below)
     defaultOn: true,
     sourceName: "Protected Planet (WDPA) + KLHK PIPPIB",
     sourceUrl: "https://www.protectedplanet.net",
@@ -64,7 +64,7 @@ export const LAYERS: LayerDef[] = [
     color: "#ffee58", // yellow 400
     strokeColor: "#263238",
     defaultOn: false,
-    sourceName: "GFW — RADD / GLAD (UMD, WUR)",
+    sourceName: "GFW, RADD / GLAD (UMD, WUR)",
     sourceUrl: "https://www.globalforestwatch.org/map/",
   },
   {
@@ -108,28 +108,28 @@ export const LAYER_SUBCOLORS: Record<
       palm_hgu: "#fb8c00", // orange 600
       pulp_hti: "#f4511e", // deep-orange 600
       logging: "#ffb300", // amber 600
-      mining: "#e53935", // red 600 — most intensive
+      mining: "#e53935", // red 600, most intensive
     },
   },
   protected: {
     prop: "cat",
     colors: {
-      TN: "#283593", // indigo 800 — Taman Nasional
-      CA: "#3949ab", // indigo 600 — Cagar Alam
-      SM: "#3f51b5", // indigo 500 — Suaka Margasatwa
-      HL: "#5c6bc0", // indigo 400 — Hutan Lindung
-      KK: "#7986cb", // indigo 300 — Kawasan Konservasi lain
-      moratorium: "#9fa8da", // indigo 200 — moratorium (softest)
+      TN: "#283593", // indigo 800, Taman Nasional
+      CA: "#3949ab", // indigo 600, Cagar Alam
+      SM: "#3f51b5", // indigo 500, Suaka Margasatwa
+      HL: "#5c6bc0", // indigo 400, Hutan Lindung
+      KK: "#7986cb", // indigo 300, Kawasan Konservasi lain
+      moratorium: "#9fa8da", // indigo 200, moratorium (softest)
     },
   },
   species: {
     prop: "status",
     colors: {
-      CR: "#c2185b", // pink 700 — most critical
+      CR: "#c2185b", // pink 700, most critical
       EN: "#e91e63", // pink 500
       VU: "#ec407a", // pink 400
       NT: "#f06292", // pink 300
-      LC: "#f48fb1", // pink 200 — least concern
+      LC: "#f48fb1", // pink 200, least concern
     },
   },
 };

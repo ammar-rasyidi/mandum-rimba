@@ -9,7 +9,7 @@ import {
 } from "../common/job-registry.service";
 
 /**
- * 04:30 WIB — Nusantara Atlas monthly deforestation reports.
+ * 04:30 WIB, Nusantara Atlas monthly deforestation reports.
  * Their license does not permit blanket redistribution of underlying data, so
  * this job only snapshots the public report index for cite-and-link use on
  * story/methodology pages. Raw HTML archived for provenance.

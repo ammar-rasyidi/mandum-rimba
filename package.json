@@ -2,7 +2,7 @@
   "name": "mandumrimba",
   "private": true,
   "version": "0.1.0",
-  "description": "Mandum Rimba — Observatorium deforestasi & akuntabilitas lingkungan Indonesia",
+  "description": "Mandum Rimba, Observatorium deforestasi & akuntabilitas lingkungan Indonesia",
   "license": "MIT",
   "packageManager": "pnpm@9.15.0",
   "engines": {

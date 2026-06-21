@@ -44,7 +44,7 @@ interface LayerSpec {
 }
 
 /**
- * 05:30 WIB — tippecanoe → PMTiles → R2. Geometry NEVER ships from the REST
+ * 05:30 WIB, tippecanoe → PMTiles → R2. Geometry NEVER ships from the REST
  * API; this static pipeline is the only geometry path to the client.
  * Each layer keeps a numeric change-key in the jobRun stats; unchanged layers
  * are skipped. Requires the tippecanoe binary (built into the Docker image).
@@ -328,7 +328,7 @@ export class TilesService implements OnModuleInit {
                 name: names.get(d.speciesSlug)?.id ?? d.speciesSlug,
                 nameEn: names.get(d.speciesSlug)?.en ?? d.speciesSlug,
                 sci: d.scientificName,
-                status: d.iucnStatus, // CR | EN | VU — drives the status filters
+                status: d.iucnStatus, // CR | EN | VU, drives the status filters
                 year: d.year ?? 0,
                 basis: d.basisOfRecord,
               },

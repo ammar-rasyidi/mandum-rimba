@@ -48,7 +48,7 @@ export default async function OpengraphImage({
   const hero = `data:image/svg+xml;base64,${heroB64}`;
 
   // Best effort: the rich, text-bearing card. If the web font can't be fetched
-  // at build time, fall back to a clean logo-only card — never fail the build
+  // at build time, fall back to a clean logo-only card, never fail the build
   // over the share image.
   try {
     const t = await getTranslations({ locale, namespace: "site" });

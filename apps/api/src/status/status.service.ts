@@ -23,7 +23,7 @@ export interface PipelineStatusJson {
 }
 
 /**
- * 06:00 WIB — write the pipeline status JSON to R2. This powers the public
+ * 06:00 WIB, write the pipeline status JSON to R2. This powers the public
  * /status page: a transparency/trust signal showing exactly when each source
  * was last refreshed and whether it succeeded.
  */

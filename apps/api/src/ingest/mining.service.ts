@@ -38,7 +38,7 @@ const SOURCE: GfwVectorSource = {
 };
 
 /**
- * 03:00 WIB — mining land-use footprint (Maus et al. via GFW Data API),
+ * 03:00 WIB, mining land-use footprint (Maus et al. via GFW Data API),
  * stored as the `mining` TYPE inside the concessions collection so it sits
  * alongside palm/pulp/logging in the Concessions layer.
  *
@@ -76,7 +76,7 @@ export class MiningService implements OnModuleInit {
     await this.locks.withLock(MiningService.JOB, async () => {
       const apiKey = process.env.GFW_API_KEY;
       if (!apiKey) {
-        this.logger.warn("GFW_API_KEY not set — skipping");
+        this.logger.warn("GFW_API_KEY not set, skipping");
         return { skipped: true };
       }
 
@@ -99,7 +99,7 @@ export class MiningService implements OnModuleInit {
               continue;
             }
             const set = {
-              companyName: "—", // Maus footprint is unattributed (no operator)
+              companyName: "-", // Maus footprint is unattributed (no operator)
               companySlug: "",
               type: "mining" as const,
               commodity: "tambang",

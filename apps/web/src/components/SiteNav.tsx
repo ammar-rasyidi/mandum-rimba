@@ -66,7 +66,7 @@ const MoonIcon = () => (
 const navLink =
   "rounded-lg px-3.5 py-2 text-[0.95rem] text-muted transition-colors hover:bg-[var(--accent-dim)] hover:text-foreground hover:no-underline";
 const navLinkActive = "bg-[var(--accent-dim)] !text-accent";
-// bordered glass chip — matches the button language used across the app
+// bordered glass chip, matches the button language used across the app
 const iconBtn =
   "glass flex items-center justify-center rounded-xl text-muted transition-[color,border-color,transform] hover:border-accent hover:text-foreground active:scale-90";
 

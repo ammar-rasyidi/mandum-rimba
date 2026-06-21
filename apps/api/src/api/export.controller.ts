@@ -21,7 +21,7 @@ import { CacheHeaderInterceptor } from "./cache.interceptor";
 
 /**
  * CSV / GeoJSON exports for license-permitting datasets (§7.5). Datasets we
- * cannot redistribute (WDPA, Nusantara Atlas) are NOT exported here — the
+ * cannot redistribute (WDPA, Nusantara Atlas) are NOT exported here, the
  * /data page links out to the upstream source instead.
  */
 @Controller("export")

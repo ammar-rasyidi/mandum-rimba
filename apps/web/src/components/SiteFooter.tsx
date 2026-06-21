@@ -1,7 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 
-/** Static (param-free) routes — the only ones usable as a plain Link href. */
+/** Static (param-free) routes, the only ones usable as a plain Link href. */
 type StaticPath =
   | "/tentang"
   | "/peta"
@@ -10,7 +10,8 @@ type StaticPath =
   | "/sumber-data"
   | "/status"
   | "/apresiasi"
-  | "/proyek";
+  | "/proyek"
+  | "/dukung";
 
 const colTitle =
   "mb-3 text-[0.72rem] font-semibold uppercase tracking-[0.14em] text-muted";
@@ -105,6 +106,11 @@ export default async function SiteFooter({ locale }: { locale: string }) {
               <li>
                 <Link href="/proyek" className={footLink}>
                   {t("contribute")}
+                </Link>
+              </li>
+              <li>
+                <Link href="/dukung" className={footLink}>
+                  {t("support")}
                 </Link>
               </li>
             </ul>

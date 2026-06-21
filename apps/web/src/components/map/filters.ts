@@ -17,7 +17,7 @@ export const ALERT_SYSTEMS = ["radd", "glad_l", "glad_s2"];
 export const DISASTER_TYPES = ["flood", "flash_flood", "landslide", "other"];
 // "mining" here is the Maus satellite footprint (real mined land, all-mineral,
 // Aceh→Papua) carried as a concession type. Official IUP permit *boundaries*
-// are not openly published (MOMI login-locked) — see /sumber-data.
+// are not openly published (MOMI login-locked), see /sumber-data.
 export const CONCESSION_TYPES = ["palm_hgu", "pulp_hti", "logging", "mining"];
 // WDPA conservation categories (mapped from desig) + KLHK PIPPIB moratorium
 export const PROTECTED_CATEGORIES = [

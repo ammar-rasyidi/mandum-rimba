@@ -21,13 +21,13 @@ export class JobRegistryService {
   async run(name: string): Promise<boolean> {
     const runner = this.jobs.get(name);
     if (!runner) return false;
-    // fire and forget — admin trigger returns immediately, jobRuns tracks it
+    // fire and forget, admin trigger returns immediately, jobRuns tracks it
     void runner();
     return true;
   }
 
   /**
-   * Await the job to completion — used by the standalone CLI (`jobs-cli.ts`)
+   * Await the job to completion, used by the standalone CLI (`jobs-cli.ts`)
    * that Modal invokes on a schedule, so the process stays alive until the
    * job finishes. Throws "unknown job" if the name isn't registered.
    */

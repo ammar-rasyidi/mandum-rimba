@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 
-// No dedicated inbox yet — contact goes to the maintainer's Threads DMs.
+// No dedicated inbox yet, contact goes to the maintainer's Threads DMs.
 const CONTACT_THREADS = "https://www.threads.com/@r.rasyidi";
 const CONTACT_HANDLE = "@r.rasyidi";
 
@@ -36,7 +36,7 @@ export default async function ProjectPage({
       <ul className="[&>li]:mb-2">
         {involve.map((it) => (
           <li key={it.title}>
-            <strong>{it.title}</strong> — {it.body}
+            <strong>{it.title}</strong>, {it.body}
           </li>
         ))}
       </ul>

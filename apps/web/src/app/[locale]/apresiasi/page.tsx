@@ -6,6 +6,7 @@ import {
   DATA_ACKNOWLEDGEMENTS,
   MEDIA_CREDITS,
   OPEN_SOURCE,
+  SUPPORTERS,
   type CreditItem,
 } from "@/lib/credits";
 
@@ -32,7 +33,7 @@ function CreditList({
           <a href={c.url} target="_blank" rel="noreferrer">
             {c.name}
           </a>
-          <span className="text-[0.85rem] text-muted"> — {c.what[loc]}</span>
+          <span className="text-[0.85rem] text-muted">, {c.what[loc]}</span>
         </li>
       ))}
     </ul>
@@ -129,6 +130,42 @@ export default async function CreditsPage({
         <Link href="/proyek">{t("openContributionLink")}</Link>.
       </p>
 
+      <h2>{t("supportersTitle")}</h2>
+      <p>{t("supportersIntro")}</p>
+      {SUPPORTERS.length === 0 ? (
+        <p className="text-[0.9rem] text-muted">{t("supportersEmpty")}</p>
+      ) : (
+        <div className="my-4 flex flex-wrap gap-2">
+          {SUPPORTERS.map((s) => {
+            const label = s.social ? `${s.name} (${s.social})` : s.name;
+            const chip =
+              "rounded-full border border-border bg-surface px-3 py-1 text-[0.85rem]";
+            return s.socialUrl ? (
+              <a
+                key={s.name + (s.social ?? "")}
+                href={s.socialUrl}
+                target="_blank"
+                rel="noreferrer"
+                className={`${chip} text-foreground no-underline transition-colors hover:border-accent hover:text-accent hover:no-underline`}
+              >
+                {label}
+              </a>
+            ) : (
+              <span
+                key={s.name + (s.social ?? "")}
+                className={`${chip} text-muted`}
+              >
+                {label}
+              </span>
+            );
+          })}
+        </div>
+      )}
+      <p className="text-[0.9rem]">
+        {t("supportersCta")}{" "}
+        <Link href="/dukung">{t("supportersCtaLink")}</Link>.
+      </p>
+
       <h2>{t("dataTitle")}</h2>
       <p>
         {t("dataIntro")}{" "}
@@ -155,7 +192,7 @@ export default async function CreditsPage({
             <a href={m.sourceUrl} target="_blank" rel="noreferrer">
               {m.source}
             </a>
-            <span className="text-[0.85rem] text-muted"> — {m.what[loc]}</span>
+            <span className="text-[0.85rem] text-muted">, {m.what[loc]}</span>
           </li>
         ))} */}
       </ul>

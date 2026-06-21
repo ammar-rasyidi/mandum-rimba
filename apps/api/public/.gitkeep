@@ -1,6 +1,6 @@
 # Intentionally empty.
 #
-# The API serves no static assets — every request is rewritten to the
+# The API serves no static assets, every request is rewritten to the
 # serverless function (api/index.js). But Vercel's generic builder (framework:
 # null + a custom buildCommand) requires an Output Directory to exist after the
 # build, or it fails with "No Output Directory named public found". This empty

@@ -17,7 +17,7 @@ import {
 } from "./data/flagship-species";
 
 // RESOLVE Ecoregions 2017 (Dinerstein et al., BioScience), served openly by
-// UNEP-WCMC as an ArcGIS FeatureServer. CC BY 4.0, queryable by anyone — the
+// UNEP-WCMC as an ArcGIS FeatureServer. CC BY 4.0, queryable by anyone, the
 // scientifically-recognized habitat units our flagship species depend on.
 const SERVICE =
   "https://data-gis.unep-wcmc.org/server/rest/services/Bio-geographicalRegions/Resolve_Ecoregions/FeatureServer/0";
@@ -27,9 +27,9 @@ interface ArcGisFeatureCollection {
 }
 
 /**
- * 03:30 WIB — habitat ecoregions for the flagship species. We pull only the
+ * 03:30 WIB, habitat ecoregions for the flagship species. We pull only the
  * named ecoregions those species inhabit (not the global 846), tag each with
- * the species that depend on it, and present them as "habitat ecoregion" —
+ * the species that depend on it, and present them as "habitat ecoregion",
  * explicitly a habitat *unit*, not a precise per-individual range.
  */
 @Injectable()

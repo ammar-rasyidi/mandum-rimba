@@ -2,7 +2,7 @@
 @tailwind components;
 
 /* ===========================================================================
-   Theme variables — swap automatically on [data-theme] (light/dark). Tailwind
+   Theme variables, swap automatically on [data-theme] (light/dark). Tailwind
    colour utilities (bg-surface, text-accent, …) read these, so utilities are
    theme-aware without dark: variants. See tailwind.config.ts.
    =========================================================================== */
@@ -11,7 +11,7 @@
 :root,
 :root[data-theme="dark"] {
   --bg: #212121; /* gray 900 */
-  --bg-raised: #2a2a2a; /* just above bg — subtle card surface */
+  --bg-raised: #2a2a2a; /* just above bg, subtle card surface */
   --border: #424242; /* gray 800 */
   --text: #fafafa; /* gray 50 */
   --text-dim: #9e9e9e; /* gray 500 */
@@ -95,7 +95,7 @@ a:hover {
       var(--glass-shadow);
   }
 
-  /* Range slider — Preflight is off, so we reset the native track/thumb chrome
+  /* Range slider, Preflight is off, so we reset the native track/thumb chrome
      ourselves and paint it in the brand accent to match the buttons. */
   .range {
     -webkit-appearance: none;

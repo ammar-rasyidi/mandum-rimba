@@ -24,7 +24,7 @@ export class ApiKeyGuard implements CanActivate {
 
     const req = context.switchToHttp().getRequest<Request>();
     const header = req.headers["x-api-key"];
-    // a repeated header arrives as an array — normalise to a single value
+    // a repeated header arrives as an array, normalise to a single value
     const token = Array.isArray(header) ? header[0] : header;
 
     if (!token || !safeEqual(token, key)) {

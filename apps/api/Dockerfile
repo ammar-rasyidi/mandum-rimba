@@ -1,4 +1,4 @@
-# Mandum Rimba API — NestJS + cron workers + tippecanoe (Railway/Render/Fly)
+# Mandum Rimba API, NestJS + cron workers + tippecanoe (Railway/Render/Fly)
 # tippecanoe must be IN this image: the tiles job shells out to it.
 
 # --- build tippecanoe ---

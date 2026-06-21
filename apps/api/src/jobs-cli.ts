@@ -5,7 +5,7 @@ import { AppModule } from "./app.module";
 import { JobRegistryService } from "./common/job-registry.service";
 
 /**
- * One-shot job runner — invoked by Modal's scheduled functions:
+ * One-shot job runner, invoked by Modal's scheduled functions:
  *
  *   node dist/jobs-cli.js <jobName>
  *

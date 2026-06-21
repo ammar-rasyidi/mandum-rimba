@@ -88,7 +88,7 @@ const SOURCES: ProtectedSource[] = [
       "status_yr",
     ],
     pageSize: 100, // park polygons are huge; keep pages small
-    license: "Protected Planet / WDPA terms — no commercial redistribution",
+    license: "Protected Planet / WDPA terms, no commercial redistribution",
     pick: (r) => {
       const desig = String(r.desig ?? "");
       const desigEng = String(r.desig_eng ?? "");
@@ -117,7 +117,7 @@ const SOURCES: ProtectedSource[] = [
     kind: "moratorium",
     fields: ["gfw_fid", "pippib_en", "gfw_area__ha"],
     pageSize: 500,
-    license: "KLHK PIPPIB — public data (via GFW, CC BY 4.0)",
+    license: "KLHK PIPPIB, public data (via GFW, CC BY 4.0)",
     pick: (r) => ({
       name: String(r.pippib_en ?? "Forest moratorium (PIPPIB)"),
       nameAlt: "",
@@ -133,7 +133,7 @@ const SOURCES: ProtectedSource[] = [
 ];
 
 /**
- * 03:30 WIB — Protected Planet (WDPA) protected areas + KLHK moratorium
+ * 03:30 WIB, Protected Planet (WDPA) protected areas + KLHK moratorium
  * polygons (PIPPIB), both served as GFW Data API vector datasets.
  */
 @Injectable()
@@ -165,7 +165,7 @@ export class WdpaService implements OnModuleInit {
     await this.locks.withLock(WdpaService.JOB, async () => {
       const apiKey = process.env.GFW_API_KEY;
       if (!apiKey) {
-        this.logger.warn("GFW_API_KEY not set — skipping");
+        this.logger.warn("GFW_API_KEY not set, skipping");
         return { skipped: true };
       }
 
@@ -214,7 +214,7 @@ export class WdpaService implements OnModuleInit {
                 );
                 upserted++;
               } catch {
-                // 2dsphere rejected the ring structure — retry repaired
+                // 2dsphere rejected the ring structure, retry repaired
                 try {
                   await this.protectedModel.updateOne(
                     { source: src.dataset, sourceRef: ref },

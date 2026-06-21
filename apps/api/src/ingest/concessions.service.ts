@@ -27,7 +27,7 @@ import {
 interface ConcessionSource extends GfwVectorSource {
   type: "palm_hgu" | "pulp_hti" | "logging";
   commodity: string;
-  /** map a row to (companyName, permitStatus) — field names differ per dataset */
+  /** map a row to (companyName, permitStatus), field names differ per dataset */
   pick: (row: Record<string, unknown>) => {
     companyName: string;
     permitStatus: string | null;
@@ -38,7 +38,7 @@ interface ConcessionSource extends GfwVectorSource {
 // (the original Kepo Hutan downloads are gone; GFW hosts the maintained
 // copies). Versions pinned for reproducibility; row counts verified live:
 // oil palm 1,855 / wood fiber 295 / logging 259 (IDN). GFW's mining layer
-// has zero IDN rows — mining arrives later via MODI/Minerba (Phase 4).
+// has zero IDN rows, mining arrives later via MODI/Minerba (Phase 4).
 const SOURCES: ConcessionSource[] = [
   {
     dataset: "gfw_oil_palm",
@@ -79,7 +79,7 @@ const SOURCES: ConcessionSource[] = [
 ];
 
 /**
- * 02:30 WIB — palm / pulpwood / logging concession boundaries via the GFW
+ * 02:30 WIB, palm / pulpwood / logging concession boundaries via the GFW
  * Data API vector datasets (paged SQL + ST_AsGeoJSON).
  */
 @Injectable()
@@ -111,7 +111,7 @@ export class ConcessionsService implements OnModuleInit {
     await this.locks.withLock(ConcessionsService.JOB, async () => {
       const apiKey = process.env.GFW_API_KEY;
       if (!apiKey) {
-        this.logger.warn("GFW_API_KEY not set — skipping");
+        this.logger.warn("GFW_API_KEY not set, skipping");
         return { skipped: true };
       }
 
@@ -162,7 +162,7 @@ export class ConcessionsService implements OnModuleInit {
                 );
                 upserted++;
               } catch {
-                // 2dsphere rejected the ring structure — retry repaired
+                // 2dsphere rejected the ring structure, retry repaired
                 try {
                   await this.concessionModel.updateOne(
                     filter,
@@ -187,7 +187,7 @@ export class ConcessionsService implements OnModuleInit {
       // optional: official mining concession (IUP) boundaries, if a hosted
       // GeoJSON is configured. Open all-mineral IUP polygons are NOT published
       // for Indonesia (ESDM MOMI is login-locked), so this stays unset by
-      // default — wire it only with a credible, cited source you can obtain.
+      // default, wire it only with a credible, cited source you can obtain.
       const mining = await this.ingestMiningConcessions();
       upserted += mining;
 

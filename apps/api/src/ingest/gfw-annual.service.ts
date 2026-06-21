@@ -27,7 +27,7 @@ interface LossRow {
 }
 
 /**
- * 01:30 WIB — Hansen/UMD annual tree cover loss aggregated per region.
+ * 01:30 WIB, Hansen/UMD annual tree cover loss aggregated per region.
  * The dataset changes once a year; the daily run hash-checks the response per
  * region and no-ops when nothing changed (ingestion rules §4).
  */
@@ -60,7 +60,7 @@ export class GfwAnnualService implements OnModuleInit {
     await this.locks.withLock(GfwAnnualService.JOB, async () => {
       const apiKey = process.env.GFW_API_KEY;
       if (!apiKey) {
-        this.logger.warn("GFW_API_KEY not set — skipping");
+        this.logger.warn("GFW_API_KEY not set, skipping");
         return { skipped: true };
       }
 

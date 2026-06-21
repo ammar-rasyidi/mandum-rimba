@@ -59,7 +59,7 @@ export default async function RegionPage({
       {summary.lossByYear.length > 0 ? (
         <LossChart data={summary.lossByYear} />
       ) : (
-        <p>—</p>
+        <p>-</p>
       )}
       <p>
         {t("sourceNote")} <Link href="/metodologi">→</Link>

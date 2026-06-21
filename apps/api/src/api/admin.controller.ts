@@ -19,7 +19,7 @@ export class AdminController {
     private readonly statusService: StatusService,
   ) {}
 
-  /** public — powers the /status trust page */
+  /** public, powers the /status trust page */
   @Get("status")
   @UseInterceptors(CacheHeaderInterceptor)
   async status() {

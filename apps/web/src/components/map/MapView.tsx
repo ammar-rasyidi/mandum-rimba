@@ -9,7 +9,7 @@ import LayerPanel from "./LayerPanel";
 import DetailDrawer, { type SelectedFeature } from "./DetailDrawer";
 import { DEFAULT_FILTERS, type MapFilters } from "./filters";
 
-// actual archipelago extent (Sabang to Merauke), not loose padding —
+// actual archipelago extent (Sabang to Merauke), not loose padding.
 // fitBounds uses this to frame the country without excess ocean
 const INDONESIA_BOUNDS: [number, number, number, number] = [
   94.5, -11.2, 141.5, 6.5,
@@ -58,7 +58,7 @@ function readUrlState(): { filters: MapFilters } {
   return { filters };
 }
 
-/** frame the archipelago in the VISIBLE part of the map — the layer panel
+/** frame the archipelago in the VISIBLE part of the map, the layer panel
  *  covers the right side on desktop, the bottom on mobile */
 function fitIndonesia(map: maplibregl.Map) {
   const mobile = window.innerWidth <= 720;
@@ -199,7 +199,7 @@ export default function MapView() {
       zoom: 4.4,
       // NO maxBounds: when the viewport spans more degrees than the bounds
       // box, MapLibre overrides fitBounds and re-clamps the camera to the
-      // box center — that was exactly the "ocean on the left" bug
+      // box center, that was exactly the "ocean on the left" bug
       minZoom: 3.5,
       attributionControl: { compact: true },
     });
@@ -213,7 +213,7 @@ export default function MapView() {
     );
 
     map.on("load", async () => {
-      // tilesets for empty collections are never built/uploaded — probe first
+      // tilesets for empty collections are never built/uploaded, probe first
       // so we don't request (and 404 on) layers that have no data yet
       const tileNames = [...new Set(LAYERS.map((l) => l.tile))];
       const avail = new Set<string>();
@@ -387,7 +387,7 @@ function buildLayer(
       // colour each feature by its category (concessions by type, protected by
       // cat); flat colour for habitat. Same on every basemap.
       const fillColor = colorExpression(def.id, def.color) as unknown as string;
-      // habitat is a broad backdrop — keep it faint; the others sit a touch more
+      // habitat is a broad backdrop, keep it faint; the others sit a touch more
       // opaque so polygons survive the bright, textured satellite basemap
       return {
         ...base,

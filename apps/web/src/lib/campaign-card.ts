@@ -1,5 +1,5 @@
 // Renders the "Tetanggaku" share card to a 1080×1920 (IG/X/FB/Threads story)
-// canvas — a centered profile-style card. Everything is drawn locally; the
+// canvas, a centered profile-style card. Everything is drawn locally; the
 // user's photo never leaves the browser.
 
 export const CARD_W = 1080;
@@ -212,7 +212,7 @@ export async function drawCampaignCard(
   ctx.fillText(c.eyebrow.toUpperCase(), cx, y);
   y += 96;
 
-  // species — the big line
+  // species, the big line
   ctx.fillStyle = t.text;
   ctx.font = `800 88px ${FONT}`;
   for (const ln of wrapLines(ctx, c.species, maxW)) {
@@ -287,7 +287,7 @@ export async function drawCampaignCard(
     const hh = (hero.height / hero.width) * hw;
     ctx.drawImage(hero, cx - hw / 2, CARD_H - 250 - hh, hw, hh);
   } catch {
-    /* hero failed to load — footer text still renders */
+    /* hero failed to load, footer text still renders */
   }
   ctx.fillStyle = t.muted;
   ctx.font = `500 32px ${FONT}`;

@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 
 /**
- * Robots policy — Mandum Rimba is a fully public observatory, so everything is
+ * Robots policy, Mandum Rimba is a fully public observatory, so everything is
  * crawlable. The sitemap reference is what crawlers read first to discover
  * pages fastest.
  */

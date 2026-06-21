@@ -6,7 +6,7 @@ import { CacheHeaderInterceptor } from "./cache.interceptor";
 import { bboxToPolygon, clampLimit, parseDate } from "./query.util";
 
 /**
- * Attribute queries only — alert geometry ships to the client via the
+ * Attribute queries only, alert geometry ships to the client via the
  * alerts.pmtiles layer, never from here (§8).
  */
 @Controller("alerts")

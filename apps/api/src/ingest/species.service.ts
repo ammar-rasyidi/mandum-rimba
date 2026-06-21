@@ -31,12 +31,12 @@ interface GbifOccurrence {
 }
 
 /**
- * 04:30 WIB — flagship-species occurrence records from GBIF.
+ * 04:30 WIB, flagship-species occurrence records from GBIF.
  *
  * These are *occurrence points* ("recorded here"), NOT habitat ranges. Quality
  * gates: georeferenced, no geospatial issue. Provenance (basisOfRecord,
  * dataset, license) is stored per record so the UI can disclose exactly where
- * each point came from — many are research-grade community observations.
+ * each point came from, many are research-grade community observations.
  */
 @Injectable()
 export class SpeciesService implements OnModuleInit {
@@ -87,7 +87,7 @@ export class SpeciesService implements OnModuleInit {
       }
 
       // 2) ingest occurrences per species (coordinates validated against the
-      //    Indonesia land mask in upsertBatch — see util/land-mask)
+      //    Indonesia land mask in upsertBatch, see util/land-mask)
       const retrievedAt = new Date();
       let upserted = 0;
       let fetched = 0;
@@ -109,7 +109,7 @@ export class SpeciesService implements OnModuleInit {
                 country: "ID",
                 hasCoordinate: true,
                 hasGeospatialIssue: false,
-                // recent enough to indicate present-day occurrence — old museum
+                // recent enough to indicate present-day occurrence, old museum
                 // specimens (e.g. a 1927 record) don't reflect where the
                 // species lives now
                 year: "1990,2026",
@@ -141,7 +141,7 @@ export class SpeciesService implements OnModuleInit {
         // Self-healing sweep: once a species is fully refreshed, drop any of its
         // occurrences NOT touched this run. That removes (a) points GBIF no
         // longer returns and (b) points that now fail the land/sea realm check
-        // — so the daily cron converges to exactly GBIF ∩ realm, the same state
+        //, so the daily cron converges to exactly GBIF ∩ realm, the same state
         // a clean manual ingest produces (no stale "sun bear in the sea"). It is
         // skipped when the fetch errored, so a transient GBIF outage never wipes
         // an existing species' data.

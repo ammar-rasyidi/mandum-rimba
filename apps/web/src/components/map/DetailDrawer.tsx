@@ -122,7 +122,7 @@ export default function DetailDrawer({
           <dt>{t("source")}</dt>
           <dd>
             <a href={layer.sourceUrl} target="_blank" rel="noreferrer">
-              {layer.sourceName} — {t("viewEvidence")}
+              {layer.sourceName}, {t("viewEvidence")}
             </a>
           </dd>
         </div>

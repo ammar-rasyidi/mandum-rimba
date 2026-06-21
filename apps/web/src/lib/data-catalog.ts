@@ -1,7 +1,7 @@
 /**
  * The single source of truth for the Data Sources page: every dataset shown on
  * the map, plus the honest gaps where credible open data does not exist. Keep
- * this in sync with the ingest jobs — anyone must be able to independently
+ * this in sync with the ingest jobs, anyone must be able to independently
  * verify each source via its URL.
  */
 export interface Bilingual {
@@ -29,7 +29,7 @@ export const DATA_CATALOG: DatasetEntry[] = [
       id: "Peringatan deforestasi (RADD, GLAD-L, GLAD-S2)",
       en: "Deforestation alerts (RADD, GLAD-L, GLAD-S2)",
     },
-    org: "Global Forest Watch — Wageningen University & University of Maryland",
+    org: "Global Forest Watch, Wageningen University & University of Maryland",
     url: "https://data-api.globalforestwatch.org",
     license: "CC BY 4.0",
     updated: "Harian / Daily",
@@ -94,25 +94,25 @@ export const DATA_CATALOG: DatasetEntry[] = [
   {
     layer: "concessions",
     name: {
-      id: "Tambang — jejak lahan (Maus et al. 2022)",
-      en: "Mining — land footprint (Maus et al. 2022)",
+      id: "Tambang, jejak lahan (Maus et al. 2022)",
+      en: "Mining, land footprint (Maus et al. 2022)",
     },
     org: "Maus et al., Scientific Data (Nature), via GFW · PANGAEA",
     url: "https://doi.org/10.1594/PANGAEA.942325",
     license: "CC BY 4.0",
     updated: "v2 (2022)",
-    coverage: { id: "Seluruh Indonesia — 1.448 poligon (~8.020 km²): a.l. batu bara Kalimantan, nikel Sulawesi/Maluku, Papua", en: "All Indonesia — 1,448 polygons (~8,020 km²): incl. Kalimantan coal, Sulawesi/Maluku nickel, Papua" },
+    coverage: { id: "Seluruh Indonesia, 1.448 poligon (~8.020 km²): a.l. batu bara Kalimantan, nikel Sulawesi/Maluku, Papua", en: "All Indonesia, 1,448 polygons (~8,020 km²): incl. Kalimantan coal, Sulawesi/Maluku nickel, Papua" },
     description: {
-      id: "Lahan tambang yang dipetakan dari citra satelit — jejak fisik pertambangan untuk SEMUA jenis mineral, dari Aceh hingga Papua, telah melalui telaah sejawat. Ini sumber data tambang utama kami (bukan batas izin).",
-      en: "Satellite-mapped mined land — the physical footprint of mining for ALL minerals, Aceh to Papua, peer-reviewed. This is our primary mining dataset (not permit boundaries).",
+      id: "Lahan tambang yang dipetakan dari citra satelit, jejak fisik pertambangan untuk SEMUA jenis mineral, dari Aceh hingga Papua, telah melalui telaah sejawat. Ini sumber data tambang utama kami (bukan batas izin).",
+      en: "Satellite-mapped mined land, the physical footprint of mining for ALL minerals, Aceh to Papua, peer-reviewed. This is our primary mining dataset (not permit boundaries).",
     },
     status: "active",
   },
   {
     layer: "habitat",
     name: {
-      id: "Habitat satwa — Ekoregion RESOLVE 2017",
-      en: "Wildlife habitat — RESOLVE Ecoregions 2017",
+      id: "Habitat satwa, Ekoregion RESOLVE 2017",
+      en: "Wildlife habitat, RESOLVE Ecoregions 2017",
     },
     org: "RESOLVE / Dinerstein et al. (BioScience), via UNEP-WCMC",
     url: "https://data-gis.unep-wcmc.org/server/rest/services/Bio-geographicalRegions/Resolve_Ecoregions/FeatureServer/0",
@@ -120,8 +120,8 @@ export const DATA_CATALOG: DatasetEntry[] = [
     updated: "2017",
     coverage: { id: "Ekoregion habitat satwa unggulan (9 ekoregion)", en: "Habitat ecoregions of the flagship species (9 ecoregions)" },
     description: {
-      id: "Unit habitat yang diakui ilmiah (mis. ‘Sumatran lowland rain forests’) yang dihuni satwa unggulan — ditampilkan sebagai ekoregion habitat, bukan sebaran persis tiap individu.",
-      en: "Scientifically-recognized habitat units (e.g. ‘Sumatran lowland rain forests’) the flagship species depend on — shown as habitat ecoregions, not a precise per-individual range.",
+      id: "Unit habitat yang diakui ilmiah (mis. ‘Sumatran lowland rain forests’) yang dihuni satwa unggulan, ditampilkan sebagai ekoregion habitat, bukan sebaran persis tiap individu.",
+      en: "Scientifically-recognized habitat units (e.g. ‘Sumatran lowland rain forests’) the flagship species depend on, shown as habitat ecoregions, not a precise per-individual range.",
     },
     status: "active",
   },
@@ -136,12 +136,12 @@ export const DATA_CATALOG: DatasetEntry[] = [
     license: "GBIF per-dataset (CC0 / CC BY / CC BY-NC); status: IUCN Red List",
     updated: "Live API",
     coverage: {
-      id: "30 spesies unggulan dari Sumatera sampai Papua — darat, laut & perairan (mamalia, burung, reptil, ikan), ~7.300 catatan",
-      en: "30 flagship species from Sumatra to Papua — land, sea & freshwater (mammals, birds, reptiles, fish), ~7,300 records",
+      id: "30 spesies unggulan dari Sumatera sampai Papua, darat, laut & perairan (mamalia, burung, reptil, ikan), ~7.300 catatan",
+      en: "30 flagship species from Sumatra to Papua, land, sea & freshwater (mammals, birds, reptiles, fish), ~7,300 records",
     },
     description: {
-      id: "Titik catatan keberadaan satwa (‘tercatat di sini’) dari GBIF (1990–kini), BUKAN batas habitat. Daftar spesies dipilih dari satwa yang DILINDUNGI hukum Indonesia (Permen LHK P.106/2018), peraturan KKP untuk satwa laut, dan CITES — sengaja mewakili tiap wilayah dan ekosistem: Sundaland, Wallacea (anoa, maleo, komodo), Papua (kanguru pohon, nokdiak), serta laut & sungai (penyu, hiu paus, dugong, pesut). Status keterancaman mengikuti IUCN Red List; sebagian dilindungi walau status IUCN-nya belum terancam (mis. penyu hijau). Disaring ke catatan bergeoreferensi tanpa masalah spasial, lalu koordinat tiap titik divalidasi terhadap peta daratan Indonesia dan realm spesiesnya, sehingga satwa laut yang salah terplot di darat (atau satwa darat di tengah laut) dibuang.",
-      en: "Occurrence points (‘recorded here’) from GBIF (1990–present), NOT habitat boundaries. Species are drawn from those PROTECTED under Indonesian law (Minister of Environment & Forestry Reg. P.106/2018), KKP marine regulations, and CITES — deliberately spanning every region and ecosystem: Sundaland, Wallacea (anoa, maleo, Komodo), Papua (tree-kangaroo, echidna), and the sea & rivers (turtles, whale shark, dugong, Irrawaddy dolphin). Threat status follows the IUCN Red List; some are protected even where their IUCN status isn't threatened (e.g. green turtle). Filtered to georeferenced records with no geospatial issues, then each point's coordinates are validated against an Indonesia land mask and the species' realm, so marine animals mis-plotted on land (or land animals out at sea) are dropped.",
+      id: "Titik catatan keberadaan satwa (‘tercatat di sini’) dari GBIF (1990–kini), BUKAN batas habitat. Daftar spesies dipilih dari satwa yang DILINDUNGI hukum Indonesia (Permen LHK P.106/2018), peraturan KKP untuk satwa laut, dan CITES, sengaja mewakili tiap wilayah dan ekosistem: Sundaland, Wallacea (anoa, maleo, komodo), Papua (kanguru pohon, nokdiak), serta laut & sungai (penyu, hiu paus, dugong, pesut). Status keterancaman mengikuti IUCN Red List; sebagian dilindungi walau status IUCN-nya belum terancam (mis. penyu hijau). Disaring ke catatan bergeoreferensi tanpa masalah spasial, lalu koordinat tiap titik divalidasi terhadap peta daratan Indonesia dan realm spesiesnya, sehingga satwa laut yang salah terplot di darat (atau satwa darat di tengah laut) dibuang.",
+      en: "Occurrence points (‘recorded here’) from GBIF (1990–present), NOT habitat boundaries. Species are drawn from those PROTECTED under Indonesian law (Minister of Environment & Forestry Reg. P.106/2018), KKP marine regulations, and CITES, deliberately spanning every region and ecosystem: Sundaland, Wallacea (anoa, maleo, Komodo), Papua (tree-kangaroo, echidna), and the sea & rivers (turtles, whale shark, dugong, Irrawaddy dolphin). Threat status follows the IUCN Red List; some are protected even where their IUCN status isn't threatened (e.g. green turtle). Filtered to georeferenced records with no geospatial issues, then each point's coordinates are validated against an Indonesia land mask and the species' realm, so marine animals mis-plotted on land (or land animals out at sea) are dropped.",
     },
     status: "active",
   },
@@ -183,8 +183,8 @@ export const DATA_GAPS: DatasetEntry[] = [
     name: { id: "Batas konsesi/izin tambang (IUP)", en: "Mining concession / permit boundaries (IUP)" },
     org: "ESDM Minerba One Map Indonesia (MOMI)",
     url: "https://momi.minerba.esdm.go.id/public/",
-    license: "—",
-    updated: "—",
+    license: "-",
+    updated: "-",
     coverage: { id: "Tidak tersedia terbuka (terkunci login)", en: "Not openly available (login-locked)" },
     description: {
       id: "MOMI memuat 10.338 IUP resmi, namun layanan petanya terkunci login (hanya blok lelang yang publik); GFW tidak punya baris tambang Indonesia, dan Global Energy Monitor hanya batu bara via formulir. Maka batas konsesi tambang tidak bisa kami sajikan. Sebagai gantinya, JEJAK lahan tambang (Maus, semua mineral) sudah ditampilkan. Bila Anda memperoleh GeoJSON IUP yang kredibel, dapat dimuat lewat MINING_IUP_GEOJSON_URL.",
@@ -198,7 +198,7 @@ export const DATA_GAPS: DatasetEntry[] = [
     org: "IUCN Red List spatial data",
     url: "https://www.iucnredlist.org/resources/spatial-data-download",
     license: "Non-commercial, redistribution restricted",
-    updated: "—",
+    updated: "-",
     coverage: { id: "Perlu registrasi & perjanjian lisensi", en: "Requires registration & license agreement" },
     description: {
       id: "Poligon sebaran resmi IUCN butuh token + perjanjian dan membatasi redistribusi, sehingga tidak bisa kami sajikan langsung. Sebagai alternatif terbuka, kami pakai ekoregion habitat (RESOLVE) + titik keberadaan (GBIF).",
@@ -212,7 +212,7 @@ export const DATA_GAPS: DatasetEntry[] = [
     org: "KBA Partnership / BirdLife International",
     url: "https://www.keybiodiversityareas.org",
     license: "Data request required",
-    updated: "—",
+    updated: "-",
     coverage: { id: "Belum terintegrasi", en: "Not yet integrated" },
     description: {
       id: "Batas KBA memerlukan permintaan data formal; belum ada endpoint terbuka. Penyedia: KBA Partnership / BirdLife.",
@@ -225,8 +225,8 @@ export const DATA_GAPS: DatasetEntry[] = [
     name: { id: "Titik panas keanekaragaman hayati", en: "Biodiversity hotspots" },
     org: "Conservation International / CEPF",
     url: "https://www.cepf.net/our-work/biodiversity-hotspots",
-    license: "—",
-    updated: "—",
+    license: "-",
+    updated: "-",
     coverage: { id: "Sundaland & Wallacea (verifikasi sumber tertunda)", en: "Sundaland & Wallacea (source verification pending)" },
     description: {
       id: "Batas hotspot Sundaland & Wallacea mencakup Indonesia, namun unduhan terbuka yang stabil belum terverifikasi. Penyedia: Conservation International / CEPF.",

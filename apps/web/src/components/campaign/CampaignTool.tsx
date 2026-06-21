@@ -33,7 +33,7 @@ interface NominatimResult {
   lon: string;
 }
 
-// `appearance-none` + no native border/bg — Preflight is off, so every button
+// `appearance-none` + no native border/bg, Preflight is off, so every button
 // must reset the browser's default chrome itself.
 const btn =
   "inline-flex cursor-pointer appearance-none items-center justify-center gap-2 rounded-xl px-4 py-3 text-[0.92rem] font-medium transition hover:no-underline disabled:opacity-50";
@@ -197,7 +197,7 @@ export default function CampaignTool() {
         await nav.share({
           files: [file],
           title: t("title"),
-          text: content ? `${content.species} — ${content.distance}` : t("title"),
+          text: content ? `${content.species}, ${content.distance}` : t("title"),
         });
       } else {
         download(blob);
@@ -205,7 +205,7 @@ export default function CampaignTool() {
     });
 
   const shareText = content
-    ? `${content.species} — ${content.distance} ${t("shareTagline")}`
+    ? `${content.species}, ${content.distance} ${t("shareTagline")}`
     : t("title");
   const pageUrl = typeof window !== "undefined" ? window.location.href : "";
   const links = {
@@ -217,7 +217,7 @@ export default function CampaignTool() {
 
   return (
     <div>
-      {/* Step 1 — city search */}
+      {/* Step 1, city search */}
       <div className="max-w-[560px]">
         <label className="mb-1.5 block text-[0.85rem] font-medium text-muted">
           {t("locationLabel")}
@@ -256,7 +256,7 @@ export default function CampaignTool() {
 
       {place && nearest && (
         <div className="mt-8 flex flex-col gap-8 md:flex-row md:items-start md:gap-12">
-          {/* Preview — first on mobile, sticky right on desktop */}
+          {/* Preview, first on mobile, sticky right on desktop */}
           <div className="order-1 md:order-2 md:w-[320px] md:shrink-0 md:sticky md:top-[6rem]">
             <div className="mx-auto w-[250px] overflow-hidden rounded-2xl border border-border shadow-[var(--shadow)] sm:w-[280px] md:w-[300px]">
               <canvas
@@ -267,7 +267,7 @@ export default function CampaignTool() {
             </div>
           </div>
 
-          {/* Controls — after preview on mobile, left on desktop */}
+          {/* Controls, after preview on mobile, left on desktop */}
           <div className="order-2 flex flex-1 flex-col gap-6 md:order-1">
             {/* summary */}
             <div className="glass rounded-2xl p-5">

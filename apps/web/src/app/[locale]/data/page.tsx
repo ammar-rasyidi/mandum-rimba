@@ -32,7 +32,7 @@ export default async function DataPage({
         {EXPORTS.map((e) => (
           <li key={e.dataset}>
             <strong>{e.dataset}</strong>
-            {" — "}
+            {", "}
             {e.formats.map((f, i) => (
               <span key={f}>
                 {i > 0 && " · "}

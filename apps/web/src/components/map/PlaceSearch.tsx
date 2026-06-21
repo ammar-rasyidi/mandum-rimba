@@ -70,7 +70,7 @@ export default function PlaceSearch({
         setResults(data);
         setOpen(true);
       } catch {
-        /* aborted or offline — leave previous results */
+        /* aborted or offline, leave previous results */
       } finally {
         setLoading(false);
       }

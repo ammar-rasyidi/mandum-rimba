@@ -23,7 +23,7 @@ export class JobLockService {
     @InjectModel(JobRun.name) private jobRunModel: Model<JobRunDocument>,
   ) {}
 
-  /** Run `fn` under the named lock. Errors are recorded, never rethrown —
+  /** Run `fn` under the named lock. Errors are recorded, never rethrown:
    *  one failed source must never block the others. */
   async withLock(
     job: string,
@@ -36,7 +36,7 @@ export class JobLockService {
       startedAt: { $gte: staleBefore },
     });
     if (running) {
-      this.logger.warn(`[${job}] previous run still in progress — skipping`);
+      this.logger.warn(`[${job}] previous run still in progress, skipping`);
       return;
     }
 

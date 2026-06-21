@@ -58,7 +58,7 @@ interface DibiRecord {
 }
 
 /**
- * 02:00 WIB — BNPB DIBI flood/landslide events via the DesInventar full
+ * 02:00 WIB, BNPB DIBI flood/landslide events via the DesInventar full
  * export (zip → 343 MB XML, streamed line-by-line; never loaded whole).
  * Events carry admin names but no coordinates: geom is the centroid of the
  * matching seeded kabupaten (documented approximation), regionId likewise.
@@ -167,7 +167,7 @@ export class BnpbDibiService implements OnModuleInit {
                 affected,
                 description: [rec.evento, rec.lugar, rec.name1, rec.name0]
                   .filter(Boolean)
-                  .join(" — "),
+                  .join(", "),
                 sourceUrl: url,
                 retrievedAt,
                 geom: match?.centroid ?? null,

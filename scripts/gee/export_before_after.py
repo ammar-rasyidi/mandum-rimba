@@ -1,6 +1,6 @@
 """Export before/after Sentinel-2 composites for a story (manual, per story).
 
-Not part of the daily cron — run this once per story, then upload the PNGs to
+Not part of the daily cron, run this once per story, then upload the PNGs to
 R2 under imagery/<story-slug>/{before,after}.png and reference them in the
 story document (heroBeforeImg / heroAfterImg).
 
@@ -60,7 +60,7 @@ def main() -> None:
         task.start()
         print(f"started export: {args.out_prefix}-{label} ({start}..{end})")
 
-    print("Monitor at https://code.earthengine.google.com/tasks — download the")
+    print("Monitor at https://code.earthengine.google.com/tasks, download the")
     print("PNGs from Drive, then upload to R2: imagery/<story-slug>/{before,after}.png")
 
 

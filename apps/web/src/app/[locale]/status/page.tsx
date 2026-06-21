@@ -55,13 +55,13 @@ export default async function StatusPage({
             {status.jobs.map((j) => (
               <tr key={j.job}>
                 <td>{j.job}</td>
-                <td>{j.lastRunAt?.replace("T", " ").slice(0, 16) ?? "—"}</td>
+                <td>{j.lastRunAt?.replace("T", " ").slice(0, 16) ?? "-"}</td>
                 <td>
-                  {j.lastSuccessAt?.replace("T", " ").slice(0, 16) ?? "—"}
+                  {j.lastSuccessAt?.replace("T", " ").slice(0, 16) ?? "-"}
                 </td>
                 <td>
                   <span className={statusBadge(j.lastStatus)}>
-                    {j.lastStatus ?? "—"}
+                    {j.lastStatus ?? "-"}
                   </span>
                 </td>
               </tr>

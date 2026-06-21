@@ -49,7 +49,7 @@ const SUB_FILTERS: Record<
   species: { key: "speciesStatus", options: SPECIES_STATUS },
 };
 
-// TEMP (2026-06): hidden from the filter menu until their data is ready —
+// TEMP (2026-06): hidden from the filter menu until their data is ready:
 // "alerts" (deforestasi) and "disasters" (banjir/longsor). To bring them back,
 // remove the id(s) below. Nothing else (layer registry, map, ingest) changed.
 const HIDDEN_LAYERS = new Set(["alerts", "disasters"]);
@@ -105,17 +105,17 @@ export default function LayerPanel({
             aria-label={t("minimize")}
             title={t("minimize")}
           >
-            —
+            −
           </button>
         </div>
       </header>
 
-      {/* place search — pinned with the header, stays fixed above the scroll area */}
+      {/* place search, pinned with the header, stays fixed above the scroll area */}
       <div className="mb-3 shrink-0">
         <PlaceSearch onGoTo={onGoTo} />
       </div>
 
-      {/* basemap switcher — stays pinned with the header above the scroll area */}
+      {/* basemap switcher, stays pinned with the header above the scroll area */}
       <div
         className="mb-3 flex shrink-0 gap-[0.4rem]"
         role="radiogroup"
@@ -138,7 +138,7 @@ export default function LayerPanel({
         ))}
       </div>
 
-      {/* layers with per-layer sub-filters — the only part that scrolls when
+      {/* layers with per-layer sub-filters, the only part that scrolls when
           the filter list gets long (negative margin lets the scrollbar sit at
           the panel edge while content keeps its padding) */}
       <div className="-mx-[0.9rem] flex-1 overflow-y-auto px-[0.9rem] [scrollbar-width:thin]">
@@ -170,7 +170,7 @@ export default function LayerPanel({
                 htmlFor={`layer-${def.id}`}
               >
                 {t(`layerNames.${def.id}`)}
-                {!available && <> — {t("noData")}</>}
+                {!available && <>, {t("noData")}</>}
               </label>
             </div>
 

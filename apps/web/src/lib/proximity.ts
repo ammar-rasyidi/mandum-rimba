@@ -112,7 +112,7 @@ export interface CityComparison {
 }
 
 /**
- * The closest familiar city that is *farther* from the user than the animal —
+ * The closest familiar city that is *farther* from the user than the animal,
  * so the card can say "closer than your trip to {city}". Returns null when the
  * animal is farther than every reference city (rare, very remote user).
  */

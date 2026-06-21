@@ -17,7 +17,7 @@ export default function HomePage() {
 
   return (
     <>
-      {/* Soft accent glow — gives the frosted-glass surfaces something to
+      {/* Soft accent glow, gives the frosted-glass surfaces something to
           refract against on an otherwise plain background. Pure decoration. */}
       <div
         aria-hidden
@@ -67,6 +67,9 @@ export default function HomePage() {
             </Link>
             <Link className={btnGhost} href="/metodologi">
               {t("readMethodology")}
+            </Link>
+            <Link className={btnGhost} href="/dukung">
+              {t("supportCta")}
             </Link>
           </div>
         </section>

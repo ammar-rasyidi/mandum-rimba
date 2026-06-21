@@ -4,7 +4,7 @@ import { HydratedDocument, Schema as MongooseSchema } from "mongoose";
 export type SpeciesOccurrenceDocument = HydratedDocument<SpeciesOccurrence>;
 
 /**
- * Georeferenced occurrence records from GBIF — "this species was recorded
+ * Georeferenced occurrence records from GBIF, "this species was recorded
  * here", NOT a habitat boundary. Provenance is kept per record (basisOfRecord
  * + dataset + license) so the UI can disclose exactly where each point came
  * from. iucnStatus is denormalized from the species reference so the map tile

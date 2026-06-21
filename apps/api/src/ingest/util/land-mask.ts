@@ -3,14 +3,14 @@ import type { Feature, Polygon } from "geojson";
 import { INDONESIA_LAND } from "../data/indonesia-land";
 
 /**
- * Land / sea validation for occurrence points. GBIF coordinates are noisy —
+ * Land / sea validation for occurrence points. GBIF coordinates are noisy:
  * marine animals get plotted inland, land animals get plotted offshore. We test
  * each point against the Indonesian land mask (Natural Earth 1:50m) and keep
  * only points consistent with the species' realm.
  *
  * A ~25 km tolerance absorbs coastline coarseness and small unmapped islets, so
  * only GROSS errors are dropped (a bear in the open ocean, a turtle deep
- * inland) — never legitimate coastal records.
+ * inland), never legitimate coastal records.
  */
 export type Realm = "land" | "sea" | "coastal" | "any";
 
@@ -75,11 +75,11 @@ export function keepByRealm(lng: number, lat: number, realm: Realm): boolean {
   if (realm === "any") return true;
   const land = onLand(lng, lat);
   if (realm === "land") {
-    // on land, or within ~25 km of it (coastal / small island) — drop open ocean
+    // on land, or within ~25 km of it (coastal / small island), drop open ocean
     return land || probe(lng, lat, TOL_KM, true);
   }
   // sea / coastal: must be in the water. Marine animals plotted on land (even on
-  // a coastal road or beach) are almost always imprecise coordinates — drop them
+  // a coastal road or beach) are almost always imprecise coordinates, drop them
   // so a turtle never appears inland.
   return !land;
 }

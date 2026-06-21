@@ -15,6 +15,7 @@ export const routing = defineRouting({
     "/sumber-data": { id: "/sumber-data", en: "/data-sources" },
     "/apresiasi": { id: "/apresiasi", en: "/credits" },
     "/proyek": { id: "/proyek", en: "/project" },
+    "/dukung": { id: "/dukung", en: "/support" },
     "/status": "/status",
   },
 });

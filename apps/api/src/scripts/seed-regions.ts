@@ -1,6 +1,6 @@
 /**
  * Seed regions from GADM 4.1 (license: free for academic & non-commercial
- * use, redistribution prohibited — we store boundaries, we don't re-publish
+ * use, redistribution prohibited, we store boundaries, we don't re-publish
  * the raw GADM files).
  *
  * Usage:

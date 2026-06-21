@@ -7,7 +7,7 @@ export type HabitatEcoregionDocument = HydratedDocument<HabitatEcoregion>;
  * RESOLVE Ecoregions 2017 (Dinerstein et al., BioScience) polygons, limited to
  * the ecoregions that are documented habitat of our flagship species. These
  * are scientifically-recognized habitat *units*, served openly by UNEP-WCMC
- * (CC BY 4.0) — presented as "habitat ecoregion", explicitly not a precise
+ * (CC BY 4.0), presented as "habitat ecoregion", explicitly not a precise
  * per-individual range.
  */
 @Schema({ collection: "habitatEcoregions" })

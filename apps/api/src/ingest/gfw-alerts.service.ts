@@ -48,7 +48,7 @@ interface GfwQueryRow {
 }
 
 /**
- * 01:00 WIB — near-real-time deforestation alerts (RADD / GLAD-L / GLAD-S2)
+ * 01:00 WIB, near-real-time deforestation alerts (RADD / GLAD-L / GLAD-S2)
  * from the GFW Data API, upserted as Points.
  *
  * GFW's raster analysis lambda rejects responses over ~6 MB
@@ -84,7 +84,7 @@ export class GfwAlertsService implements OnModuleInit {
     await this.locks.withLock(GfwAlertsService.JOB, async () => {
       const apiKey = process.env.GFW_API_KEY;
       if (!apiKey) {
-        this.logger.warn("GFW_API_KEY not set — skipping");
+        this.logger.warn("GFW_API_KEY not set, skipping");
         return { skipped: true };
       }
 

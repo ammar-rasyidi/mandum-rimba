@@ -1,6 +1,6 @@
 /**
  * Curated flagship threatened species whose habitat is under pressure from
- * deforestation, palm/pulp expansion, and mining — the animals at the heart of
+ * deforestation, palm/pulp expansion, and mining, the animals at the heart of
  * Mandum Rimba's mission.
  *
  * Every field is a citable public fact, not an estimate:
@@ -33,12 +33,12 @@ const iucnSearch = (name: string) =>
   `https://www.iucnredlist.org/search?query=${encodeURIComponent(name)}&searchType=species`;
 
 /**
- * Ecological realm — drives land/sea coordinate validation so GBIF noise
+ * Ecological realm, drives land/sea coordinate validation so GBIF noise
  * (a turtle plotted inland, a bear plotted offshore) is dropped.
- *   sea     — open water / reef (whale shark, manta, napoleon, dugong)
- *   coastal — beach + sea (turtles): keep near the coast, drop deep inland
- *   any     — river + coast (pesut): no land/sea filter
- *   land    — everything else (terrestrial)
+ *   sea: open water / reef (whale shark, manta, napoleon, dugong)
+ *   coastal: beach + sea (turtles): keep near the coast, drop deep inland
+ *   any: river + coast (pesut): no land/sea filter
+ *   land: everything else (terrestrial)
  */
 export type SpeciesRealm = "land" | "sea" | "coastal" | "any";
 

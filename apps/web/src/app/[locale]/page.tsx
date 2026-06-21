@@ -1,5 +1,14 @@
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
+import ThreadsEmbed from "@/components/ThreadsEmbed";
+
+// Curated Threads posts on how Mandum Rimba began (order matters; share tokens
+// stripped). Update these to feature different posts.
+const THREADS_POSTS = [
+  "https://www.threads.com/@r.rasyidi/post/DZcrtJYm5Z5",
+  "https://www.threads.com/@r.rasyidi/post/DZexry8EgGa",
+  "https://www.threads.com/@r.rasyidi/post/DZpvpajkvNt",
+];
 
 const btnBase =
   "inline-flex items-center justify-center rounded-full px-5 py-2.5 text-[0.95rem] font-medium transition-[transform,filter,background-color] hover:-translate-y-px hover:no-underline";
@@ -47,6 +56,9 @@ export default function HomePage() {
           <Link className={`${btnPrimary} mt-5`} href="/kampanye">
             {t("campaignCta")}
           </Link>
+          <Link className={`${btnGhost} mt-3`} href="/dukung">
+            {t("supportCta")}
+          </Link>
         </section>
 
         {/* ---- Hero ---- */}
@@ -67,9 +79,6 @@ export default function HomePage() {
             </Link>
             <Link className={btnGhost} href="/metodologi">
               {t("readMethodology")}
-            </Link>
-            <Link className={btnGhost} href="/dukung">
-              {t("supportCta")}
             </Link>
           </div>
         </section>
@@ -165,6 +174,17 @@ export default function HomePage() {
           <Link className={btnPrimary} href="/peta">
             {t("openMap")}
           </Link>
+        </section>
+
+        {/* ---- How it began: curated Threads posts ---- */}
+        <section className="mb-16 mt-4">
+          <h2 className="text-[1.5rem] font-bold tracking-tight">
+            {t("threadsTitle")}
+          </h2>
+          <p className="mt-3 max-w-[44rem] leading-relaxed text-muted">
+            {t("threadsBody")}
+          </p>
+          <ThreadsEmbed urls={THREADS_POSTS} />
         </section>
       </main>
     </>

@@ -12,7 +12,8 @@
     "data": "Data",
     "sources": "Sumber Data",
     "status": "Status",
-    "credits": "Apresiasi"
+    "credits": "Apresiasi",
+    "support": "Dukung"
   },
   "about": {
     "title": "Tentang Mandum Rimba",
@@ -46,7 +47,9 @@
     "heroBody": "Gajah dan harimau Sumatra, orangutan Kalimantan, anoa Sulawesi, cenderawasih Papua, satu per satu kehilangan ruang hidup saat hutan berubah menjadi kebun sawit, tambang, dan lahan terbuka. Dari daratan sampai lautnya, kami merangkum data satelit dan sumber publik yang kredibel menjadi satu peta yang mudah dipahami, agar siapa pun bisa melihat apa yang sedang terjadi, memahami konsekuensinya, dan ikut bertindak.",
     "openMap": "Buka peta",
     "readMethodology": "Baca metodologi",
-    "supportCta": "Dukung Lam Rimba",
+    "supportCta": "Ikuti perjalanan Lam Rimba",
+    "threadsTitle": "Berawal dari obrolan kecil",
+    "threadsBody": "Mandum Rimba lahir dari obrolan-obrolan kecil di Threads, dari orang-orang yang peduli pada hal yang sama. Ini sebagian ceritanya.",
     "principle1Title": "Bukti, bukan tuduhan",
     "principle1Body": "Kami menumpangkan data resmi dengan kenyataan dari satelit, lalu membiarkan selisihnya berbicara sendiri.",
     "principle2Title": "Setiap klaim bisa diklik",
@@ -296,6 +299,7 @@
     "contactCta": "DM @r.rasyidi",
     "qrisTitle": "Atau pindai langsung di sini:",
     "qrisBody": "Dukunganmu menemani Lam Rimba tumbuh, dan game-nya akan selalu gratis untuk semua.",
+    "qrisDmNote": "Sudah transfer? Kirim bukti transfermu lewat DM Threads, biar namamu bisa aku tampilkan di daftar pendukung. Tentu, hanya kalau kamu berkenan.",
     "transparencyNote": "Demi keterbukaan, daftar pendukung saya perbarui berkala.",
     "donorsTitle": "Pendukung",
     "donorsBody": "Terima kasih untuk teman-teman yang sudah ikut menemani perjalanan ini. Nama hanya ditampilkan seizin masing-masing.",

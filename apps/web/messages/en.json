@@ -12,7 +12,8 @@
     "data": "Data",
     "sources": "Data Sources",
     "status": "Status",
-    "credits": "Credits"
+    "credits": "Credits",
+    "support": "Support"
   },
   "about": {
     "title": "About Mandum Rimba",
@@ -46,7 +47,9 @@
     "heroBody": "Sumatran elephants and tigers, Bornean orangutans, Sulawesi anoa, Papuan birds-of-paradise, one by one they lose the space to live as forest turns into palm plantations, mines, and cleared land. From the land to its seas, we distill credible satellite and public data into one map anyone can understand, so everyone can see what is happening, grasp the consequences, and act.",
     "openMap": "Open the map",
     "readMethodology": "Read the methodology",
-    "supportCta": "Support Lam Rimba",
+    "supportCta": "Follow Lam Rimba's journey",
+    "threadsTitle": "It began with a small conversation",
+    "threadsBody": "Mandum Rimba grew out of small conversations on Threads, from people who care about the same thing. Here is part of the story.",
     "principle1Title": "Evidence over accusation",
     "principle1Body": "We overlay official data with satellite reality and let the gap speak for itself.",
     "principle2Title": "Every claim is clickable",
@@ -296,6 +299,7 @@
     "contactCta": "DM @r.rasyidi",
     "qrisTitle": "Or scan right here:",
     "qrisBody": "Your support helps Lam Rimba grow, and the game will always be free for everyone.",
+    "qrisDmNote": "Transferred? Send your receipt via DM on Threads so I can add your name to the supporters list. Only if you'd like to, of course.",
     "transparencyNote": "For transparency, I update the supporter list periodically.",
     "donorsTitle": "Supporters",
     "donorsBody": "Thank you to everyone who has joined this journey. Names are only shown with each person's permission.",

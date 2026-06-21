@@ -11,7 +11,8 @@ type StaticPath =
   | "/sumber-data"
   | "/data"
   | "/status"
-  | "/apresiasi";
+  | "/apresiasi"
+  | "/dukung";
 
 type Theme = "light" | "dark";
 
@@ -66,6 +67,9 @@ const MoonIcon = () => (
 const navLink =
   "rounded-lg px-3.5 py-2 text-[0.95rem] text-muted transition-colors hover:bg-[var(--accent-dim)] hover:text-foreground hover:no-underline";
 const navLinkActive = "bg-[var(--accent-dim)] !text-accent";
+// highlighted support link, stands out from the muted nav items
+const navLinkHighlight =
+  "rounded-lg bg-[var(--accent-dim)] px-3.5 py-2 text-[0.95rem] font-semibold text-accent transition-[filter] hover:brightness-110 hover:no-underline";
 // bordered glass chip, matches the button language used across the app
 const iconBtn =
   "glass flex items-center justify-center rounded-xl text-muted transition-[color,border-color,transform] hover:border-accent hover:text-foreground active:scale-90";
@@ -203,6 +207,9 @@ export default function SiteNav() {
                 {label}
               </Link>
             ))}
+            <Link href="/dukung" className={navLinkHighlight}>
+              {t("support")}
+            </Link>
           </div>
           <span className="mx-2 h-5 w-px bg-border" />
           <div className="flex items-center gap-1.5">
@@ -249,6 +256,14 @@ export default function SiteNav() {
                   <span className="text-muted">→</span>
                 </Link>
               ))}
+              <Link
+                href="/dukung"
+                onClick={() => setOpen(false)}
+                className="flex items-center justify-between border-b border-border py-4 text-2xl font-semibold text-accent transition-colors hover:no-underline"
+              >
+                {t("support")}
+                <span>→</span>
+              </Link>
             </div>
             <div className="mt-8 flex items-center justify-between">
               <LocaleSwitch large />

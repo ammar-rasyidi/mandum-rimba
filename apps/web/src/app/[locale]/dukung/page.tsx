@@ -171,8 +171,12 @@ export default async function SupportPage({
         {t("qrisTitle")}
       </div>
       <div className="mt-3 flex flex-col gap-3">
-        {PAYMENTS.map((p) => (
-          <details key={p.id} className="group glass overflow-hidden rounded-xl">
+        {PAYMENTS.map((p, i) => (
+          <details
+            key={p.id}
+            open={i === 0}
+            className="group glass overflow-hidden rounded-xl"
+          >
             <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 font-medium text-foreground [&::-webkit-details-marker]:hidden">
               <span>{p.label}</span>
               <svg
@@ -192,7 +196,7 @@ export default async function SupportPage({
                 />
               </svg>
             </summary>
-            <div className="flex flex-col items-center px-4 pb-5 pt-1">
+            <div className="flex flex-col items-center gap-3 px-4 pb-5 pt-1">
               <div className="w-full max-w-[280px] overflow-hidden rounded-2xl bg-white">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
@@ -202,6 +206,9 @@ export default async function SupportPage({
                   height={p.h}
                   className="block h-auto w-full"
                 />
+              </div>
+              <div className="w-full rounded-xl border border-border bg-[var(--accent-dim)] px-4 py-3 text-[0.85rem] text-foreground">
+                {t("qrisDmNote")}
               </div>
             </div>
           </details>

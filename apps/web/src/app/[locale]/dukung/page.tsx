@@ -18,6 +18,10 @@ const PAYMENTS = [
   { id: "qris", label: "QRIS", img: "/images/qris_ammar.png", w: 1240, h: 1748 },
 ];
 
+// PayPal.me link for supporters outside Indonesia (QRIS is Indonesia-only).
+// Set to your link, e.g. "https://paypal.me/ammarrasyidi". Empty = button hidden.
+const PAYPAL_URL: string = "https://paypal.me/rrasyidi";
+
 // The supporter list lives in lib/credits.ts (SUPPORTERS), shared with credits.
 
 export async function generateMetadata({
@@ -216,6 +220,20 @@ export default async function SupportPage({
       </div>
       <p className="mt-3 text-[0.85rem] text-muted">{t("qrisBody")}</p>
       <p className="mt-1 text-[0.8rem] text-muted">{QRIS_NAME}</p>
+
+      {/* PayPal, for supporters outside Indonesia */}
+      {PAYPAL_URL && (
+        <div className="mt-4">
+          <a
+            href={PAYPAL_URL}
+            target="_blank"
+            rel="noreferrer"
+            className={ghost}
+          >
+            {t("paypalCta")}
+          </a>
+        </div>
+      )}
 
       {/* transparency: supporter list + spending log, updated every Friday */}
       <div className="mt-8 rounded-xl border border-border bg-surface px-4 py-3 text-[0.85rem] text-muted">

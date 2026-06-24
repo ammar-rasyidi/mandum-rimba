@@ -69,7 +69,7 @@ export interface CardContent {
 }
 
 const imgCache = new Map<string, Promise<HTMLImageElement>>();
-function loadImage(src: string): Promise<HTMLImageElement> {
+export function loadImage(src: string): Promise<HTMLImageElement> {
   let p = imgCache.get(src);
   if (!p) {
     p = new Promise((resolve, reject) => {
@@ -84,7 +84,7 @@ function loadImage(src: string): Promise<HTMLImageElement> {
   return p;
 }
 
-function roundRectPath(
+export function roundRectPath(
   ctx: CanvasRenderingContext2D,
   x: number,
   y: number,
@@ -101,7 +101,7 @@ function roundRectPath(
   ctx.closePath();
 }
 
-function wrapLines(
+export function wrapLines(
   ctx: CanvasRenderingContext2D,
   text: string,
   maxWidth: number,
@@ -122,7 +122,7 @@ function wrapLines(
   return lines;
 }
 
-const FONT =
+export const FONT =
   "system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
 
 /** circular avatar (user-adjustable 1:1 crop) with a soft drop shadow */

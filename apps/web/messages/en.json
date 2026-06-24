@@ -75,7 +75,11 @@
     "badgeOpenSource": "Open source",
     "badgeEvidence": "Evidence-based",
     "campaignCaption": "Get to know who lives near you. Threatened wildlife may be closer than you think.",
-    "campaignCta": "Who lives near you"
+    "campaignCta": "Who lives near you",
+    "campaignCtaSub": "Find threatened wildlife near you",
+    "ktpCta": "Make a Forest Resident Card",
+    "ktpCtaSub": "Make your forest ID and share it",
+    "supportCtaSub": "Follow the journey and lend support"
   },
   "campaign": {
     "title": "Who Lives Near You",
@@ -102,6 +106,30 @@
     "shareTagline": "get to know who lives near you · mandumrimba.org",
     "shareHint": "On mobile, Share goes straight to WhatsApp/Instagram/Threads/X/Facebook. On desktop, download the image and post it to your story.",
     "previewEmpty": "Pick your location to build the card."
+  },
+  "ktp": {
+    "title": "Forest Resident Card",
+    "intro": "Resident cards trending on Threads? Let's make the jungle edition. Pick your city and we'll issue a 'national ID' for the wild neighbour nearest you, with its conservation status and habitat. We cannot love what we do not know.",
+    "cardTitle": "Forest Resident Card",
+    "republic": "REPUBLIC OF RIMBA INDONESIA",
+    "province": "PROVINCE OF RIMBA INDONESIA",
+    "fieldName": "Name",
+    "fieldSci": "Scientific name",
+    "fieldStatus": "Conservation status",
+    "fieldHabitat": "Habitat",
+    "fieldCitizen": "Citizenship",
+    "citizenValue": "Citizen of Rimba Indonesia",
+    "fieldValid": "Valid until",
+    "validValue": "AS LONG AS ITS FOREST STANDS",
+    "habitatFallback": "Forest near {place}",
+    "fieldNeighbor": "Wildlife neighbour",
+    "wargaTag": "Honorary Forest Citizen",
+    "photoLabel": "PHOTO",
+    "issuedPlace": "RIMBA INDONESIA",
+    "caption": "Your neighbour in {place}, recorded {km} from here.",
+    "source": "source: GBIF",
+    "photoHint": "Your photo is processed on your device and never stored. You can skip it too.",
+    "shareTagline": "forest resident card · mandumrimba.org"
   },
   "map": {
     "title": "Map",

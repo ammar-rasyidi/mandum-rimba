@@ -7,6 +7,7 @@ export const routing = defineRouting({
     "/": "/",
     "/tentang": { id: "/tentang", en: "/about" },
     "/kampanye": { id: "/kampanye", en: "/campaign" },
+    "/kartu": { id: "/kartu", en: "/resident-card" },
     "/peta": { id: "/peta", en: "/map" },
     "/wilayah/[slug]": { id: "/wilayah/[slug]", en: "/regions/[slug]" },
     "/cerita/[slug]": { id: "/cerita/[slug]", en: "/stories/[slug]" },

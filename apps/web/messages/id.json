@@ -75,7 +75,11 @@
     "badgeOpenSource": "Sumber terbuka",
     "badgeEvidence": "Berbasis bukti",
     "campaignCaption": "Kenali yang tinggal di dekatmu. Satwa terancam mungkin lebih dekat dari yang kamu kira.",
-    "campaignCta": "Yang tinggal di dekatmu"
+    "campaignCta": "Yang tinggal di dekatmu",
+    "campaignCtaSub": "Temukan satwa terancam di dekatmu",
+    "ktpCta": "Bikin Kartu Penduduk Rimba",
+    "ktpCtaSub": "Bikin KTP rimba-mu, lalu bagikan",
+    "supportCtaSub": "Ikuti ceritanya dan beri dukungan"
   },
   "campaign": {
     "title": "Yang Tinggal di Dekatmu",
@@ -102,6 +106,30 @@
     "shareTagline": "kenali yang tinggal di dekatmu · mandumrimba.org",
     "shareHint": "Di HP, tombol Bagikan langsung ke WhatsApp/Instagram/Threads/X/Facebook. Di desktop, unduh gambarnya lalu unggah ke story-mu.",
     "previewEmpty": "Pilih lokasimu untuk membuat kartu."
+  },
+  "ktp": {
+    "title": "Kartu Penduduk Rimba",
+    "intro": "Lagi rame kartu penduduk di Threads? Yuk bikin versi rimbanya. Pilih kotamu, lalu kami terbitkan 'KTP' buat satwa tetanggamu, lengkap dengan status konservasi dan habitatnya. Tak kenal, maka tak sayang.",
+    "cardTitle": "Kartu Penduduk Rimba",
+    "republic": "REPUBLIK RIMBA INDONESIA",
+    "province": "PROVINSI RIMBA INDONESIA",
+    "fieldName": "Nama",
+    "fieldSci": "Nama Ilmiah",
+    "fieldStatus": "Status Konservasi",
+    "fieldHabitat": "Habitat",
+    "fieldCitizen": "Kewarganegaraan",
+    "citizenValue": "Warga Rimba Indonesia",
+    "fieldValid": "Berlaku Hingga",
+    "validValue": "SELAMA HUTANNYA ADA",
+    "habitatFallback": "Hutan dekat {place}",
+    "fieldNeighbor": "Satwa Tetangga",
+    "wargaTag": "Warga Kehormatan Rimba",
+    "photoLabel": "PAS FOTO",
+    "issuedPlace": "RIMBA INDONESIA",
+    "caption": "Tetanggamu di {place}, tercatat {km} dari sini.",
+    "source": "sumber: GBIF",
+    "photoHint": "Foto diproses di perangkatmu dan tidak kami simpan. Boleh juga tanpa foto.",
+    "shareTagline": "kartu penduduk rimba · mandumrimba.org"
   },
   "map": {
     "title": "Peta",

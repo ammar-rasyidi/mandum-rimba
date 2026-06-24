@@ -53,12 +53,90 @@ export default function HomePage() {
           <p className="mt-5 max-w-[34rem] text-[1.02rem] leading-relaxed text-muted">
             {t("campaignCaption")}
           </p>
-          <Link className={`${btnPrimary} mt-5`} href="/kampanye">
-            {t("campaignCta")}
-          </Link>
-          <Link className={`${btnGhost} mt-3`} href="/dukung">
-            {t("supportCta")}
-          </Link>
+          <div className="mt-7 grid w-full max-w-[660px] gap-3 sm:grid-cols-3">
+            <Link
+              href="/kampanye"
+              className="group glass flex flex-col items-center gap-2 rounded-2xl border border-[var(--glass-border)] p-4 text-center transition-[transform,border-color] hover:-translate-y-0.5 hover:border-accent hover:no-underline"
+            >
+              <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[var(--accent-dim)] text-accent transition-transform group-hover:scale-105">
+                <svg
+                  className="h-5 w-5"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden
+                >
+                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 1 1 18 0Z" />
+                  <circle cx="12" cy="10" r="3" />
+                </svg>
+              </span>
+              <span className="text-[0.95rem] font-semibold leading-tight text-foreground">
+                {t("campaignCta")}
+              </span>
+              <span className="text-[0.76rem] leading-snug text-muted">
+                {t("campaignCtaSub")}
+              </span>
+            </Link>
+
+            <Link
+              href="/kartu"
+              className="group glass flex flex-col items-center gap-2 rounded-2xl border border-[var(--glass-border)] p-4 text-center transition-[transform,border-color] hover:-translate-y-0.5 hover:border-accent hover:no-underline"
+            >
+              <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[var(--accent-dim)] text-accent transition-transform group-hover:scale-105">
+                <svg
+                  className="h-5 w-5"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden
+                >
+                  <rect x="3" y="5" width="18" height="14" rx="2" />
+                  <circle cx="8.5" cy="11" r="2" />
+                  <path d="M13 9.5h5M13 13h5M6 15.5h7" />
+                </svg>
+              </span>
+              <span className="text-[0.95rem] font-semibold leading-tight text-foreground">
+                {t("ktpCta")}
+              </span>
+              <span className="text-[0.76rem] leading-snug text-muted">
+                {t("ktpCtaSub")}
+              </span>
+            </Link>
+
+            <Link
+              href="/dukung"
+              className="group glass flex flex-col items-center gap-2 rounded-2xl border border-[var(--glass-border)] p-4 text-center transition-[transform,border-color] hover:-translate-y-0.5 hover:border-accent hover:no-underline"
+            >
+              <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[var(--accent-dim)] text-accent transition-transform group-hover:scale-105">
+                <svg
+                  className="h-5 w-5"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden
+                >
+                  <path d="M12 22V11" />
+                  <path d="M12 12C12 8 9 4 4 4c0 5 3 8 8 8Z" />
+                  <path d="M12 14c0-3 3-6 8-6 0 4-3 6-8 6Z" />
+                </svg>
+              </span>
+              <span className="text-[0.95rem] font-semibold leading-tight text-foreground">
+                {t("supportCta")}
+              </span>
+              <span className="text-[0.76rem] leading-snug text-muted">
+                {t("supportCtaSub")}
+              </span>
+            </Link>
+          </div>
         </section>
 
         {/* ---- Hero ---- */}

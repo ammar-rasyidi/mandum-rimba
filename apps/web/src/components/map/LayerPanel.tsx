@@ -9,7 +9,7 @@ import {
   CONCESSION_TYPES,
   DISASTER_TYPES,
   PROTECTED_CATEGORIES,
-  SPECIES_STATUS,
+  SPECIES_CLASSES,
   type Basemap,
   type MapFilters,
 } from "./filters";
@@ -37,7 +37,7 @@ const SUB_FILTERS: Record<
         | "disasterTypes"
         | "concessionTypes"
         | "protectedCategories"
-        | "speciesStatus";
+        | "speciesClasses";
       options: string[];
     }
   | undefined
@@ -46,7 +46,7 @@ const SUB_FILTERS: Record<
   disasters: { key: "disasterTypes", options: DISASTER_TYPES },
   concessions: { key: "concessionTypes", options: CONCESSION_TYPES },
   protected: { key: "protectedCategories", options: PROTECTED_CATEGORIES },
-  species: { key: "speciesStatus", options: SPECIES_STATUS },
+  "species-dist": { key: "speciesClasses", options: SPECIES_CLASSES },
 };
 
 // TEMP (2026-06): hidden from the filter menu until their data is ready:

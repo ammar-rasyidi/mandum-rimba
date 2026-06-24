@@ -109,23 +109,6 @@ export const DATA_CATALOG: DatasetEntry[] = [
     status: "active",
   },
   {
-    layer: "habitat",
-    name: {
-      id: "Habitat satwa, Ekoregion RESOLVE 2017",
-      en: "Wildlife habitat, RESOLVE Ecoregions 2017",
-    },
-    org: "RESOLVE / Dinerstein et al. (BioScience), via UNEP-WCMC",
-    url: "https://data-gis.unep-wcmc.org/server/rest/services/Bio-geographicalRegions/Resolve_Ecoregions/FeatureServer/0",
-    license: "CC BY 4.0",
-    updated: "2017",
-    coverage: { id: "Ekoregion habitat satwa unggulan (9 ekoregion)", en: "Habitat ecoregions of the flagship species (9 ecoregions)" },
-    description: {
-      id: "Unit habitat yang diakui ilmiah (mis. ‘Sumatran lowland rain forests’) yang dihuni satwa unggulan, ditampilkan sebagai ekoregion habitat, bukan sebaran persis tiap individu.",
-      en: "Scientifically-recognized habitat units (e.g. ‘Sumatran lowland rain forests’) the flagship species depend on, shown as habitat ecoregions, not a precise per-individual range.",
-    },
-    status: "active",
-  },
-  {
     layer: "species",
     name: {
       id: "Catatan keberadaan satwa dilindungi (GBIF + IUCN + pemerintah)",
@@ -193,7 +176,7 @@ export const DATA_GAPS: DatasetEntry[] = [
     status: "gap",
   },
   {
-    layer: "habitat",
+    layer: null,
     name: { id: "Sebaran resmi spesies (poligon IUCN)", en: "Official species range polygons (IUCN)" },
     org: "IUCN Red List spatial data",
     url: "https://www.iucnredlist.org/resources/spatial-data-download",
@@ -201,8 +184,8 @@ export const DATA_GAPS: DatasetEntry[] = [
     updated: "-",
     coverage: { id: "Perlu registrasi & perjanjian lisensi", en: "Requires registration & license agreement" },
     description: {
-      id: "Poligon sebaran resmi IUCN butuh token + perjanjian dan membatasi redistribusi, sehingga tidak bisa kami sajikan langsung. Sebagai alternatif terbuka, kami pakai ekoregion habitat (RESOLVE) + titik keberadaan (GBIF).",
-      en: "IUCN's authoritative range polygons require a token + agreement and restrict redistribution, so we cannot serve them directly. As an open alternative we use habitat ecoregions (RESOLVE) + occurrence points (GBIF).",
+      id: "Poligon sebaran resmi IUCN butuh token + perjanjian dan membatasi redistribusi, sehingga tidak bisa kami sajikan langsung. Sebagai alternatif terbuka, Peta Sebaran Satwa memakai titik keberadaan (GBIF) yang dibobot tutupan habitat alami (ESA WorldCover).",
+      en: "IUCN's authoritative range polygons require a token + agreement and restrict redistribution, so we cannot serve them directly. As an open alternative, the Wildlife Distribution layer uses occurrence points (GBIF) weighted by natural-habitat cover (ESA WorldCover).",
     },
     status: "gap",
   },

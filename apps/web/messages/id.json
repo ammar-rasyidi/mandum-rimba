@@ -143,7 +143,11 @@
       "EN": "Genting (EN)",
       "VU": "Rentan (VU)",
       "NT": "Hampir terancam (NT)",
-      "LC": "Risiko rendah (LC)"
+      "LC": "Risiko rendah (LC)",
+      "aves": "Burung",
+      "mammalia": "Mamalia",
+      "reptilia": "Reptil",
+      "amphibia": "Amfibi"
     },
     "close": "Tutup",
     "viewEvidence": "Lihat bukti",
@@ -159,6 +163,26 @@
     "fieldArea": "Luas",
     "fieldYear": "Tahun ditetapkan",
     "fieldIucn": "Kategori IUCN",
+    "fieldClass": "Kelas",
+    "fieldDensity": "Kepadatan catatan",
+    "fieldDate": "Data per",
+    "speciesHere": "Satwa tercatat di sekitar sini",
+    "speciesNone": "Belum ada catatan spesies prioritas konservasi di titik ini.",
+    "fieldDataPeriod": "Periode data sumber",
+    "docRange": "Sebaran terdokumentasi (IUCN / KLHK), bukan pengamatan lapangan",
+    "docFootnote": "* sebaran terdokumentasi (IUCN / KLHK), bukan dari catatan pengamatan",
+    "iucn": {
+      "LC": "Risiko Rendah",
+      "NT": "Hampir Terancam",
+      "VU": "Rentan",
+      "EN": "Terancam Punah",
+      "CR": "Kritis",
+      "EW": "Punah di Alam Liar",
+      "EX": "Punah"
+    },
+    "densityLow": "Rendah",
+    "densityMed": "Sedang",
+    "densityHigh": "Tinggi",
     "basisValues": {
       "HUMAN_OBSERVATION": "Observasi langsung",
       "MACHINE_OBSERVATION": "Observasi alat (kamera/sensor)",
@@ -173,8 +197,7 @@
       "alerts": "Peringatan deforestasi (90 hari)",
       "concessions": "Konsesi (sawit / HTI / logging / tambang)",
       "protected": "Kawasan lindung & moratorium",
-      "habitat": "Habitat satwa (ekoregion)",
-      "species": "Satwa dilindungi",
+      "species-dist": "Peta Sebaran Satwa",
       "disasters": "Bencana (banjir, longsor)"
     }
   },

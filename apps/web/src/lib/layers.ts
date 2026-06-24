@@ -20,6 +20,9 @@ export interface LayerDef {
   color: string;
   /** halo for circle layers: keeps points visible over satellite imagery */
   strokeColor?: string;
+  /** local GeoJSON URL — when set, the layer loads from here instead of R2
+   *  PMTiles (used by the species-distribution richness grid) */
+  geojson?: string;
   defaultOn: boolean;
   sourceName: string;
   sourceUrl: string;
@@ -28,14 +31,17 @@ export interface LayerDef {
 export const LAYERS: LayerDef[] = [
   // ---- fills (drawn first, under the points) ----
   {
-    id: "habitat",
-    tile: "habitat",
+    // Peta Sebaran Satwa: threatened wildlife (all classes) occurrence density,
+    // smoothed into organic contour bands (not dots, not a grid). Loaded from a
+    // local GeoJSON, not R2 PMTiles. Coloured by density band.
+    id: "species-dist",
+    tile: "species-dist",
     kind: "fill",
-    color: "#ffca28", // amber 400, recessive backdrop (drawn at low opacity)
-    defaultOn: false,
-    sourceName: "RESOLVE Ecoregions 2017 (UNEP-WCMC)",
-    sourceUrl:
-      "https://data-gis.unep-wcmc.org/server/rest/services/Bio-geographicalRegions/Resolve_Ecoregions/FeatureServer/0",
+    geojson: "/data/species-distribution.geojson",
+    color: "#8e24aa", // top density band (legend swatch)
+    defaultOn: true,
+    sourceName: "GBIF occurrences (IUCN threatened, all classes)",
+    sourceUrl: "https://www.gbif.org",
   },
   {
     id: "concessions",
@@ -78,16 +84,6 @@ export const LAYERS: LayerDef[] = [
     sourceUrl:
       "https://www.desinventar.net/DesInventar/profiletab.jsp?countrycode=idn",
   },
-  {
-    id: "species",
-    tile: "species",
-    kind: "circle",
-    color: "#ec407a", // pink 400 (coloured by IUCN status below)
-    strokeColor: "#ffffff",
-    defaultOn: false,
-    sourceName: "GBIF occurrence records (per dataset license)",
-    sourceUrl: "https://www.gbif.org",
-  },
 ];
 
 /**
@@ -102,6 +98,16 @@ export const LAYER_SUBCOLORS: Record<
   string,
   { prop: string; colors: Record<string, string> }
 > = {
+  // Peta Sebaran Satwa, coloured by animal class (density shown via opacity)
+  "species-dist": {
+    prop: "class",
+    colors: {
+      aves: "#ec407a", // pink, burung
+      mammalia: "#8e24aa", // purple, mamalia
+      reptilia: "#00acc1", // cyan, reptil
+      amphibia: "#fdd835", // yellow, amfibi
+    },
+  },
   concessions: {
     prop: "type",
     colors: {
@@ -120,16 +126,6 @@ export const LAYER_SUBCOLORS: Record<
       HL: "#5c6bc0", // indigo 400, Hutan Lindung
       KK: "#7986cb", // indigo 300, Kawasan Konservasi lain
       moratorium: "#9fa8da", // indigo 200, moratorium (softest)
-    },
-  },
-  species: {
-    prop: "status",
-    colors: {
-      CR: "#c2185b", // pink 700, most critical
-      EN: "#e91e63", // pink 500
-      VU: "#ec407a", // pink 400
-      NT: "#f06292", // pink 300
-      LC: "#f48fb1", // pink 200, least concern
     },
   },
 };

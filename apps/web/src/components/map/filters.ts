@@ -10,7 +10,7 @@ export interface MapFilters {
   disasterTypes: string[]; // flood | flash_flood | landslide | other
   concessionTypes: string[]; // palm_hgu | pulp_hti | logging | mining
   protectedCategories: string[]; // TN | HL | CA | SM | other | moratorium
-  speciesStatus: string[]; // CR | EN | VU
+  speciesClasses: string[]; // aves | mammalia | reptilia | amphibia
 }
 
 export const ALERT_SYSTEMS = ["radd", "glad_l", "glad_s2"];
@@ -28,8 +28,8 @@ export const PROTECTED_CATEGORIES = [
   "KK",
   "moratorium",
 ];
-// CR/EN/VU = terancam (IUCN); NT/LC = dilindungi UU/CITES walau belum terancam
-export const SPECIES_STATUS = ["CR", "EN", "VU", "NT", "LC"];
+// animal classes shown on the Peta Sebaran Satwa layer
+export const SPECIES_CLASSES = ["aves", "mammalia", "reptilia", "amphibia"];
 
 export const DEFAULT_FILTERS: MapFilters = {
   basemap: "dark",
@@ -39,5 +39,5 @@ export const DEFAULT_FILTERS: MapFilters = {
   disasterTypes: [...DISASTER_TYPES],
   concessionTypes: [...CONCESSION_TYPES],
   protectedCategories: [...PROTECTED_CATEGORIES],
-  speciesStatus: [...SPECIES_STATUS],
+  speciesClasses: [...SPECIES_CLASSES],
 };

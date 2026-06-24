@@ -52,8 +52,8 @@ const SOURCES = [
     license: "Public (CITES Secretariat)",
   },
   {
-    name: "RESOLVE Ecoregions 2017, wildlife habitat units, via UNEP-WCMC",
-    url: "https://data-gis.unep-wcmc.org/server/rest/services/Bio-geographicalRegions/Resolve_Ecoregions/FeatureServer/0",
+    name: "ESA WorldCover 2021 (v200), 10 m land cover / natural-habitat weighting",
+    url: "https://esa-worldcover.org",
     license: "CC BY 4.0",
   },
   {

@@ -105,12 +105,12 @@ export const DATA_ACKNOWLEDGEMENTS: CreditItem[] = [
     url: "https://www.desinventar.net",
   },
   {
-    name: "RESOLVE Ecoregions · UNEP-WCMC",
+    name: "ESA WorldCover 2021",
     what: {
-      id: "Ekoregion habitat satwa",
-      en: "Wildlife habitat ecoregions",
+      id: "Tutupan lahan / pembobotan habitat alami",
+      en: "Land cover / natural-habitat weighting",
     },
-    url: "https://www.unep-wcmc.org",
+    url: "https://esa-worldcover.org",
   },
   {
     name: "Maus et al. 2022 (PANGAEA)",

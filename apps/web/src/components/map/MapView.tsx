@@ -53,7 +53,7 @@ function readUrlState(): { filters: MapFilters } {
   filters.disasterTypes = list("dis") ?? filters.disasterTypes;
   filters.concessionTypes = list("con") ?? filters.concessionTypes;
   filters.protectedCategories = list("pro") ?? filters.protectedCategories;
-  filters.speciesStatus = list("spc") ?? filters.speciesStatus;
+  filters.speciesClasses = list("cls") ?? filters.speciesClasses;
 
   return { filters };
 }
@@ -138,7 +138,7 @@ export default function MapView() {
     p.set("dis", f.disasterTypes.join(","));
     p.set("con", f.concessionTypes.join(","));
     p.set("pro", f.protectedCategories.join(","));
-    p.set("spc", f.speciesStatus.join(","));
+    p.set("cls", f.speciesClasses.join(","));
     window.history.replaceState(null, "", `?${p.toString()}`);
   }, []);
 
@@ -232,6 +232,17 @@ export default function MapView() {
 
       const added = new Set<string>();
       for (const def of LAYERS) {
+        // local GeoJSON layers (richness grid) load from the bundled file, not R2
+        if (def.geojson) {
+          const sourceId = `src-${def.id}`;
+          if (!added.has(sourceId)) {
+            map.addSource(sourceId, { type: "geojson", data: def.geojson });
+            added.add(sourceId);
+          }
+          map.addLayer(buildLayer(def, sourceId));
+          avail.add(def.tile); // so the legend shows it as available
+          continue;
+        }
         if (!avail.has(def.tile)) continue;
         const sourceId = `src-${def.tile}`;
         if (!added.has(sourceId)) {
@@ -254,6 +265,61 @@ export default function MapView() {
       const features = map.queryRenderedFeatures(e.point, { layers: layerIds });
       if (features.length === 0) {
         setSelected(null);
+        return;
+      }
+      // Peta Sebaran Satwa is the bottom layer; when it's the topmost hit (i.e.
+      // nothing else is on this spot), gather EVERY class-area under the click
+      // and group the recorded species by class — "what birds / mammals / etc.
+      // are here". MapLibre serialises the species array to a string, so parse.
+      if (features[0].layer.id === "lyr-species-dist") {
+        // each species is a [scientificName, iucnCode] pair; dedupe by name and
+        // order by conservation severity so the most threatened lead the list.
+        const RANK: Record<string, number> = {
+          EX: 7,
+          EW: 6,
+          CR: 5,
+          EN: 4,
+          VU: 3,
+          NT: 2,
+          LC: 1,
+        };
+        // species entries are [sciName, iucnCode, source?] where source "doc"
+        // means a documented-range marker (e.g. rhino), not a field observation.
+        const byClassMap: Record<
+          string,
+          Map<string, { cat: string; doc: boolean }>
+        > = {};
+        let date = "";
+        for (const f of features) {
+          if (f.layer.id !== "lyr-species-dist") continue;
+          const p = (f.properties ?? {}) as Record<string, unknown>;
+          const cls = String(p.class ?? "");
+          if (p.date) date = String(p.date);
+          let sp: string[][] = [];
+          try {
+            const raw =
+              typeof p.species === "string"
+                ? JSON.parse(p.species)
+                : p.species;
+            if (Array.isArray(raw)) sp = raw as string[][];
+          } catch {
+            /* ignore malformed */
+          }
+          const m = byClassMap[cls] ?? (byClassMap[cls] = new Map());
+          for (const [name, cat, src] of sp)
+            if (name) m.set(name, { cat: cat ?? "", doc: src === "doc" });
+        }
+        const byClass: Record<
+          string,
+          { sci: string; cat: string; doc: boolean }[]
+        > = {};
+        for (const [cls, m] of Object.entries(byClassMap)) {
+          byClass[cls] = [...m.entries()]
+            .map(([sci, v]) => ({ sci, cat: v.cat, doc: v.doc }))
+            .sort((a, b) => (RANK[b.cat] ?? 0) - (RANK[a.cat] ?? 0));
+        }
+        const def = LAYERS.find((l) => l.id === "species-dist");
+        if (def) setSelected({ layer: def, properties: { byClass, date } });
         return;
       }
       const f = features[0];
@@ -336,11 +402,11 @@ export default function MapView() {
         ["literal", filters.protectedCategories],
       ] as never);
     }
-    if (map.getLayer("lyr-species")) {
-      map.setFilter("lyr-species", [
+    if (map.getLayer("lyr-species-dist")) {
+      map.setFilter("lyr-species-dist", [
         "in",
-        ["get", "status"],
-        ["literal", filters.speciesStatus],
+        ["get", "class"],
+        ["literal", filters.speciesClasses],
       ] as never);
     }
 
@@ -371,7 +437,8 @@ function buildLayer(
   const base = {
     id: `lyr-${def.id}`,
     source: sourceId,
-    "source-layer": def.tile,
+    // GeoJSON sources have no source-layer; vector tiles do
+    ...(def.geojson ? {} : { "source-layer": def.tile }),
     layout: {
       visibility: (def.defaultOn ? "visible" : "none") as "visible" | "none",
     },
@@ -384,17 +451,31 @@ function buildLayer(
         paint: { "line-color": def.color, "line-width": 1, "line-opacity": 0.8 },
       };
     case "fill": {
+      // Peta Sebaran Satwa: smooth density bands (organic contour polygons).
+      // Colour by animal class (so the class chips read at a glance); the
+      // density band drives opacity (sparse edge -> dense core).
+      if (def.id === "species-dist") {
+        const c = colorExpression(def.id, def.color) as unknown as string;
+        return {
+          ...base,
+          type: "fill",
+          paint: {
+            "fill-color": c,
+            "fill-opacity": 0.4,
+            "fill-outline-color": c, // class-coloured edge, like the concessions
+          },
+        };
+      }
       // colour each feature by its category (concessions by type, protected by
-      // cat); flat colour for habitat. Same on every basemap.
+      // cat). Same on every basemap.
       const fillColor = colorExpression(def.id, def.color) as unknown as string;
-      // habitat is a broad backdrop, keep it faint; the others sit a touch more
-      // opaque so polygons survive the bright, textured satellite basemap
+      // a touch opaque so polygons survive the bright, textured satellite basemap
       return {
         ...base,
         type: "fill",
         paint: {
           "fill-color": fillColor,
-          "fill-opacity": def.id === "habitat" ? 0.3 : 0.45,
+          "fill-opacity": 0.45,
           "fill-outline-color": fillColor,
         },
       };

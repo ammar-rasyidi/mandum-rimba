@@ -113,6 +113,7 @@
     "cardTitle": "Kartu Penduduk Rimba",
     "republic": "REPUBLIK RIMBA INDONESIA",
     "province": "PROVINSI RIMBA INDONESIA",
+    "provinceOf": "PROVINSI RIMBA {region}",
     "fieldName": "Nama",
     "fieldSci": "Nama Ilmiah",
     "fieldStatus": "Status Konservasi",
@@ -126,7 +127,7 @@
     "wargaTag": "Warga Kehormatan Rimba",
     "photoLabel": "PAS FOTO",
     "issuedPlace": "RIMBA INDONESIA",
-    "caption": "Tetanggamu di {place}, tercatat {km} dari sini.",
+    "caption": "Penduduk rimba di sekitar {place} · {km}",
     "source": "sumber: GBIF",
     "photoHint": "Foto diproses di perangkatmu dan tidak kami simpan. Boleh juga tanpa foto.",
     "shareTagline": "kartu penduduk rimba · mandumrimba.org"

@@ -245,28 +245,26 @@ export default async function SupportPage({
       <table className={`my-4 w-full border-collapse text-[0.92rem] ${cell}`}>
         <thead>
           <tr className="text-muted">
-            <th>{t("colName")}</th>
             <th>{t("colSocial")}</th>
           </tr>
         </thead>
         <tbody>
           {SUPPORTERS.map((d) => (
-            <tr key={d.name + (d.social ?? "")}>
-              <td>{d.name}</td>
+            <tr key={d.name}>
               <td>
                 {d.socialUrl ? (
                   <a href={d.socialUrl} target="_blank" rel="noreferrer">
-                    {d.social ?? "-"}
+                    {d.name}
                   </a>
                 ) : (
-                  (d.social ?? "-")
+                  d.name
                 )}
               </td>
             </tr>
           ))}
           {SUPPORTERS.length === 0 && (
             <tr>
-              <td colSpan={2} className="text-muted">
+              <td colSpan={1} className="text-muted">
                 {t("donorsEmpty")}
               </td>
             </tr>

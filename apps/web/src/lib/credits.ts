@@ -68,7 +68,10 @@ export const CONTRIBUTORS: Contributor[] = [
  * person's permission. Add { name, social?, socialUrl? }. Shared with the
  * support page (/dukung) so both stay in sync.
  */
-export const SUPPORTERS: Supporter[] = [];
+export const SUPPORTERS: Supporter[] = [
+  { name: "@arifa.ifaa", socialUrl: "https://www.threads.com/@arifa.ifaa" },
+  { name: "@baizawy", socialUrl: "https://www.threads.com/@baizawy" },
+];
 
 /** Organizations whose open data powers the map (full detail on /sumber-data). */
 export const DATA_ACKNOWLEDGEMENTS: CreditItem[] = [

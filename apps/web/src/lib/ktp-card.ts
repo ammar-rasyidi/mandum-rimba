@@ -19,13 +19,13 @@ export const KTP_W = 1240;
 export const KTP_H = 860;
 
 export interface KtpContent {
-  province: string; // "PROVINSI RIMBA INDONESIA"
+  province: string; // "PROVINSI RIMBA ACEH"
   republic: string; // "REPUBLIK RIMBA INDONESIA"
+  kota: string; // the picked city, KTP issue place
   nik: string; // generated pseudo-NIK
   rows: { label: string; value: string }[]; // Satwa Tetangga, Nama Ilmiah, …
   wargaTag: string; // "Warga Kehormatan Rimba"
   photoLabel: string; // "PAS FOTO"
-  issuedPlace: string; // "RIMBA INDONESIA"
   issuedDate: string; // "20-06-2026"
   caption: string; // share caption under the card
   footer: string; // "mandumrimba.org"
@@ -75,10 +75,10 @@ export async function drawKtpCard(
   ctx.textAlign = "center";
   ctx.fillStyle = ink;
   ctx.font = `800 38px ${FONT}`;
-  ctx.fillText(c.province, cardX + cardW / 2, cardY + 66);
+  ctx.fillText(c.province, cardX + cardW / 2, cardY + 64);
   ctx.fillStyle = inkSoft;
   ctx.font = `600 26px ${FONT}`;
-  ctx.fillText(c.republic, cardX + cardW / 2, cardY + 102);
+  ctx.fillText(c.republic, cardX + cardW / 2, cardY + 100);
   ctx.strokeStyle = line;
   ctx.lineWidth = 3;
   ctx.beginPath();
@@ -129,8 +129,8 @@ export async function drawKtpCard(
   ctx.font = `700 26px ${FONT}`;
   ctx.fillText("NIK", cardX + pad, cardY + 186);
   ctx.fillStyle = ink;
-  ctx.font = `800 50px ${FONT}`;
-  ctx.fillText(c.nik, cardX + pad, cardY + 236);
+  ctx.font = `700 38px ${FONT}`;
+  ctx.fillText(c.nik, cardX + pad, cardY + 232);
 
   // field rows (inline KTP style: LABEL : value), left column beside the photo
   const labelX = cardX + pad;
@@ -163,7 +163,7 @@ export async function drawKtpCard(
   ctx.textAlign = "center";
   ctx.fillStyle = inkSoft;
   ctx.font = `600 24px ${FONT}`;
-  ctx.fillText(c.issuedPlace, sigX, phY + phH + 40);
+  ctx.fillText(c.kota.toUpperCase(), sigX, phY + phH + 40);
   ctx.fillText(c.issuedDate, sigX, phY + phH + 72);
   ctx.strokeStyle = t.accent;
   ctx.lineWidth = 5;

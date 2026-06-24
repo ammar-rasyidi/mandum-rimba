@@ -113,6 +113,7 @@
     "cardTitle": "Forest Resident Card",
     "republic": "REPUBLIC OF RIMBA INDONESIA",
     "province": "PROVINCE OF RIMBA INDONESIA",
+    "provinceOf": "RIMBA PROVINCE OF {region}",
     "fieldName": "Name",
     "fieldSci": "Scientific name",
     "fieldStatus": "Conservation status",
@@ -126,7 +127,7 @@
     "wargaTag": "Honorary Forest Citizen",
     "photoLabel": "PHOTO",
     "issuedPlace": "RIMBA INDONESIA",
-    "caption": "Your neighbour in {place}, recorded {km} from here.",
+    "caption": "A forest resident around {place} · {km}",
     "source": "source: GBIF",
     "photoHint": "Your photo is processed on your device and never stored. You can skip it too.",
     "shareTagline": "forest resident card · mandumrimba.org"

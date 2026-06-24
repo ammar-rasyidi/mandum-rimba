@@ -17,6 +17,7 @@ interface Place {
   lng: number;
   lat: number;
   label: string;
+  region?: string; // province, for the KTP "PROVINSI RIMBA …" line
 }
 interface NominatimResult {
   place_id: number;
@@ -24,6 +25,16 @@ interface NominatimResult {
   name?: string;
   lat: string;
   lon: string;
+  address?: { state?: string; region?: string };
+}
+
+/** trim Indonesian province ceremonial prefixes for a tidy KTP line */
+function tidyProvince(s: string): string {
+  return s
+    .replace(/^Daerah Khusus Ibukota\s+/i, "")
+    .replace(/^Daerah Istimewa\s+/i, "")
+    .replace(/^Provinsi\s+/i, "")
+    .trim();
 }
 
 const btn =
@@ -70,7 +81,7 @@ export default function KtpTool() {
     const id = setTimeout(async () => {
       try {
         const res = await fetch(
-          `https://nominatim.openstreetmap.org/search?format=jsonv2&countrycodes=id&limit=6&q=${encodeURIComponent(q)}`,
+          `https://nominatim.openstreetmap.org/search?format=jsonv2&countrycodes=id&addressdetails=1&limit=6&q=${encodeURIComponent(q)}`,
           {
             signal: ctrl.signal,
             headers: { "Accept-Language": locale === "en" ? "en" : "id" },
@@ -111,8 +122,11 @@ export default function KtpTool() {
   const content: KtpContent | null =
     place && nearest
       ? {
+          province: place.region
+            ? t("provinceOf", { region: place.region.toUpperCase() })
+            : t("province"),
           republic: t("republic"),
-          province: t("province"),
+          kota: place.label,
           nik: makeNik(nearest.species.sci),
           rows: [
             { label: t("fieldNeighbor"), value: nearest.species.id },
@@ -131,7 +145,6 @@ export default function KtpTool() {
           ],
           wargaTag: t("wargaTag"),
           photoLabel: t("photoLabel"),
-          issuedPlace: t("issuedPlace"),
           issuedDate: new Date()
             .toLocaleDateString("id-ID", {
               day: "2-digit",
@@ -156,8 +169,14 @@ export default function KtpTool() {
 
   const selectPlace = (r: NominatimResult) => {
     const short = r.name || r.display_name.split(",")[0];
+    const state = r.address?.state || r.address?.region;
     justSelected.current = true;
-    setPlace({ lng: Number(r.lon), lat: Number(r.lat), label: short });
+    setPlace({
+      lng: Number(r.lon),
+      lat: Number(r.lat),
+      label: short,
+      region: state ? tidyProvince(state) : undefined,
+    });
     setQuery(short);
     setResults([]);
     setOpen(false);

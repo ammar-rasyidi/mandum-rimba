@@ -1,0 +1,5 @@
+# "Sponsor this project" links shown on GitHub.
+# PayPal and Saweria aren't native funding platforms, so they go under custom:.
+custom:
+  - https://saweria.co/mandumrimba
+  - https://paypal.me/rrasyidi

@@ -1,5 +1,9 @@
 # Mandum Rimba
 
+<p align="center">
+  <img src="apps/web/public/images/hero_light.svg" alt="Mandum Rimba" width="320">
+</p>
+
 **An independent, non-profit observatory for Indonesia's forests, land, and
 protected wildlife.** A map-first public-interest web app that distills credible
 satellite and public data, deforestation, palm oil & mining expansion, linked
@@ -26,17 +30,20 @@ disasters, and the wildlife losing its home, into one open map anyone can check.
 - **Wildlife distribution**, threatened & endemic species across all classes,
   drawn from occurrence records and weighted by natural-habitat cover, then
   contoured per island so species stay where they actually live, each area
-  tagged with the species recorded there and its IUCN status. Spans Sundaland,
-  Wallacea (anoa, maleo, Komodo), Papua (tree-kangaroo, echidna), and the sea &
-  rivers (turtles, dugong, Irrawaddy dolphin).
+  tagged with the species recorded there and its IUCN status. Cryptic species
+  whose coordinates are withheld for protection (e.g. Sumatran rhino) appear as
+  clearly-flagged documented-range markers. Spans Sundaland, Wallacea (anoa,
+  maleo, Komodo), Papua (tree-kangaroo, echidna), and the sea & rivers (turtles,
+  dugong, Irrawaddy dolphin).
 - **Disasters**, event-level floods and landslides.
 
-### "Yang Tinggal di Dekatmu" (Who lives near you)
+### Shareable cards (browser-only)
 
-A small campaign tool that takes a city, finds the nearest recorded protected
-animal and the nearest protected area, and renders a shareable card, so a
-distant statistic becomes a neighbour. **Photos and location stay in the browser
-and are never uploaded or stored.**
+Two tools turn a distant statistic into a neighbour: **"Yang Tinggal di
+Dekatmu"** finds the nearest recorded threatened animal to your city (plus the
+nearest protected area) and renders a share card, and **"Kartu Penduduk Rimba"**
+issues a playful KTP-style resident card featuring that animal. **Photos and
+location stay in the browser and are never uploaded or stored.**
 
 ## Data & sources
 
@@ -57,12 +64,16 @@ credible open data does not yet exist.
 - **BNPB DIBI** (via UNDRR DesInventar), disaster events
 - **Trase**, palm exporter ↔ deforestation linkage
 - **GADM**, administrative boundaries · **HydroBASINS**, watersheds
+- **Natural Earth**, urban-area reference used to drop city points (public domain)
 - **OpenStreetMap / Nominatim**, location search (© OpenStreetMap contributors, ODbL)
 
-Occurrence coordinates are validated against an Indonesia land mask and the
-species' realm, so marine animals mis-plotted inland (or land animals offshore)
-are dropped as gross errors while legitimate coastal records are kept. Museum
-specimens older than 1990 are excluded so the map reflects present-day presence.
+The wildlife-distribution layer is an offline build: GBIF occurrence density for
+threatened + flagship/endemic species, weighted by ESA WorldCover natural-habitat
+cover (city points dropped) and contoured **per island** so a species never bleeds
+onto an island it doesn't live on. Cryptic species with no public coordinates are
+shown as documented-range markers. Pre-1990 museum specimens are excluded so the
+map reflects present-day presence. The full build is in
+[`scripts/species-distribution`](./scripts/species-distribution).
 
 ## How it's built
 

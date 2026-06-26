@@ -2,25 +2,20 @@ import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { SUPPORTERS } from "@/lib/credits";
 
-// The donation link is config, not hard-coded. Until a platform is set up, the
-// link lives on the maintainer's Threads (NEXT_PUBLIC_DONATE_URL to override).
 const THREADS_URL = "https://www.threads.com/@r.rasyidi";
-const DONATE_URL = process.env.NEXT_PUBLIC_DONATE_URL?.trim();
 
 // The Rimba Universe white papers (Google Drive folder).
 const WHITEPAPER_URL =
   "https://drive.google.com/drive/folders/1vQcc_IZNPxwFTb4ZIApFsTUoL0-XpfmX?usp=drive_link";
 
-// Personal payment QRs (under the developer's own name) for support toward
-// building the game. Images live in public/images/.
-const QRIS_NAME = "Ammar Rizal Rasyidi";
-const PAYMENTS = [
-  { id: "qris", label: "QRIS", img: "/images/qris_ammar.png", w: 1240, h: 1748 },
-];
+// Saweria (Indonesia) handles QRIS, GoPay, OVO, DANA, ShopeePay, and cards in
+// one hosted page, so no personal QR images are needed.
+const SAWERIA_URL = "https://saweria.co/mandumrimba";
 
-// PayPal.me link for supporters outside Indonesia (QRIS is Indonesia-only).
-// Set to your link, e.g. "https://paypal.me/ammarrasyidi". Empty = button hidden.
-const PAYPAL_URL: string = "https://paypal.me/rrasyidi";
+// PayPal.me for supporters outside Indonesia. To use an official hosted Donate
+// button instead, create one in PayPal and drop in their donate-SDK snippet
+// (https://www.paypalobjects.com/donate/sdk/donate-sdk.js) with the button id.
+const PAYPAL_URL = "https://paypal.me/rrasyidi";
 
 // The supporter list lives in lib/credits.ts (SUPPORTERS), shared with credits.
 
@@ -42,11 +37,8 @@ export default async function SupportPage({
   const useItems = t.raw("useItems") as { title: string; body: string }[];
   const freeHelp = t.raw("freeHelpItems") as string[];
 
-  const donateUrl = DONATE_URL || THREADS_URL;
-  const viaThreads = !DONATE_URL;
-
-  const primary =
-    "inline-flex items-center justify-center rounded-xl bg-accent px-5 py-3 font-medium text-background no-underline transition hover:brightness-110 hover:no-underline";
+  const payCard =
+    "group not-prose flex flex-col gap-3 rounded-2xl border border-border bg-surface p-5 no-underline transition hover:border-accent hover:no-underline";
   const ghost =
     "glass inline-flex items-center justify-center rounded-xl px-5 py-3 font-medium text-foreground no-underline transition hover:brightness-[1.04] hover:no-underline";
   const cell =
@@ -154,86 +146,37 @@ export default async function SupportPage({
 
       <h2>{t("ctaTitle")}</h2>
       <p>{t("ctaBody")}</p>
-      <div className="mt-5 flex flex-wrap gap-3">
-        <a href={donateUrl} target="_blank" rel="noreferrer" className={primary}>
-          {viaThreads ? t("donateViaThreads") : t("donate")}
+
+      <div className="mt-6 grid gap-4 sm:grid-cols-2">
+        {/* Saweria, Indonesia (QRIS, GoPay, OVO, DANA, ShopeePay, cards) */}
+        <a href={SAWERIA_URL} target="_blank" rel="noreferrer" className={payCard}>
+          <span className="inline-flex w-fit items-center gap-2 rounded-xl bg-[#ff4d4d] px-4 py-2.5 font-semibold text-white transition group-hover:brightness-110">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+              <path d="M12 21s-7.4-4.5-7.4-10A4.4 4.4 0 0 1 12 7a4.4 4.4 0 0 1 7.4 4c0 5.5-7.4 10-7.4 10Z" />
+            </svg>
+            {t("saweriaCta")}
+          </span>
+          <span className="text-[0.85rem] text-muted">{t("saweriaNote")}</span>
         </a>
-        {!viaThreads && (
-          <a
-            href={THREADS_URL}
-            target="_blank"
-            rel="noreferrer"
-            className={ghost}
-          >
-            {t("contactCta")}
-          </a>
-        )}
+
+        {/* PayPal, international, official wordmark on the brand gold button */}
+        <a href={PAYPAL_URL} target="_blank" rel="noreferrer" className={payCard}>
+          <span className="inline-flex w-fit items-center rounded-xl bg-[#ffc439] px-5 py-2.5 text-[1.15rem] font-bold italic tracking-tight transition group-hover:brightness-[1.03]">
+            <span style={{ color: "#003087" }}>Pay</span>
+            <span style={{ color: "#009cde" }}>Pal</span>
+          </span>
+          <span className="text-[0.85rem] text-muted">{t("paypalNote")}</span>
+        </a>
       </div>
 
-      {/* QRIS / GoPay, revealed on tap (native <details>, no JS) */}
-      <div className="mt-5 text-[0.85rem] font-medium text-muted">
-        {t("qrisTitle")}
-      </div>
-      <div className="mt-3 flex flex-col gap-3">
-        {PAYMENTS.map((p, i) => (
-          <details
-            key={p.id}
-            open={i === 0}
-            className="group glass overflow-hidden rounded-xl"
-          >
-            <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 font-medium text-foreground [&::-webkit-details-marker]:hidden">
-              <span>{p.label}</span>
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                aria-hidden
-                className="text-muted transition-transform group-open:rotate-180"
-              >
-                <path
-                  d="M6 9l6 6 6-6"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </summary>
-            <div className="flex flex-col items-center gap-3 px-4 pb-5 pt-1">
-              <div className="w-full max-w-[280px] overflow-hidden rounded-2xl bg-white">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={p.img}
-                  alt={`${p.label} ${QRIS_NAME}`}
-                  width={p.w}
-                  height={p.h}
-                  className="block h-auto w-full"
-                />
-              </div>
-              <div className="w-full rounded-xl border border-border bg-[var(--accent-dim)] px-4 py-3 text-[0.85rem] text-foreground">
-                {t("qrisDmNote")}
-              </div>
-            </div>
-          </details>
-        ))}
-      </div>
-      <p className="mt-3 text-[0.85rem] text-muted">{t("qrisBody")}</p>
-      <p className="mt-1 text-[0.8rem] text-muted">{QRIS_NAME}</p>
+      <p className="mt-4 text-[0.85rem] text-muted">{t("qrisDmNote")}</p>
+      <p className="mt-2 text-[0.85rem] text-muted">{t("qrisBody")}</p>
 
-      {/* PayPal, for supporters outside Indonesia */}
-      {PAYPAL_URL && (
-        <div className="mt-4">
-          <a
-            href={PAYPAL_URL}
-            target="_blank"
-            rel="noreferrer"
-            className={ghost}
-          >
-            {t("paypalCta")}
-          </a>
-        </div>
-      )}
+      <div className="mt-4">
+        <a href={THREADS_URL} target="_blank" rel="noreferrer" className={ghost}>
+          {t("contactCta")}
+        </a>
+      </div>
 
       {/* transparency: supporter list + spending log, updated every Friday */}
       <div className="mt-8 rounded-xl border border-border bg-surface px-4 py-3 text-[0.85rem] text-muted">

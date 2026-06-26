@@ -23,10 +23,12 @@ disasters, and the wildlife losing its home, into one open map anyone can check.
   peer-reviewed (physical footprint, not permit boundaries).
 - **Protected areas & forest moratorium**, national parks, nature reserves,
   wildlife sanctuaries, and moratorium polygons.
-- **Protected wildlife**, occurrence records for 30 flagship species spanning
-  every region and ecosystem: Sundaland, Wallacea (anoa, maleo, Komodo), Papua
-  (tree-kangaroo, echidna), and the sea & rivers (turtles, whale shark, dugong,
-  Irrawaddy dolphin), with IUCN status and a habitat-ecoregion layer.
+- **Wildlife distribution**, threatened & endemic species across all classes,
+  drawn from occurrence records and weighted by natural-habitat cover, then
+  contoured per island so species stay where they actually live, each area
+  tagged with the species recorded there and its IUCN status. Spans Sundaland,
+  Wallacea (anoa, maleo, Komodo), Papua (tree-kangaroo, echidna), and the sea &
+  rivers (turtles, dugong, Irrawaddy dolphin).
 - **Disasters**, event-level floods and landslides.
 
 ### "Yang Tinggal di Dekatmu" (Who lives near you)
@@ -50,7 +52,8 @@ credible open data does not yet exist.
 - **Protected Planet (WDPA)** + **KLHK PIPPIB**, protected areas & moratorium
 - **GBIF** occurrences + **IUCN Red List** status + **Permen LHK P.106/2018**,
   **KKP** marine rules & **CITES**, protected-species selection
-- **RESOLVE Ecoregions 2017**, wildlife habitat units
+- **ESA WorldCover 2021**, natural-habitat cover (forest/savanna/wetland) used to
+  weight the wildlife-distribution layer, CC BY 4.0
 - **BNPB DIBI** (via UNDRR DesInventar), disaster events
 - **Trase**, palm exporter ↔ deforestation linkage
 - **GADM**, administrative boundaries · **HydroBASINS**, watersheds
@@ -67,9 +70,12 @@ A [pnpm](https://pnpm.io) + [Turborepo](https://turbo.build) monorepo:
 
 - **`apps/web`**, Next.js 14 (App Router), MapLibre GL with vector tiles,
   `next-intl` (Indonesian / English), Recharts.
-- **`apps/api`**, NestJS: scheduled daily ingest jobs that pull from the public
-  sources above, build vector tiles, and expose a public read-only REST API.
+- **`apps/api`**, NestJS: weekly ingest jobs that pull from the public sources
+  above, build vector tiles, and expose a public read-only REST API.
 - **`packages/shared`**, shared TypeScript domain types.
+
+📖 **[DATA-FLOW.md](./DATA-FLOW.md)** explains how data moves from source to map ·
+**[SETUP.md](./SETUP.md)** covers local setup, ingest jobs, and deployment.
 
 ## Local development
 
@@ -84,7 +90,7 @@ cp apps/web/.env.example apps/web/.env.local
 pnpm dev          # web on :3000, api on :4000
 ```
 
-The ingest jobs run on a daily schedule; data sources without a stable machine
+The ingest jobs run on a weekly schedule; data sources without a stable machine
 endpoint are skipped cleanly when unconfigured, so the app runs with whatever
 subset you have keys for.
 

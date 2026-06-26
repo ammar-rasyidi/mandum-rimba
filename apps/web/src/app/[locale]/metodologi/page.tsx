@@ -32,12 +32,12 @@ const SOURCES = [
     license: "CC BY 4.0",
   },
   {
-    name: "GBIF, protected-wildlife occurrence records (30 flagship species, Sumatra–Papua; land, sea & freshwater)",
+    name: "GBIF, wildlife occurrence records (threatened & endemic species, all classes, Sumatra–Papua), contoured per island into the distribution layer",
     url: "https://www.gbif.org",
     license: "Per-dataset (CC0 / CC BY / CC BY-NC)",
   },
   {
-    name: "IUCN Red List of Threatened Species, conservation status (CR/EN/VU/NT/LC) of each flagship species",
+    name: "IUCN Red List of Threatened Species, conservation status (CR/EN/VU/NT/LC) used to select and label species",
     url: "https://www.iucnredlist.org",
     license: "IUCN Red List terms (non-commercial use, attribution)",
   },
@@ -89,6 +89,10 @@ const SOURCES = [
 ];
 
 const CHANGELOG = [
+  {
+    version: "2026.06.2",
+    note: "Wildlife layer reworked from occurrence points into a habitat-aware Wildlife Distribution layer: GBIF occurrences of threatened + flagship/endemic species (all classes, hundreds of species) are weighted by ESA WorldCover natural-habitat cover, city points are dropped, then density is contoured per island so each species stays on its actual island (a Sumatran tiger never bleeds into Java). Cryptic species whose coordinates are withheld for protection (e.g. Sumatran rhino) are added as clearly-flagged documented-range markers (IUCN/KLHK), not field records. The standalone RESOLVE ecoregion habitat layer was retired; its role is folded into the distribution layer's habitat weighting.",
+  },
   {
     version: "2026.06.1",
     note: "Wildlife coverage expanded from 10 to 30 flagship species, every biogeographic region (Sundaland, Wallacea, Papua) and ecosystem (land, sea, freshwater), not just western Indonesia. Species now selected from Indonesia's protected-species law (Permen LHK P.106/2018), KKP marine rules & CITES, with IUCN Red List status and GBIF occurrences (filtered to 1990–present, removing stale museum specimens). Every occurrence coordinate is validated against an Indonesia land mask (Natural Earth 1:50m) and the species' realm, so marine animals mis-plotted inland (or land animals offshore) are dropped as gross coordinate errors, legitimate coastal records are kept. The layer was renamed from 'threatened' to 'protected' wildlife to match.",

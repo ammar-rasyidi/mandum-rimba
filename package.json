@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "description": "Mandum Rimba, Observatorium deforestasi & akuntabilitas lingkungan Indonesia",
-  "license": "MIT",
+  "license": "AGPL-3.0-or-later",
   "packageManager": "pnpm@9.15.0",
   "engines": {
     "node": ">=20"

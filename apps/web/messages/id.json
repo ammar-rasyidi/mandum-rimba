@@ -39,7 +39,7 @@
     "p4Title": "Independen & nirlaba",
     "p4Body": "Kami tidak menjual data, tidak beriklan, dan tidak berpihak.",
     "openTitle": "Sumber terbuka",
-    "openBody": "Mandum Rimba berlisensi MIT dan terbuka untuk kontribusi siapa saja. Setiap dataset tetap milik sumbernya masing-masing, lihat halaman Sumber Data dan Apresiasi.",
+    "openBody": "Mandum Rimba berlisensi GNU AGPL-3.0 dan terbuka untuk kontribusi siapa saja. Setiap dataset tetap milik sumbernya masing-masing, lihat halaman Sumber Data dan Apresiasi.",
     "ctaLead": "Mulai jelajahi:"
   },
   "home": {
@@ -284,7 +284,7 @@
     "intro": "Mandum Rimba berdiri di atas kerja banyak pihak: orang-orang yang membangunnya, organisasi yang membuka datanya, dan perangkat sumber terbuka yang menjalankannya. Terima kasih.",
     "partnersTitle": "Partner & pendukung",
     "contributorsTitle": "Kontributor",
-    "openContribution": "Mandum Rimba bersifat sumber terbuka (lisensi MIT). Kontribusi terbuka untuk siapa saja,",
+    "openContribution": "Mandum Rimba bersifat sumber terbuka (lisensi GNU AGPL-3.0). Kontribusi terbuka untuk siapa saja,",
     "openContributionLink": "ikut berkontribusi",
     "supportersTitle": "Rakan Rimba",
     "supportersIntro": "Terima kasih untuk Rakan Rimba, teman-teman yang ikut menyokong perjalanan ini. Nama hanya ditampilkan seizin masing-masing.",
@@ -300,13 +300,25 @@
     "photoBy": "Foto oleh",
     "photoOn": "di",
     "licenseTitle": "Lisensi",
-    "licenseBody": "Kode sumber Mandum Rimba berlisensi MIT. Setiap dataset tetap milik sumbernya masing-masing dengan lisensinya sendiri, lihat halaman Sumber Data. Disajikan secara deskriptif dari data publik; bukan tuduhan terhadap pihak mana pun."
+    "github": "Lihat di GitHub",
+    "stars": "bintang GitHub",
+    "forks": "fork GitHub",
+    "licenseIntro": "Kodenya terbuka; mereknya milik pengelola. Tiap lapisan dilisensikan terpisah:",
+    "licenseCode": "Kode",
+    "licenseCodeDesc": "Bebas dijalankan, dipelajari, dan dikembangkan; jika kamu menyebarkan versi modifikasi sebagai layanan jaringan, kamu wajib membagikan kode sumbernya.",
+    "licenseBrand": "Nama & logo",
+    "licenseBrandLink": "kebijakan merek & brand",
+    "licenseBrandDesc": "Merek milik pengelola, tidak termasuk dalam lisensi kode; turunan wajib mengganti merek dan tetap mencantumkan tautan ke mandumrimba.org.",
+    "licenseData": "Data",
+    "licenseDataDesc": "milik masing-masing sumber dengan lisensinya sendiri, lihat halaman",
+    "licenseGovernance": "Tata kelola & kontribusi",
+    "licenseGovernanceDesc": "Model satu pengelola; kontribusi tunduk pada Contributor License Agreement."
   },
   "project": {
     "title": "Proyek",
     "intro": "Mandum Rimba dibangun terbuka, sebagai proyek nirlaba untuk kepentingan publik. Halaman ini menjelaskan status kode sumbernya dan bagaimana kamu bisa ikut terlibat.",
     "sourceTitle": "Kode sumber",
-    "sourceBody": "Seluruh kode Mandum Rimba berlisensi terbuka (MIT). Tujuannya sederhana, siapa pun bisa memeriksa cara kerjanya, menyalinnya, dan ikut memperbaikinya.",
+    "sourceBody": "Seluruh kode Mandum Rimba berlisensi terbuka (AGPL-3.0). Tujuannya sederhana, siapa pun bisa memeriksa cara kerjanya, menyalinnya, dan ikut memperbaikinya.",
     "sourceStatus": "Saat ini repositorinya sedang kami siapkan untuk dibuka ke publik, lengkap dengan panduan kontribusi agar siapa pun nyaman ikut membangun. Tautan repositori akan muncul di sini begitu siap.",
     "involveTitle": "Ikut berkontribusi",
     "involveIntro": "Kamu tidak perlu bisa menulis kode untuk membantu. Yang paling kami butuhkan sekarang:",
@@ -363,7 +375,7 @@
     "colSocial": "Akun"
   },
   "footer": {
-    "license": "Kode sumber terbuka (MIT). Data milik masing-masing sumber, lihat metodologi.",
+    "license": "Kode sumber terbuka (AGPL-3.0). Data milik masing-masing sumber, lihat metodologi.",
     "disclaimer": "Disajikan secara deskriptif dari data publik; bukan tuduhan terhadap pihak mana pun.",
     "exploreTitle": "Jelajah",
     "transparencyTitle": "Transparansi",

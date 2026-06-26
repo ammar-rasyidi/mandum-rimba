@@ -104,7 +104,19 @@ subset you have keys for.
    provider is named; we never invent coordinates, ranges, or figures.
 5. **Bilingual**, Indonesian first, English second.
 
-## License
+## License & brand
 
-MIT (code). Data belongs to its respective sources, see the methodology page
-for per-dataset licenses.
+The code is open; the brand is the maintainer's. The two are licensed separately.
+
+- **Code** — [GNU AGPL-3.0-or-later](./LICENSE). Run, study, and improve it; if you
+  deploy a modified version as a network service, you must offer your source.
+- **Name & logos** — "Mandum Rimba", "Lam Rimba", and the project logos are
+  **trademarks**, not covered by the code license. Forks must rebrand, see
+  [TRADEMARK.md](./TRADEMARK.md).
+- **Attribution** — a public derivative must credit *"Based on Mandum Rimba —
+  https://mandumrimba.org"* (see [NOTICE](./NOTICE)).
+- **Data** — belongs to each source under its own license; see the in-app
+  [Data Sources](https://mandumrimba.org/sumber-data) and Credits pages.
+
+Governance is a single-steward model ([GOVERNANCE.md](./GOVERNANCE.md)) and
+contributions are under the [Contributor License Agreement](./CLA.md).

@@ -4,6 +4,12 @@
   <img src="apps/web/public/images/hero_light.svg" alt="Mandum Rimba" width="320">
 </p>
 
+<p align="center">
+  <a href="https://trakteer.id/mabxx6yj8dnsbic9odnj/tip"><img alt="Support on Trakteer" src="https://img.shields.io/badge/Trakteer-Dukung-ff4d4d?style=for-the-badge"></a>
+  &nbsp;
+  <a href="https://paypal.me/rrasyidi"><img alt="Donate via PayPal" src="https://img.shields.io/badge/PayPal-Donate-003087?style=for-the-badge&logo=paypal&logoColor=white"></a>
+</p>
+
 **An independent, non-profit observatory for Indonesia's forests, land, and
 protected wildlife.** A map-first public-interest web app that distills credible
 satellite and public data, deforestation, palm oil & mining expansion, linked

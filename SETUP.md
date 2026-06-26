@@ -8,11 +8,11 @@ actually moves through the system, see [DATA-FLOW.md](./DATA-FLOW.md).
 - **Node.js ≥ 20**
 - **pnpm 9** (`corepack enable` then `corepack prepare pnpm@9.15.0 --activate`,
   or `npm i -g pnpm@9`)
-- **MongoDB** — local (`mongodb://localhost:27017`) or a free MongoDB Atlas
+- **MongoDB**, local (`mongodb://localhost:27017`) or a free MongoDB Atlas
   cluster. Optional: the web app runs with whatever data you have.
-- *(Optional)* **Cloudflare R2** bucket — only needed to build/serve your own
+- *(Optional)* **Cloudflare R2** bucket, only needed to build/serve your own
   PMTiles vector tiles.
-- *(Optional)* **Modal** account — only needed to run the scheduled pipeline.
+- *(Optional)* **Modal** account, only needed to run the scheduled pipeline.
 
 ## 1. Install
 
@@ -27,12 +27,12 @@ This is a [pnpm](https://pnpm.io) + [Turborepo](https://turbo.build) monorepo:
 | Package | What it is |
 | --- | --- |
 | `apps/web` | Next.js 14 (App Router), MapLibre GL, `next-intl` (ID / EN), Recharts |
-| `apps/api` | NestJS — read-only REST API **and** the ingest/tiles CLI jobs |
+| `apps/api` | NestJS, read-only REST API **and** the ingest/tiles CLI jobs |
 | `packages/shared` | Shared TypeScript domain types |
 
 ## 2. Environment
 
-Each app ships an `.env.example`. Copy them and fill what you have — anything
+Each app ships an `.env.example`. Copy them and fill what you have, anything
 left blank is skipped cleanly.
 
 ```bash
@@ -100,7 +100,7 @@ modal run modal_app.py::run_job --job all   # ingest + tiles + status, one-off
 modal deploy modal_app.py                    # install the weekly Cron
 ```
 
-`CRON_ENABLED` stays `false` everywhere — scheduling is owned only by Modal Cron.
+`CRON_ENABLED` stays `false` everywhere, scheduling is owned only by Modal Cron.
 
 ## 6. Deploying
 
@@ -114,8 +114,8 @@ A typical deployment mirrors production:
 
 ## Troubleshooting
 
-- **Map is blank / "no data"** — expected without ingested data or a tiles URL;
+- **Map is blank / "no data"**, expected without ingested data or a tiles URL;
   the app degrades gracefully.
-- **API can't connect** — check `MONGODB_URI` and that MongoDB is reachable.
-- **An ingest job no-ops** — its source key/URL is unset in `.env`; that's
+- **API can't connect**, check `MONGODB_URI` and that MongoDB is reachable.
+- **An ingest job no-ops**, its source key/URL is unset in `.env`; that's
   intentional. Fill the relevant var to enable it.

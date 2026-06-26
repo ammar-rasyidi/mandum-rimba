@@ -269,7 +269,7 @@ export default function MapView() {
       }
       // Peta Sebaran Satwa is the bottom layer; when it's the topmost hit (i.e.
       // nothing else is on this spot), gather EVERY class-area under the click
-      // and group the recorded species by class — "what birds / mammals / etc.
+      // and group the recorded species by class, "what birds / mammals / etc.
       // are here". MapLibre serialises the species array to a string, so parse.
       if (features[0].layer.id === "lyr-species-dist") {
         // each species is a [scientificName, iucnCode] pair; dedupe by name and

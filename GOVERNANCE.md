@@ -7,7 +7,7 @@ to a neutral foundation (e.g. Kubernetes / CNCF).
 
 ## Roles
 
-- **Maintainer / Steward — Ammar Rasyidi.** Owns the project direction, has final
+- **Maintainer / Steward, Ammar Rasyidi.** Owns the project direction, has final
   say on what ships, holds the **trademark and brand** (see [TRADEMARK.md](./TRADEMARK.md)),
   and is the release authority. Reachable at
   [@r.rasyidi](https://www.threads.com/@r.rasyidi).

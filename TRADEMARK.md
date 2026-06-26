@@ -39,8 +39,8 @@ or forking the code.
 If you publicly deploy a derivative of this code (a website, app, or service):
 
 1. **Rebrand it.** Use your own name and logo, not Mandum Rimba's.
-2. **Keep the credit.** Display a visible, working credit on the site —
-   **"Based on Mandum Rimba — https://mandumrimba.org"** — and preserve the
+2. **Keep the credit.** Display a visible, working credit on the site,
+   **"Based on Mandum Rimba, https://mandumrimba.org"**, and preserve the
    copyright notices in the source (see [NOTICE](./NOTICE)).
 
 This keeps the code free while keeping the identity clearly the maintainer's.

@@ -7,7 +7,7 @@
 <p align="center">
   <a href="https://trakteer.id/mabxx6yj8dnsbic9odnj/tip"><img alt="Support on Trakteer" src="https://img.shields.io/badge/Trakteer-Dukung-ff4d4d?style=for-the-badge"></a>
   &nbsp;
-  <a href="https://paypal.me/rrasyidi"><img alt="Donate via PayPal" src="https://img.shields.io/badge/PayPal-Donate-003087?style=for-the-badge&logo=paypal&logoColor=white"></a>
+  <a href="https://paypal.me/rrasyidi"><img alt="Support via PayPal" src="https://img.shields.io/badge/PayPal-Support-003087?style=for-the-badge&logo=paypal&logoColor=white"></a>
 </p>
 
 **An independent, non-profit observatory for Indonesia's forests, land, and
@@ -24,16 +24,18 @@ disasters, and the wildlife losing its home, into one open map anyone can check.
 
 ## What's on the map
 
-- **Deforestation alerts**, near-real-time forest-clearing points from satellite
-  radar and optical sensors (10–30 m).
-- **Annual tree-cover loss**, per-year loss aggregated by region, behind the
-  region-page charts.
-- **Concessions**, oil palm, pulpwood, and logging concession boundaries.
-- **Mining footprint**, satellite-mapped mined land for all minerals,
-  peer-reviewed (physical footprint, not permit boundaries).
-- **Protected areas & forest moratorium**, national parks, nature reserves,
+Live layers are checked; the rest are on the roadmap.
+
+- [ ] **Deforestation alerts**, near-real-time forest-clearing points from
+  satellite radar and optical sensors (10–30 m). *(planned)*
+- [ ] **Annual tree-cover loss**, per-year loss aggregated by region, behind the
+  region-page charts. *(planned)*
+- [x] **Concessions**, oil palm, pulpwood, and logging concession boundaries.
+- [ ] **Mining footprint**, satellite-mapped mined land for all minerals,
+  peer-reviewed (physical footprint, not permit boundaries). *(planned)*
+- [x] **Protected areas & forest moratorium**, national parks, nature reserves,
   wildlife sanctuaries, and moratorium polygons.
-- **Wildlife distribution**, threatened & endemic species across all classes,
+- [x] **Wildlife distribution**, threatened & endemic species across all classes,
   drawn from occurrence records and weighted by natural-habitat cover, then
   contoured per island so species stay where they actually live, each area
   tagged with the species recorded there and its IUCN status. Cryptic species
@@ -41,7 +43,7 @@ disasters, and the wildlife losing its home, into one open map anyone can check.
   clearly-flagged documented-range markers. Spans Sundaland, Wallacea (anoa,
   maleo, Komodo), Papua (tree-kangaroo, echidna), and the sea & rivers (turtles,
   dugong, Irrawaddy dolphin).
-- **Disasters**, event-level floods and landslides.
+- [ ] **Disasters**, event-level floods and landslides. *(planned)*
 
 ### Shareable cards (browser-only)
 
@@ -125,14 +127,14 @@ subset you have keys for.
 
 The code is open; the brand is the maintainer's. The two are licensed separately.
 
-- **Code** — [GNU AGPL-3.0-or-later](./LICENSE). Run, study, and improve it; if you
+- **Code**, [GNU AGPL-3.0-or-later](./LICENSE). Run, study, and improve it; if you
   deploy a modified version as a network service, you must offer your source.
-- **Name & logos** — "Mandum Rimba", "Lam Rimba", and the project logos are
+- **Name & logos**, "Mandum Rimba", "Lam Rimba", and the project logos are
   **trademarks**, not covered by the code license. Forks must rebrand, see
   [TRADEMARK.md](./TRADEMARK.md).
-- **Attribution** — a public derivative must credit *"Based on Mandum Rimba —
+- **Attribution**, a public derivative must credit *"Based on Mandum Rimba,
   https://mandumrimba.org"* (see [NOTICE](./NOTICE)).
-- **Data** — belongs to each source under its own license; see the in-app
+- **Data**, belongs to each source under its own license; see the in-app
   [Data Sources](https://mandumrimba.org/sumber-data) and Credits pages.
 
 Governance is a single-steward model ([GOVERNANCE.md](./GOVERNANCE.md)) and

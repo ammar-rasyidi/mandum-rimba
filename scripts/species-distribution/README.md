@@ -15,18 +15,18 @@ nightly server pipeline. See [../../DATA-FLOW.md](../../DATA-FLOW.md) for contex
 
 ## Method (why it looks the way it does)
 
-1. **Occurrences** — GBIF records for threatened + flagship/endemic species
+1. **Occurrences**, GBIF records for threatened + flagship/endemic species
    across all classes, pulled **per region** so under-surveyed areas (e.g. Papua)
    are represented, not just observer hotspots.
-2. **Status** — each species' **IUCN** category; we keep conservation-relevant
+2. **Status**, each species' **IUCN** category; we keep conservation-relevant
    species (threatened everywhere; plus all native non-bird wildlife in the
-   highly-endemic east — Wallacea + Papua — since nearly all of it is endemic).
-3. **Habitat weighting** — occurrence density is weighted by **ESA WorldCover**
+   highly-endemic east, Wallacea + Papua, since nearly all of it is endemic).
+3. **Habitat weighting**, occurrence density is weighted by **ESA WorldCover**
    natural-habitat cover (forest/savanna/wetland/shrub/mangrove) and city points
    are dropped, so areas follow real habitat, not cities or sampling bias.
-4. **Per-island contours** — contoured **per island** so species stay on their
+4. **Per-island contours**, contoured **per island** so species stay on their
    actual island (a Sumatran tiger never bleeds into Java), with smooth edges.
-5. **Documented-range markers** — a few species whose public coordinates are
+5. **Documented-range markers**, a few species whose public coordinates are
    withheld for protection (e.g. Sumatran rhino) are placed at their documented
    protected areas, clearly flagged as documented range, not field records
    (see `markers.json`).

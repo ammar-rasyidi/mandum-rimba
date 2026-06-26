@@ -60,28 +60,28 @@ Implementations live in `apps/api/src/ingest/*.service.ts`.
 
 ## 3. Storage
 
-- **MongoDB** — normalised, queryable records (alerts, disasters, concessions,
+- **MongoDB**, normalised, queryable records (alerts, disasters, concessions,
   regions, companies, stories). Shared by the Vercel API and the Modal pipeline.
-- **Cloudflare R2** (S3-compatible) — the built **PMTiles** vector layers plus
+- **Cloudflare R2** (S3-compatible), the built **PMTiles** vector layers plus
   raw source archives. Only the pipeline writes; the browser reads from R2's
   public URL.
 
 ## 4. Serving
 
-- **`apps/api`** (NestJS, on Vercel) — a **read-only REST API** over MongoDB
+- **`apps/api`** (NestJS, on Vercel), a **read-only REST API** over MongoDB
   (`alerts`, `concessions`, `disasters`, `regions`, `companies`, `stories`,
   `export`). The exact same code runs the ingest/tiles jobs on Modal.
-- **Cloudflare R2** — serves the PMTiles directly to the browser (no API hop).
+- **Cloudflare R2**, serves the PMTiles directly to the browser (no API hop).
 
 ## 5. The browser (web app)
 
 `apps/web` (Next.js 14, App Router) assembles three data channels:
 
-- **Vector tiles** — MapLibre GL loads PMTiles straight from R2
+- **Vector tiles**, MapLibre GL loads PMTiles straight from R2
   (`NEXT_PUBLIC_TILES_BASE_URL`) for the heavy spatial layers.
-- **REST API** — region pages, charts, and feature detail come from the API
+- **REST API**, region pages, charts, and feature detail come from the API
   (`NEXT_PUBLIC_API_BASE_URL`).
-- **Bundled data** — a few small, static datasets ship inside the web build
+- **Bundled data**, a few small, static datasets ship inside the web build
   (`apps/web/src/data` and `apps/web/public/data`): the **wildlife distribution**
   layer (`species-distribution.geojson`), the campaign / KTP "nearest species"
   index (`wildlife-points.json`), conservation areas, and species common names.
@@ -110,10 +110,10 @@ present-day presence.
 
 ## Editorial guarantees baked into the flow
 
-- **Every claim is clickable** — each layer carries its source, date, and a
+- **Every claim is clickable**, each layer carries its source, date, and a
   methodology link.
-- **Never fabricate** — data we cannot obtain is marked unavailable and the real
+- **Never fabricate**, data we cannot obtain is marked unavailable and the real
   provider named; documented-range markers are labelled, never passed off as
   field observations.
-- **Privacy** — the campaign / KTP tools run entirely in the browser; photos and
+- **Privacy**, the campaign / KTP tools run entirely in the browser; photos and
   location are never uploaded or stored.

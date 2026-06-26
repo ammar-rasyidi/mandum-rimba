@@ -20,7 +20,7 @@ export interface LayerDef {
   color: string;
   /** halo for circle layers: keeps points visible over satellite imagery */
   strokeColor?: string;
-  /** local GeoJSON URL — when set, the layer loads from here instead of R2
+  /** local GeoJSON URL, when set, the layer loads from here instead of R2
    *  PMTiles (used by the species-distribution richness grid) */
   geojson?: string;
   defaultOn: boolean;

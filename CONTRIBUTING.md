@@ -23,6 +23,25 @@ on the map is confusing.
 5. **Translations.** The interface is Indonesian and English. Improvements to
    either are appreciated.
 
+## Opening an issue
+
+The quickest way to help is to
+[open an issue](https://github.com/ammar-rasyidi/mandum-rimba/issues/new/choose)
+and pick the template that fits. Each one asks for exactly what we need to act on
+it, so please fill it out rather than starting from blank:
+
+- **Bug report**, when something on the site or map looks broken. Tell us the
+  page or layer, what you expected, and the steps to reproduce it.
+- **Data correction**, when a coordinate, status, or source looks wrong. A link
+  to the original source is required; we verify against the provider before
+  changing anything.
+- **Feature or data source**, to suggest a feature, a new layer, or a dataset.
+  For a new source, include the provider, a link, the license, and the coverage.
+
+Filling the template out fully is the single biggest thing you can do to get an
+issue acted on quickly. For anything that does not fit a template, the contact
+link on the issue page reaches the maintainer.
+
 ## Principles we hold to
 
 These are not negotiable, and any contribution is expected to follow them:

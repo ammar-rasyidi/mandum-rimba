@@ -1,4 +1,4 @@
-// Renders the "Kartu Penduduk Rimba" — a landscape, KTP-style resident card.
+// Renders the "Kartu Penduduk Rimba", a landscape, KTP-style resident card.
 // The cardholder's photo is a person (an honorary forest citizen); the card
 // features the threatened wildlife neighbour recorded nearest them. Everything
 // is drawn locally; the photo never leaves the browser.
@@ -44,7 +44,7 @@ export async function drawKtpCard(
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
 
-  // backdrop (theme) — only the thin margin + footer show it
+  // backdrop (theme), only the thin margin + footer show it
   ctx.fillStyle = t.bg;
   ctx.fillRect(0, 0, KTP_W, KTP_H);
 
@@ -86,7 +86,7 @@ export async function drawKtpCard(
   ctx.lineTo(cardX + cardW - pad, cardY + 130);
   ctx.stroke();
 
-  // photo box (right) — a person's portrait
+  // photo box (right), a person's portrait
   const phW = 248;
   const phH = 312;
   const phX = cardX + cardW - pad - phW;

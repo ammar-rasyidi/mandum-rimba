@@ -227,7 +227,7 @@ export default function KtpTool() {
         await nav.share({
           files: [file],
           title: t("title"),
-          text: content ? `${content.rows[0].value} — ${t("title")}` : t("title"),
+          text: content ? `${content.rows[0].value} · ${t("title")}` : t("title"),
         });
       } else {
         download(blob);
@@ -235,7 +235,7 @@ export default function KtpTool() {
     });
 
   const shareText = content
-    ? `${content.rows[0].value} — ${t("shareTagline")}`
+    ? `${content.rows[0].value} · ${t("shareTagline")}`
     : t("title");
   const pageUrl = typeof window !== "undefined" ? window.location.href : "";
   const links = {

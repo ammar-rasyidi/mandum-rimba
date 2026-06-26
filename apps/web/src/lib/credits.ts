@@ -40,15 +40,15 @@ export interface MediaCredit {
 /** Photos & media, with the attribution their licenses require. */
 export const MEDIA_CREDITS: MediaCredit[] = [
   {
-    author: "Dimitry B",
+    author: "Muhammad Afandi",
     authorUrl:
-      "https://unsplash.com/@dimitry_b?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText",
+      "https://unsplash.com/@kertiaa/illustrations?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText",
     source: "Unsplash",
     sourceUrl:
-      "https://unsplash.com/photos/brown-monkey-on-tree-branch-during-daytime-tRGqh8cHanA?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText",
+      "https://unsplash.com/illustrations/a-green-plant-growing-from-rich-brown-soil-G8PBjF7WfZM?utm_source=unsplash&utm_medium=referral&utm_content=creditCopyText",
     what: {
-      id: "Foto latar beranda (orangutan)",
-      en: "Homepage background photo (orangutan)",
+      id: "Ilustrasi unit Trakteer (tunas hijau)",
+      en: "Trakteer unit illustration (green sprout)",
     },
   },
 ];

@@ -1,5 +1,9 @@
 # Mandum Rimba
 
+<p align="center">
+  <img src="apps/web/public/images/hero_light.svg" alt="Mandum Rimba" width="320">
+</p>
+
 **An independent, non-profit observatory for Indonesia's forests, land, and
 protected wildlife.** A map-first public-interest web app that distills credible
 satellite and public data, deforestation, palm oil & mining expansion, linked
@@ -23,18 +27,23 @@ disasters, and the wildlife losing its home, into one open map anyone can check.
   peer-reviewed (physical footprint, not permit boundaries).
 - **Protected areas & forest moratorium**, national parks, nature reserves,
   wildlife sanctuaries, and moratorium polygons.
-- **Protected wildlife**, occurrence records for 30 flagship species spanning
-  every region and ecosystem: Sundaland, Wallacea (anoa, maleo, Komodo), Papua
-  (tree-kangaroo, echidna), and the sea & rivers (turtles, whale shark, dugong,
-  Irrawaddy dolphin), with IUCN status and a habitat-ecoregion layer.
+- **Wildlife distribution**, threatened & endemic species across all classes,
+  drawn from occurrence records and weighted by natural-habitat cover, then
+  contoured per island so species stay where they actually live, each area
+  tagged with the species recorded there and its IUCN status. Cryptic species
+  whose coordinates are withheld for protection (e.g. Sumatran rhino) appear as
+  clearly-flagged documented-range markers. Spans Sundaland, Wallacea (anoa,
+  maleo, Komodo), Papua (tree-kangaroo, echidna), and the sea & rivers (turtles,
+  dugong, Irrawaddy dolphin).
 - **Disasters**, event-level floods and landslides.
 
-### "Yang Tinggal di Dekatmu" (Who lives near you)
+### Shareable cards (browser-only)
 
-A small campaign tool that takes a city, finds the nearest recorded protected
-animal and the nearest protected area, and renders a shareable card, so a
-distant statistic becomes a neighbour. **Photos and location stay in the browser
-and are never uploaded or stored.**
+Two tools turn a distant statistic into a neighbour: **"Yang Tinggal di
+Dekatmu"** finds the nearest recorded threatened animal to your city (plus the
+nearest protected area) and renders a share card, and **"Kartu Penduduk Rimba"**
+issues a playful KTP-style resident card featuring that animal. **Photos and
+location stay in the browser and are never uploaded or stored.**
 
 ## Data & sources
 
@@ -50,16 +59,21 @@ credible open data does not yet exist.
 - **Protected Planet (WDPA)** + **KLHK PIPPIB**, protected areas & moratorium
 - **GBIF** occurrences + **IUCN Red List** status + **Permen LHK P.106/2018**,
   **KKP** marine rules & **CITES**, protected-species selection
-- **RESOLVE Ecoregions 2017**, wildlife habitat units
+- **ESA WorldCover 2021**, natural-habitat cover (forest/savanna/wetland) used to
+  weight the wildlife-distribution layer, CC BY 4.0
 - **BNPB DIBI** (via UNDRR DesInventar), disaster events
 - **Trase**, palm exporter ↔ deforestation linkage
 - **GADM**, administrative boundaries · **HydroBASINS**, watersheds
+- **Natural Earth**, urban-area reference used to drop city points (public domain)
 - **OpenStreetMap / Nominatim**, location search (© OpenStreetMap contributors, ODbL)
 
-Occurrence coordinates are validated against an Indonesia land mask and the
-species' realm, so marine animals mis-plotted inland (or land animals offshore)
-are dropped as gross errors while legitimate coastal records are kept. Museum
-specimens older than 1990 are excluded so the map reflects present-day presence.
+The wildlife-distribution layer is an offline build: GBIF occurrence density for
+threatened + flagship/endemic species, weighted by ESA WorldCover natural-habitat
+cover (city points dropped) and contoured **per island** so a species never bleeds
+onto an island it doesn't live on. Cryptic species with no public coordinates are
+shown as documented-range markers. Pre-1990 museum specimens are excluded so the
+map reflects present-day presence. The full build is in
+[`scripts/species-distribution`](./scripts/species-distribution).
 
 ## How it's built
 
@@ -67,9 +81,12 @@ A [pnpm](https://pnpm.io) + [Turborepo](https://turbo.build) monorepo:
 
 - **`apps/web`**, Next.js 14 (App Router), MapLibre GL with vector tiles,
   `next-intl` (Indonesian / English), Recharts.
-- **`apps/api`**, NestJS: scheduled daily ingest jobs that pull from the public
-  sources above, build vector tiles, and expose a public read-only REST API.
+- **`apps/api`**, NestJS: weekly ingest jobs that pull from the public sources
+  above, build vector tiles, and expose a public read-only REST API.
 - **`packages/shared`**, shared TypeScript domain types.
+
+📖 **[DATA-FLOW.md](./DATA-FLOW.md)** explains how data moves from source to map ·
+**[SETUP.md](./SETUP.md)** covers local setup, ingest jobs, and deployment.
 
 ## Local development
 
@@ -84,7 +101,7 @@ cp apps/web/.env.example apps/web/.env.local
 pnpm dev          # web on :3000, api on :4000
 ```
 
-The ingest jobs run on a daily schedule; data sources without a stable machine
+The ingest jobs run on a weekly schedule; data sources without a stable machine
 endpoint are skipped cleanly when unconfigured, so the app runs with whatever
 subset you have keys for.
 
@@ -98,7 +115,19 @@ subset you have keys for.
    provider is named; we never invent coordinates, ranges, or figures.
 5. **Bilingual**, Indonesian first, English second.
 
-## License
+## License & brand
 
-MIT (code). Data belongs to its respective sources, see the methodology page
-for per-dataset licenses.
+The code is open; the brand is the maintainer's. The two are licensed separately.
+
+- **Code** — [GNU AGPL-3.0-or-later](./LICENSE). Run, study, and improve it; if you
+  deploy a modified version as a network service, you must offer your source.
+- **Name & logos** — "Mandum Rimba", "Lam Rimba", and the project logos are
+  **trademarks**, not covered by the code license. Forks must rebrand, see
+  [TRADEMARK.md](./TRADEMARK.md).
+- **Attribution** — a public derivative must credit *"Based on Mandum Rimba —
+  https://mandumrimba.org"* (see [NOTICE](./NOTICE)).
+- **Data** — belongs to each source under its own license; see the in-app
+  [Data Sources](https://mandumrimba.org/sumber-data) and Credits pages.
+
+Governance is a single-steward model ([GOVERNANCE.md](./GOVERNANCE.md)) and
+contributions are under the [Contributor License Agreement](./CLA.md).

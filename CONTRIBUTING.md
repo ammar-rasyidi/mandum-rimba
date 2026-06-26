@@ -106,6 +106,10 @@ at [@r.rasyidi](https://www.threads.com/@r.rasyidi).
 
 ## License
 
-By contributing, you agree that your contributions are licensed under the MIT
-License, the same terms that cover the rest of the source. Data remains the
-property of its original providers under their own licenses.
+By contributing, you agree to the [Contributor License Agreement](./CLA.md):
+your contributions are licensed under the **GNU AGPL-3.0-or-later** (the same
+terms that cover the rest of the code), and you grant the maintainer the rights
+described there so the project can stay under one consistent license. The Mandum
+Rimba name and logos are trademarks and are not part of that grant
+([TRADEMARK.md](./TRADEMARK.md)). Data remains the property of its original
+providers under their own licenses.

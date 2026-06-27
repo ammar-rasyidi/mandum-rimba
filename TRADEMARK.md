@@ -7,7 +7,7 @@ the property of the maintainer.
 
 ## What this covers (the brand)
 
-The following are trademarks and brand assets of **Ammar Rasyidi** ("the
+The following are trademarks and brand assets of **Ammar R Rasyidi** ("the
 maintainer"), All Rights Reserved:
 
 - The names **"Mandum Rimba"** and **"Lam Rimba"**, and **"The Rimba Universe"**.
@@ -51,5 +51,4 @@ For any use of the name or logos beyond the above, ask first:
 [@r.rasyidi on Threads](https://www.threads.com/@r.rasyidi).
 
 *This policy is modelled on the trademark policies of projects like Kubernetes,
-Grafana, and Home Assistant, where the code is open but the brand is protected.
-It is not legal advice.*
+Grafana, and Home Assistant, where the code is open but the brand is protected.*

@@ -9,8 +9,15 @@ const WHITEPAPER_URL =
   "https://drive.google.com/drive/folders/1vQcc_IZNPxwFTb4ZIApFsTUoL0-XpfmX?usp=drive_link";
 
 // Trakteer (Indonesia) handles QRIS, GoPay, OVO, DANA, ShopeePay, and cards in
-// one hosted page, so no personal QR images are needed.
+// one hosted page; the QR codes below are for scanning directly.
 const TRAKTEER_URL = "https://trakteer.id/mabxx6yj8dnsbic9odnj/tip";
+
+// Personal QR codes (under the maintainer's own name) for direct transfers.
+const QRIS_NAME = "Ammar Rizal Rasyidi";
+const QR_CODES = [
+  { id: "qris", label: "QRIS", img: "/images/qris_ammar.png" },
+  { id: "gopay", label: "GoPay", img: "/images/gopay.png" },
+];
 
 // PayPal.me for supporters outside Indonesia. To use an official hosted Donate
 // button instead, create one in PayPal and drop in their donate-SDK snippet
@@ -169,8 +176,33 @@ export default async function SupportPage({
         </a>
       </div>
 
-      <p className="mt-4 text-[0.85rem] text-muted">{t("qrisDmNote")}</p>
-      <p className="mt-2 text-[0.85rem] text-muted">{t("qrisBody")}</p>
+      <p className="mt-6 text-[0.85rem] font-medium text-muted">
+        {t("qrisTitle")}
+      </p>
+      <div className="mt-3 grid max-w-[440px] grid-cols-2 gap-3">
+        {QR_CODES.map((q) => (
+          <div
+            key={q.id}
+            className="not-prose flex flex-col items-center gap-2 rounded-2xl border border-border bg-surface p-3"
+          >
+            <div className="w-full overflow-hidden rounded-xl bg-white">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={q.img}
+                alt={`${q.label}, ${QRIS_NAME}`}
+                className="block h-auto w-full"
+              />
+            </div>
+            <span className="text-[0.85rem] font-medium text-foreground">
+              {q.label}
+            </span>
+          </div>
+        ))}
+      </div>
+      <p className="mt-2 text-[0.8rem] text-muted">{QRIS_NAME}</p>
+
+      <p className="mt-6 text-[0.98rem] font-semibold text-foreground">{t("qrisDmNote")}</p>
+      <p className="mt-3 text-[0.98rem] font-semibold text-foreground">{t("qrisBody")}</p>
 
       <div className="mt-4">
         <a href={THREADS_URL} target="_blank" rel="noreferrer" className={ghost}>

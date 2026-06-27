@@ -8,7 +8,7 @@ purpose.
    and to recipients of the software under the **AGPL-3.0-or-later**, the same
    license as the project.
 
-2. **Grant to the maintainer.** You also grant the maintainer (Ammar Rasyidi) a
+2. **Grant to the maintainer.** You also grant the maintainer (Ammar R Rasyidi) a
    perpetual, worldwide, non-exclusive, royalty-free license to use, reproduce,
    modify, sublicense, and **relicense** your contribution as part of the
    project. This lets the project keep a single, consistent license and adapt it

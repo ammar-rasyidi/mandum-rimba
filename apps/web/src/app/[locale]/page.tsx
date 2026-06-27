@@ -111,9 +111,9 @@ export default function HomePage() {
 
             <Link
               href="/dukung"
-              className="group glass flex flex-col items-center gap-2 rounded-2xl border border-[var(--glass-border)] p-4 text-center transition-[transform,border-color] hover:-translate-y-0.5 hover:border-accent hover:no-underline"
+              className="group flex flex-col items-center gap-2 rounded-2xl border border-accent bg-[var(--accent-dim)] p-4 text-center shadow-[var(--shadow)] transition-[transform,filter] hover:-translate-y-0.5 hover:brightness-[1.05] hover:no-underline"
             >
-              <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[var(--accent-dim)] text-accent transition-transform group-hover:scale-105">
+              <span className="flex h-11 w-11 items-center justify-center rounded-full bg-accent text-background transition-transform group-hover:scale-105">
                 <svg
                   className="h-5 w-5"
                   viewBox="0 0 24 24"

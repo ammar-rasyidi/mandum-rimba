@@ -5,16 +5,16 @@ How data moves through Mandum Rimba, from public sources to the map you see at
 [SETUP.md](./SETUP.md).
 
 ```
- PUBLIC SOURCES                 PIPELINE (Modal, weekly)            STORAGE              SERVING                 BROWSER
- ────────────────               ─────────────────────────          ───────────          ─────────────          ─────────────
- Global Forest Watch  ┐                                       ┌─►  MongoDB  ───────────► NestJS REST API ──────► Next.js web app
- Maus mining (PANGAEA)│         node dist/jobs-cli.js <job>   │    (records,             (apps/api, Vercel)     (apps/web, Vercel)
- WDPA / KLHK PIPPIB   │   ┌───► 1. ingest jobs  ──────────────┤     regions,                                          │
- GBIF + IUCN          ├──►│     2. tiles  (build PMTiles) ─────┼─►  Cloudflare R2 ──────────────────────────────────►  MapLibre GL
- BNPB DIBI (DesInv.)  │   │     3. status                     │    (PMTiles vector       (public read URL)       loads vector tiles
- Trase, GADM, …       ┘   │                                   │     tiles + archives)
-                          │                                   └─►  bundled GeoJSON/JSON ─────────────────────────►  shipped in the
- ESA WorldCover ─────────►│   (offline) wildlife-distribution build  (in apps/web/src/data + public/data)            web bundle
+ PUBLIC SOURCES                 PIPELINE (scheduled, periodic)      STORAGE              SERVING               BROWSER
+ ----------------               -----------------------------      -----------          -------------         -------------
+ Global Forest Watch  +                                       +->  database  ---------->  REST API  --------->  web app
+ Maus mining (PANGAEA)|         node dist/jobs-cli.js <job>   |    (records,             (apps/api)            (apps/web)
+ WDPA / KLHK PIPPIB   |   +----> 1. ingest jobs  -------------+     regions, ...)                                  |
+ GBIF + IUCN          +-->|      2. tiles  (build PMTiles) ----+->  object store  ------------------------------>  MapLibre GL
+ BNPB DIBI (DesInv.)  |   |      3. status                    |    (vector tiles                                loads vector tiles
+ Trase, GADM, ...     +   |                                   |     + archives)
+                          |                                   +->  bundled GeoJSON/JSON --------------------->  shipped in the
+ ESA WorldCover ---------+    (offline) wildlife-distribution build  (in apps/web/src/data + public/data)         web bundle
  (offline build)
 ```
 
@@ -37,47 +37,47 @@ documented per-dataset (license, coverage, update date) on the in-app
 | Boundaries / watersheds | GADM, HydroBASINS |
 | Location search | OpenStreetMap / Nominatim |
 
-## 2. Ingest pipeline (Modal, weekly)
+## 2. Ingest pipeline (scheduled)
 
-The pipeline is the **same NestJS codebase** as the API, invoked as CLI jobs.
-`modal_app.py` runs it on a weekly [Modal](https://modal.com) Cron
-(`0 18 * * 0`, Sunday 18:00 UTC); the in-process NestJS cron stays disabled
-(`CRON_ENABLED=false`) so scheduling is owned in exactly one place.
+The pipeline is the **same API codebase**, invoked as CLI jobs. It runs on a
+**periodic schedule** (not in-process; the in-app cron stays disabled via
+`CRON_ENABLED=false` so scheduling is owned in exactly one place, whatever
+scheduler you wire it to).
 
 Each job (`node dist/jobs-cli.js <job>`) pulls from a source, normalises it, and
-upserts into MongoDB. Run order (`modal_app.py` → `JOB_ORDER`):
+upserts into the database. Run order (`JOB_ORDER`):
 
-1. **Ingest jobs** → MongoDB:
+1. **Ingest jobs** -> database:
    `gfw-alerts`, `gfw-annual`, `bnpb-dibi`, `concessions`, `modi-esdm`,
    `mining`, `wdpa`, `habitat`, `trase`, `species`, `nusantara-atlas`.
    Sources without a stable machine endpoint are **skipped cleanly** when
    unconfigured, so the pipeline runs with whatever keys you have.
-2. **`tiles`** → builds vector **PMTiles** from the ingested geometry and
-   uploads them to **Cloudflare R2**.
-3. **`status`** → records run health for the in-app status page.
+2. **`tiles`** -> builds vector **PMTiles** from the ingested geometry and
+   uploads them to the object store.
+3. **`status`** -> records run health for the in-app status page.
 
 Implementations live in `apps/api/src/ingest/*.service.ts`.
 
 ## 3. Storage
 
-- **MongoDB**, normalised, queryable records (alerts, disasters, concessions,
-  regions, companies, stories). Shared by the Vercel API and the Modal pipeline.
-- **Cloudflare R2** (S3-compatible), the built **PMTiles** vector layers plus
-  raw source archives. Only the pipeline writes; the browser reads from R2's
-  public URL.
+- **Database**, normalised, queryable records (alerts, disasters, concessions,
+  regions, companies, stories). Shared by the serving API and the pipeline.
+- **Object store** (S3-compatible), the built **PMTiles** vector layers plus raw
+  source archives. Only the pipeline writes; the browser reads from its public
+  URL.
 
 ## 4. Serving
 
-- **`apps/api`** (NestJS, on Vercel), a **read-only REST API** over MongoDB
-  (`alerts`, `concessions`, `disasters`, `regions`, `companies`, `stories`,
-  `export`). The exact same code runs the ingest/tiles jobs on Modal.
-- **Cloudflare R2**, serves the PMTiles directly to the browser (no API hop).
+- **`apps/api`**, a **read-only REST API** over the database (`alerts`,
+  `concessions`, `disasters`, `regions`, `companies`, `stories`, `export`). The
+  exact same code runs the ingest/tiles jobs on the scheduler.
+- **Object store**, serves the PMTiles directly to the browser (no API hop).
 
 ## 5. The browser (web app)
 
 `apps/web` (Next.js 14, App Router) assembles three data channels:
 
-- **Vector tiles**, MapLibre GL loads PMTiles straight from R2
+- **Vector tiles**, MapLibre GL loads PMTiles straight from the object store
   (`NEXT_PUBLIC_TILES_BASE_URL`) for the heavy spatial layers.
 - **REST API**, region pages, charts, and feature detail come from the API
   (`NEXT_PUBLIC_API_BASE_URL`).
@@ -89,7 +89,7 @@ Implementations live in `apps/api/src/ingest/*.service.ts`.
 ## The wildlife distribution layer (offline build)
 
 The "Peta Sebaran Satwa" / Wildlife Distribution layer is produced by an
-**offline build** (not the nightly pipeline) and shipped as a bundled GeoJSON,
+**offline build** (not the scheduled pipeline) and shipped as a bundled GeoJSON,
 because it has no live source we can stream. The build:
 
 1. Pulls **GBIF** occurrence records for threatened + flagship/endemic species
@@ -106,7 +106,8 @@ because it has no live source we can stream. The build:
 
 Occurrence coordinates are validated against an Indonesia land mask and the
 species' realm, and pre-1990 museum specimens are dropped, so the map reflects
-present-day presence.
+present-day presence. The full build is in
+[`scripts/species-distribution`](./scripts/species-distribution).
 
 ## Editorial guarantees baked into the flow
 

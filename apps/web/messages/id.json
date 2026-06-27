@@ -287,7 +287,7 @@
     "openContribution": "Mandum Rimba bersifat sumber terbuka (lisensi GNU AGPL-3.0). Kontribusi terbuka untuk siapa saja,",
     "openContributionLink": "ikut berkontribusi",
     "supportersTitle": "Rakan Rimba",
-    "supportersIntro": "Terima kasih untuk Rakan Rimba, teman-teman yang ikut menyokong perjalanan ini. Nama hanya ditampilkan seizin masing-masing.",
+    "supportersIntro": "Terima kasih banyak buat Rakan Rimba, teman-teman yang ikut mendukung lewat Trakteer atau PayPal. Dukungan kalian yang bikin perjalanan ini terus jalan. Nama cuma aku tampilkan kalau kamu mengizinkan.",
     "supportersEmpty": "Belum ada. Jadilah yang pertama menemani perjalanan ini.",
     "supportersCta": "Mau ikut mendukung?",
     "supportersCtaLink": "lihat caranya",
@@ -333,13 +333,13 @@
     "contactBody": "Punya koreksi, usulan, atau pertanyaan? Belum ada email khusus, jadi DM aku langsung di Threads"
   },
   "support": {
-    "title": "Dukung Lam Rimba",
+    "title": "Dukung Rimba Universe",
     "whitepaper": "Baca white paper lengkapnya",
     "intro": "Mandum Rimba punya saudara: Lam Rimba, sebuah game konservasi 3D tempat kamu masuk ke dalam rimba Indonesia, menyelamatkan satwa, merawatnya sampai pulih, memulangkannya ke alam, lalu menyembuhkan habitatnya. Keduanya satu dunia, The Rimba Universe, dengan satu misi sederhana: tak kenal, maka tak sayang.",
     "freeTitle": "Lam Rimba akan gratis",
     "freeBody": "Game ini dibangun dengan Godot dan, di fase pertama, bisa dimainkan langsung di ponsel, baik iOS maupun Android. Gratis, supaya bisa sampai ke tangan sebanyak mungkin orang.",
     "whyTitle": "Kenapa saya buka pintu dukungan",
-    "whyBody": "Membangun game itu dunia yang berbeda dari membangun peta. Ada aset 3D, suara, animasi, dan banyak hal yang butuh waktu sekaligus biaya. Mandum Rimba masih bisa saya rawat sendiri, tapi Lam Rimba lebih besar, dan untuk pertama kalinya saya memberanikan diri membuka pintu dukungan.",
+    "whyBody": "Mandum Rimba, peta yang sedang kamu buka, perlu server, domain, dan pipeline data yang menjaganya tetap hidup dan terus diperbarui tiap hari. Lam Rimba, game-nya, dunia yang lebih besar lagi: penuh aset 3D, suara, animasi, dan banyak hal yang butuh waktu sekaligus biaya. Untuk pertama kalinya saya memberanikan diri membuka pintu dukungan, supaya keduanya bisa terus tumbuh.",
     "useTitle": "Ke mana dukunganmu pergi",
     "useItems": [
       { "title": "Aset & produksi", "body": "model 3D satwa dan hutannya, animasi, musik, dan efek suara, sampai detail kecil yang membuat rimbanya terasa hidup. Sebagian saya buat sendiri, sebagian perlu dibeli atau dikerjakan dengan alat berbayar." },
@@ -365,11 +365,12 @@
     "trakteerCta": "Dukung lewat Trakteer",
     "trakteerNote": "Trakteer menerima QRIS, GoPay, OVO, DANA, ShopeePay, dan kartu, untuk pendukung di Indonesia.",
     "paypalNote": "Untuk pendukung di luar Indonesia.",
+    "qrisTitle": "Atau pindai langsung di sini:",
     "qrisBody": "Dukunganmu menemani Lam Rimba tumbuh, dan game-nya akan selalu gratis untuk semua.",
     "qrisDmNote": "Sudah transfer? Kirim bukti transfermu lewat DM Threads, biar namamu bisa aku tampilkan di daftar Rakan Rimba. Tentu, hanya kalau kamu berkenan.",
     "transparencyNote": "Demi keterbukaan, daftar Rakan Rimba saya perbarui berkala.",
     "donorsTitle": "Rakan Rimba",
-    "donorsBody": "Terima kasih untuk Rakan Rimba, teman-teman yang sudah ikut menemani perjalanan ini. Nama hanya ditampilkan seizin masing-masing.",
+    "donorsBody": "Terima kasih banyak buat kamu yang udah ikut mendukung lewat Trakteer atau PayPal. Sekecil apa pun, dukunganmu yang bikin perjalanan ini terus jalan. Nama cuma aku tampilkan kalau kamu mengizinkan.",
     "donorsEmpty": "Belum ada. Jadilah yang pertama menemani perjalanan ini.",
     "colName": "Nama",
     "colSocial": "Akun"
@@ -382,7 +383,7 @@
     "projectTitle": "Proyek",
     "sourceCode": "Kode sumber",
     "contribute": "Ikut berkontribusi",
-    "support": "Dukung Lam Rimba",
+    "support": "Dukung Rimba Universe",
     "rights": "Hak cipta dilindungi sesuai lisensi masing-masing."
   }
 }

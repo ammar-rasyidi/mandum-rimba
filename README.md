@@ -10,12 +10,26 @@
   <a href="https://paypal.me/rrasyidi"><img alt="Support via PayPal" src="https://img.shields.io/badge/PayPal-Support-003087?style=for-the-badge&logo=paypal&logoColor=white"></a>
 </p>
 
+<p align="center"><sub>If you chip in through Trakteer or PayPal, thank you. You're keeping this little project alive, and your name goes on the Rakan Rimba list if you'd like.</sub></p>
+
+<details align="center">
+  <summary><sub>Prefer to scan directly? QRIS &amp; GoPay</sub></summary>
+  <br>
+  <img src="apps/web/public/images/qris_ammar.png" alt="QRIS, Ammar Rizal Rasyidi" width="230">
+  &nbsp;&nbsp;
+  <img src="apps/web/public/images/gopay.png" alt="GoPay, Ammar Rizal Rasyidi" width="230">
+</details>
+
 **An independent, non-profit observatory for Indonesia's forests, land, and
 protected wildlife.** A map-first public-interest web app that distills credible
 satellite and public data, deforestation, palm oil & mining expansion, linked
 disasters, and the wildlife losing its home, into one open map anyone can check.
 
 🌳 Live at **[mandumrimba.org](https://mandumrimba.org)** · bilingual (Indonesia / English)
+
+📄 **White paper**, what Mandum Rimba is and why it exists:
+[English](white_paper_mandum_rimba/Mandum-Rimba-White-Paper-EN.pdf) ·
+[Bahasa Indonesia](white_paper_mandum_rimba/Mandum-Rimba-White-Paper-ID.pdf)
 
 > **Evidence over accusation.** We gather and show the data as it is, and never
 > draw conclusions on anyone's behalf. We overlay official data against

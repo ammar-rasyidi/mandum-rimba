@@ -287,7 +287,7 @@
     "openContribution": "Mandum Rimba is open source (AGPL-3.0). Contributions are open to everyone,",
     "openContributionLink": "get involved",
     "supportersTitle": "Rakan Rimba",
-    "supportersIntro": "Thank you to the Rakan Rimba, the friends helping support this journey. Names are only shown with each person's permission.",
+    "supportersIntro": "A big thank you to the Rakan Rimba, the friends who chip in through Trakteer or PayPal. Your support is what keeps this going. Names are only shown with your permission.",
     "supportersEmpty": "None yet. Be the first to join this journey.",
     "supportersCta": "Want to support too?",
     "supportersCtaLink": "see how",
@@ -333,13 +333,13 @@
     "contactBody": "Have a correction, a suggestion, or a question? There's no dedicated inbox yet, so DM me directly on Threads at"
   },
   "support": {
-    "title": "Support Lam Rimba",
+    "title": "Support the Rimba Universe",
     "whitepaper": "Read the full white paper",
     "intro": "Mandum Rimba has a sibling: Lam Rimba, a 3D conservation game where you step into the Indonesian rimba, rescue wildlife, nurse them back to health, return them to the wild, then heal the habitat. Both share one world, The Rimba Universe, and one simple belief: we cannot love what we do not know.",
     "freeTitle": "Lam Rimba will be free",
     "freeBody": "It is built with Godot and, in its first phase, runs right on your phone, both iOS and Android. Free, so it can reach as many people as possible.",
     "whyTitle": "Why I opened the door to support",
-    "whyBody": "Building a game is a different world from building a map. There are 3D assets, sound, animation, and many things that take both time and money. Mandum Rimba I can still maintain on my own, but Lam Rimba is bigger, and for the first time I am opening the door to support.",
+    "whyBody": "Mandum Rimba, the map you are looking at, needs a server, a domain, and the data pipeline that keeps it alive and up to date every day. Lam Rimba, the game, is a bigger world still: full of 3D assets, sound, animation, and many things that take both time and money. For the first time I am opening the door to support, so both can keep growing.",
     "useTitle": "Where your support goes",
     "useItems": [
       { "title": "Assets and production", "body": "3D models of the wildlife and its forest, animation, music, and sound, down to the small details that make the rimba feel alive. Some I build myself, some I have to buy or make with paid tools." },
@@ -365,11 +365,12 @@
     "trakteerCta": "Support via Trakteer",
     "trakteerNote": "Trakteer accepts QRIS, GoPay, OVO, DANA, ShopeePay, and cards, for supporters in Indonesia.",
     "paypalNote": "For supporters outside Indonesia.",
+    "qrisTitle": "Or scan directly:",
     "qrisBody": "Your support helps Lam Rimba grow, and the game will always be free for everyone.",
     "qrisDmNote": "Transferred? Send your receipt via DM on Threads so I can add your name to the Rakan Rimba list. Only if you'd like to, of course.",
     "transparencyNote": "For transparency, I update the Rakan Rimba list periodically.",
     "donorsTitle": "Rakan Rimba",
-    "donorsBody": "Thank you to the Rakan Rimba, the friends who have joined this journey. Names are only shown with each person's permission.",
+    "donorsBody": "A big thank you to everyone who chips in through Trakteer or PayPal. However small, your support is what keeps this going. Names are only shown with your permission.",
     "donorsEmpty": "None yet. Be the first to join this journey.",
     "colName": "Name",
     "colSocial": "Account"
@@ -382,7 +383,7 @@
     "projectTitle": "Project",
     "sourceCode": "Source code",
     "contribute": "Get involved",
-    "support": "Support Lam Rimba",
+    "support": "Support the Rimba Universe",
     "rights": "All rights reserved under their respective licenses."
   }
 }

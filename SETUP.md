@@ -5,14 +5,15 @@ actually moves through the system, see [DATA-FLOW.md](./DATA-FLOW.md).
 
 ## Prerequisites
 
-- **Node.js ≥ 20**
+- **Node.js >= 20**
 - **pnpm 9** (`corepack enable` then `corepack prepare pnpm@9.15.0 --activate`,
   or `npm i -g pnpm@9`)
-- **MongoDB**, local (`mongodb://localhost:27017`) or a free MongoDB Atlas
-  cluster. Optional: the web app runs with whatever data you have.
-- *(Optional)* **Cloudflare R2** bucket, only needed to build/serve your own
-  PMTiles vector tiles.
-- *(Optional)* **Modal** account, only needed to run the scheduled pipeline.
+- **MongoDB**, local (`mongodb://localhost:27017`) or any hosted MongoDB. The web
+  app runs with whatever data you have, so this is the only thing you really need.
+- *(Optional)* an **S3-compatible object store**, only if you want to build and
+  serve your own PMTiles vector tiles.
+- *(Optional)* a **job scheduler** (cron, a CI schedule, a serverless cron),
+  only if you want to run the ingest pipeline on a cadence.
 
 ## 1. Install
 
@@ -27,13 +28,13 @@ This is a [pnpm](https://pnpm.io) + [Turborepo](https://turbo.build) monorepo:
 | Package | What it is |
 | --- | --- |
 | `apps/web` | Next.js 14 (App Router), MapLibre GL, `next-intl` (ID / EN), Recharts |
-| `apps/api` | NestJS, read-only REST API **and** the ingest/tiles CLI jobs |
+| `apps/api` | the read-only REST API **and** the ingest/tiles CLI jobs |
 | `packages/shared` | Shared TypeScript domain types |
 
 ## 2. Environment
 
-Each app ships an `.env.example`. Copy them and fill what you have, anything
-left blank is skipped cleanly.
+Each app ships an `.env.example`. Copy them and fill what you have, anything left
+blank is skipped cleanly.
 
 ```bash
 cp apps/api/.env.example apps/api/.env          # API + ingest
@@ -42,18 +43,18 @@ cp apps/web/.env.example apps/web/.env.local    # web (NEXT_PUBLIC_* only)
 
 Minimum to boot locally:
 
-- **`apps/api/.env`** → `MONGODB_URI` (e.g. `mongodb://localhost:27017/forestwatch`).
-- **`apps/web/.env.local`** → `NEXT_PUBLIC_API_BASE_URL=http://localhost:4000`.
-  `NEXT_PUBLIC_TILES_BASE_URL` only matters once you have PMTiles on R2.
+- **`apps/api/.env`** -> `MONGODB_URI` (e.g. `mongodb://localhost:27017/forestwatch`).
+- **`apps/web/.env.local`** -> `NEXT_PUBLIC_API_BASE_URL=http://localhost:4000`.
+  `NEXT_PUBLIC_TILES_BASE_URL` only matters once you have PMTiles in an object store.
 
-Source API keys (`GFW_API_KEY`, the R2 `R2_*` keys, optional CSV URLs) are only
+Source API keys, object-store credentials, and optional dataset URLs are only
 needed when you run the matching ingest job; see the comments in each
 `.env.example`.
 
 ## 3. Run (development)
 
 ```bash
-pnpm dev          # web → http://localhost:3000   ·   api → http://localhost:4000
+pnpm dev          # web -> http://localhost:3000   ·   api -> http://localhost:4000
 ```
 
 Useful per-package commands:
@@ -71,7 +72,7 @@ show "no data" rather than erroring.
 
 ## 4. Loading data (optional)
 
-The ingest jobs are the NestJS code run as CLI tasks. After `pnpm build`:
+The ingest jobs are the API code run as CLI tasks. After `pnpm build`:
 
 ```bash
 # from apps/api, after building:
@@ -88,34 +89,22 @@ Available jobs: `gfw-alerts`, `gfw-annual`, `bnpb-dibi`, `concessions`,
 `modi-esdm`, `mining`, `wdpa`, `habitat`, `trase`, `species`, `nusantara-atlas`,
 then `tiles` and `status`.
 
-## 5. The scheduled pipeline (optional, Modal)
+## 5. Production (optional)
 
-Production ingest + tile builds run weekly on [Modal](https://modal.com) via
-`modal_app.py`. To run it yourself:
+There's no required platform; deploy the pieces wherever you like:
 
-```bash
-cp .env.modal.example .env.modal            # fill in the real values
-modal secret create mandumrimba-env ...     # create the "mandumrimba-env" secret
-modal run modal_app.py::run_job --job all   # ingest + tiles + status, one-off
-modal deploy modal_app.py                    # install the weekly Cron
-```
-
-`CRON_ENABLED` stays `false` everywhere, scheduling is owned only by Modal Cron.
-
-## 6. Deploying
-
-A typical deployment mirrors production:
-
-- **Web** → Vercel project from `apps/web`, with the `NEXT_PUBLIC_*` env vars.
-- **API** → Vercel project from `apps/api` (read-only serving; `CRON_ENABLED=false`).
-- **Pipeline** → Modal (`modal_app.py`), with the `mandumrimba-env` secret.
-- **MongoDB** → MongoDB Atlas. **Tiles** → Cloudflare R2 with a public URL set as
-  `NEXT_PUBLIC_TILES_BASE_URL`.
+- **Web & API** -> build with `pnpm build` and host on any Node-capable platform.
+  Set the API's `MONGODB_URI` and the web's `NEXT_PUBLIC_*` vars. Keep
+  `CRON_ENABLED=false` on the serving instances.
+- **Scheduled ingest + tiles** -> the jobs above are plain CLI tasks
+  (`node dist/jobs-cli.js <job>`). Run them on any periodic scheduler at whatever
+  cadence you want; that's the only place scheduling should live.
+- **Tiles** -> point `NEXT_PUBLIC_TILES_BASE_URL` at your object store's public URL.
 
 ## Troubleshooting
 
 - **Map is blank / "no data"**, expected without ingested data or a tiles URL;
   the app degrades gracefully.
-- **API can't connect**, check `MONGODB_URI` and that MongoDB is reachable.
+- **API can't connect**, check `MONGODB_URI` and that the database is reachable.
 - **An ingest job no-ops**, its source key/URL is unset in `.env`; that's
   intentional. Fill the relevant var to enable it.

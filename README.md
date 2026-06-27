@@ -5,9 +5,9 @@
 </p>
 
 <p align="center">
-  <a href="https://trakteer.id/mabxx6yj8dnsbic9odnj/tip"><img alt="Support on Trakteer" src="https://img.shields.io/badge/Trakteer-Dukung-ff4d4d?style=for-the-badge"></a>
+  <a target="_blank" href="https://trakteer.id/mabxx6yj8dnsbic9odnj/tip"><img alt="Support on Trakteer" src="https://img.shields.io/badge/Trakteer-Dukung-ff4d4d?style=for-the-badge"></a>
   &nbsp;
-  <a href="https://paypal.me/rrasyidi"><img alt="Support via PayPal" src="https://img.shields.io/badge/PayPal-Support-003087?style=for-the-badge&logo=paypal&logoColor=white"></a>
+  <a target="_blank" href="https://paypal.me/rrasyidi"><img alt="Support via PayPal" src="https://img.shields.io/badge/PayPal-Support-003087?style=for-the-badge&logo=paypal&logoColor=white"></a>
 </p>
 
 <p align="center"><sub>If you chip in through Trakteer or PayPal, thank you. You're keeping this little project alive, and your name goes on the Rakan Rimba list if you'd like.</sub></p>

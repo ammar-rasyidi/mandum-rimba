@@ -10,7 +10,7 @@
   <a target="_blank" href="https://paypal.me/rrasyidi"><img alt="Support via PayPal" src="https://img.shields.io/badge/PayPal-Support-003087?style=for-the-badge&logo=paypal&logoColor=white"></a>
 </p>
 
-<p align="center"><sub>If you chip in through Trakteer or PayPal, thank you. You're keeping this little project alive, and your name goes on the Rakan Rimba list if you'd like.</sub></p>
+<h4 align="center"><sub>If you chip in through Trakteer or PayPal, thank you. You're keeping this little project alive, and your name goes on the Rakan Rimba list if you'd like.</sub></h4>
 
 <details align="center">
   <summary><sub>Prefer to scan directly? QRIS &amp; GoPay</sub></summary>

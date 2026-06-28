@@ -12,13 +12,13 @@
 
 <h4 align="center"><sub>If you chip in through Trakteer or PayPal, thank you. You're keeping this little project alive, and your name goes on the Rakan Rimba list if you'd like.</sub></h4>
 
-<details align="center">
-  <summary><sub>Prefer to scan directly? QRIS &amp; GoPay</sub></summary>
-  <br>
+<p align="center"><sub>Prefer to scan directly? QRIS &amp; GoPay</sub></p>
+
+<p align="center">
   <img src="apps/web/public/images/qris_ammar.png" alt="QRIS, Ammar Rizal Rasyidi" width="230">
   &nbsp;&nbsp;
   <img src="apps/web/public/images/gopay.png" alt="GoPay, Ammar Rizal Rasyidi" width="230">
-</details>
+</p>
 
 **An independent, non-profit observatory for Indonesia's forests, land, and
 protected wildlife.** A map-first public-interest web app that distills credible

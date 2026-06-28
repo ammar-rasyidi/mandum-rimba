@@ -123,7 +123,7 @@ export default async function CreditsPage({
         {/* each logo swaps with the theme: the _dark variant (white art) shows
             on the dark theme, the _light variant (dark art) on the light theme */}
         <a
-          href="https://dahono.com/"
+          href="https://labs.dahono.com/"
           target="_blank"
           rel="noreferrer"
           aria-label="Dahono Labs"

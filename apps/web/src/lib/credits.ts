@@ -72,6 +72,8 @@ export const SUPPORTERS: Supporter[] = [
   { name: "@arifa.ifaa", socialUrl: "https://www.threads.com/@arifa.ifaa" },
   { name: "@baizawy", socialUrl: "https://www.threads.com/@baizawy" },
   { name: "@nabilmdiana", socialUrl: "https://www.threads.com/@nabilmdiana" },
+  { name: "@farahvulcanoell", socialUrl: "https://www.threads.com/@farahvulcanoell" },
+  { name: "Novfirman", socialUrl: "" },
 ];
 
 /** Organizations whose open data powers the map (full detail on /sumber-data). */

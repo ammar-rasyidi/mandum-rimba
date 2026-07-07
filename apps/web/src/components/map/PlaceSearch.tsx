@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useTranslations, useLocale } from "next-intl";
+import { parseCoordinates } from "@/lib/geo-import";
 
 /** Subset of the Nominatim search response we use. boundingbox is
  *  [south, north, west, east] as strings. */
@@ -45,6 +46,7 @@ export default function PlaceSearch({
 
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<NominatimResult[]>([]);
+  const [coord, setCoord] = useState<[number, number] | null>(null);
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
   const boxRef = useRef<HTMLDivElement>(null);
@@ -52,6 +54,15 @@ export default function PlaceSearch({
   // debounced geocode (Indonesia only)
   useEffect(() => {
     const q = query.trim();
+    // a pasted coordinate short-circuits the place geocode
+    const c = parseCoordinates(q);
+    setCoord(c);
+    if (c) {
+      setResults([]);
+      setLoading(false);
+      setOpen(true);
+      return;
+    }
     if (q.length < 3) {
       setResults([]);
       setLoading(false);
@@ -99,6 +110,14 @@ export default function PlaceSearch({
     setOpen(false);
   };
 
+  const goToCoord = () => {
+    if (!coord) return;
+    const [lng, lat] = coord;
+    const d = 0.02; // small frame around the point
+    onGoTo([lng - d, lat - d, lng + d, lat + d], [lng, lat], `${lat}, ${lng}`);
+    setOpen(false);
+  };
+
   return (
     <div ref={boxRef} className="relative shrink-0">
       <span className="pointer-events-none absolute left-[0.7rem] top-1/2 -translate-y-1/2 text-muted">
@@ -127,9 +146,21 @@ export default function PlaceSearch({
         </button>
       )}
 
-      {open && (loading || results.length > 0) && (
+      {open && (coord || loading || results.length > 0) && (
         <ul className="glass absolute left-0 right-0 top-full z-10 mt-1 max-h-[230px] list-none overflow-y-auto rounded-xl p-1 [scrollbar-width:thin] bg-gray-900">
-          {loading && results.length === 0 ? (
+          {coord ? (
+            <li>
+              <button
+                onClick={goToCoord}
+                className="block w-full cursor-pointer appearance-none rounded-lg border-0 bg-transparent px-2 py-1.5 text-left text-[0.8rem] text-foreground transition-colors hover:bg-[var(--accent-dim)] hover:text-accent"
+              >
+                <span className="block font-medium">📍 {t("goToCoord")}</span>
+                <span className="block text-[0.72rem] text-muted">
+                  {coord[1].toFixed(5)}, {coord[0].toFixed(5)}
+                </span>
+              </button>
+            </li>
+          ) : loading && results.length === 0 ? (
             <li className="px-2 py-2 text-[0.8rem] text-muted">
               {t("searching")}
             </li>

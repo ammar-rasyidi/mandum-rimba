@@ -3,12 +3,38 @@
 import { useTranslations, useLocale } from "next-intl";
 import type { LayerDef } from "@/lib/layers";
 import speciesNamesRaw from "@/data/species-names.json";
+import floraSpeciesRaw from "@/data/flora-species.json";
+import faunaSpeciesRaw from "@/data/fauna-species.json";
 
 // scientific name -> common name (Indonesian / English), from GBIF vernaculars
 const SPECIES_NAMES = speciesNamesRaw as Record<
   string,
   { id?: string; en?: string }
 >;
+
+// curated, sourced profiles for the iconic flora taxa (POWO/IUCN/CITES). Keyed
+// by the `taxon` label the flora-distribution polygons carry.
+type Bi = { id: string; en: string };
+interface SpeciesProfile {
+  sci: string;
+  en: string;
+  id: string;
+  type: Bi;
+  endemic: Bi;
+  range: Bi;
+  habitat: Bi;
+  iucn: string;
+  iucnNote: Bi;
+  cites: string;
+  protected: Bi;
+  desc: Bi;
+  ref: { name: string; url: string };
+}
+// (each JSON carries a leading `_note` string key for maintainers; it is never
+// looked up, so cast through unknown). Same profile shape is used for the flora
+// (/biodiversitas flora layer) and fauna (endemic-wildlife layer) catalogs.
+const FLORA_SPECIES = floraSpeciesRaw as unknown as Record<string, SpeciesProfile>;
+const FAUNA_SPECIES = faunaSpeciesRaw as unknown as Record<string, SpeciesProfile>;
 
 export interface SelectedFeature {
   layer: LayerDef;
@@ -166,6 +192,131 @@ export default function DetailDrawer({
             </dd>
           </div>
         </dl>
+      </aside>
+    );
+  }
+
+  // Endemic-fauna / flora DISTRIBUTION AREAS: each polygon carries the taxa
+  // recorded inside it + the biogeographic zone (fauna). For flora, each taxon
+  // has a curated, sourced profile (FLORA_SPECIES) rendered as a rich card;
+  // fauna (no catalog yet) falls back to a plain name list.
+  if (layer.id === "endemic" || layer.id === "flora") {
+    const L = locale === "en" ? "en" : "id";
+    // MapLibre serialises array/object feature properties to JSON strings, so
+    // `taxa` arrives as a string (e.g. '["Rafflesia","Meranti"]'), not an array.
+    let taxa: string[] = [];
+    if (Array.isArray(properties.taxa)) {
+      taxa = properties.taxa as string[];
+    } else if (typeof properties.taxa === "string" && properties.taxa) {
+      try {
+        const parsed = JSON.parse(properties.taxa);
+        if (Array.isArray(parsed)) taxa = parsed as string[];
+      } catch {
+        /* ignore malformed */
+      }
+    }
+    const zone =
+      typeof properties.grp === "string" && properties.grp
+        ? properties.grp.charAt(0).toUpperCase() + properties.grp.slice(1)
+        : "";
+    const iucnBadge = (code: string) =>
+      ["NT", "VU", "EN", "CR", "EW", "EX"].includes(code) ? (
+        <span
+          className="rounded-[4px] bg-[var(--glass-highlight)] px-1 py-px text-[0.62rem] font-semibold tracking-[0.04em] text-accent"
+          title={t.has(`iucn.${code}`) ? t(`iucn.${code}`) : code}
+        >
+          {code}
+        </span>
+      ) : null;
+    const catalog = layer.id === "flora" ? FLORA_SPECIES : FAUNA_SPECIES;
+    const profiles = taxa
+      .map((name) => [name, catalog[name]] as const)
+      .filter(([, p]) => p);
+    return (
+      <aside
+        className="glass absolute left-3 top-[5.75rem] z-[5] max-h-[calc(100%-8rem)] w-[340px] animate-[panel-in_0.22s_ease] overflow-y-auto rounded-[18px] p-4 text-[0.88rem] max-[720px]:inset-x-2 max-[720px]:top-[5.25rem] max-[720px]:max-h-[55%] max-[720px]:w-auto"
+        aria-label={t("detail")}
+      >
+        <button className={closeBtn} onClick={onClose}>
+          {t("close")}
+        </button>
+        <h2 className="m-0 mb-1 text-base">{t(`layerNames.${layer.id}`)}</h2>
+        {zone && <p className="m-0 mb-1 text-[0.78rem] text-accent">{zone}</p>}
+        {taxa.length === 0 ? (
+          <p className="m-0 mt-2 text-muted">{t("speciesNone")}</p>
+        ) : profiles.length > 0 ? (
+          <>
+            <p className="m-0 mb-2 text-[0.78rem] text-muted">{t("taxaHere")}</p>
+            <div className="flex flex-col gap-3">
+              {profiles.map(([name, p]) => (
+                <div
+                  key={name}
+                  className="rounded-[12px] border border-[var(--glass-border)] bg-[var(--glass-highlight)] p-3"
+                >
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                    <strong className="text-[0.92rem]">{p[L]}</strong>
+                    {iucnBadge(p.iucn)}
+                    {p.cites && (
+                      <span
+                        className="rounded-[4px] bg-[var(--glass-highlight)] px-1 py-px text-[0.62rem] font-semibold tracking-[0.04em] text-accent"
+                        title={t("citesTitle")}
+                      >
+                        CITES {p.cites}
+                      </span>
+                    )}
+                  </div>
+                  <p className="m-0 text-[0.74rem] italic text-muted">{p.sci}</p>
+                  <p className="m-0 mt-1 text-[0.8rem]">{p.desc[L]}</p>
+                  <dl className="m-0 mt-2 grid grid-cols-[auto_1fr] gap-x-2 gap-y-[0.2rem] text-[0.76rem] [&_dt]:text-muted">
+                    <dt>{t("floraType")}</dt>
+                    <dd className="m-0">{p.type[L]}</dd>
+                    <dt>{t("floraEndemic")}</dt>
+                    <dd className="m-0">{p.endemic[L]}</dd>
+                    <dt>{t("floraRange")}</dt>
+                    <dd className="m-0">{p.range[L]}</dd>
+                    <dt>{t("floraHabitat")}</dt>
+                    <dd className="m-0">{p.habitat[L]}</dd>
+                    {p.iucnNote[L] && (
+                      <>
+                        <dt>{t("floraStatus")}</dt>
+                        <dd className="m-0">{p.iucnNote[L]}</dd>
+                      </>
+                    )}
+                    {p.protected[L] && p.protected[L] !== "-" && (
+                      <>
+                        <dt>{t("floraProtected")}</dt>
+                        <dd className="m-0">{p.protected[L]}</dd>
+                      </>
+                    )}
+                  </dl>
+                  <a
+                    className="mt-2 inline-block text-[0.74rem]"
+                    href={p.ref.url}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {t("source")}: {p.ref.name}
+                  </a>
+                </div>
+              ))}
+            </div>
+          </>
+        ) : (
+          <>
+            <p className="m-0 mb-1 text-[0.78rem] text-muted">{t("taxaHere")}</p>
+            <p className="m-0">{taxa.join(", ")}</p>
+            <dl className="m-0 [&_dd]:m-0 [&_dt]:mt-[0.6rem] [&_dt]:text-[0.75rem] [&_dt]:uppercase [&_dt]:tracking-[0.04em] [&_dt]:text-muted">
+              <div>
+                <dt>{t("source")}</dt>
+                <dd>
+                  <a href={layer.sourceUrl} target="_blank" rel="noreferrer">
+                    {layer.sourceName}, {t("viewEvidence")}
+                  </a>
+                </dd>
+              </div>
+            </dl>
+          </>
+        )}
       </aside>
     );
   }

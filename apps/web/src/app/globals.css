@@ -161,4 +161,41 @@ a:hover {
   }
 }
 
+/* MapLibre popups (e.g. occurrence-record provenance) follow the app theme.
+   The extra `.maplibregl-popup` prefix raises specificity above maplibre-gl.css
+   (which loads after globals.css and would otherwise force a white popup). */
+.maplibregl-popup .maplibregl-popup-content {
+  background: var(--bg-raised);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  padding: 9px 11px;
+  font: 12px/1.4 system-ui, sans-serif;
+}
+.maplibregl-popup .maplibregl-popup-content a {
+  color: var(--link);
+}
+.maplibregl-popup .maplibregl-popup-close-button {
+  color: var(--text-dim);
+  font-size: 15px;
+  padding-right: 4px;
+}
+.maplibregl-popup-anchor-top .maplibregl-popup-tip,
+.maplibregl-popup-anchor-top-left .maplibregl-popup-tip,
+.maplibregl-popup-anchor-top-right .maplibregl-popup-tip {
+  border-bottom-color: var(--bg-raised);
+}
+.maplibregl-popup-anchor-bottom .maplibregl-popup-tip,
+.maplibregl-popup-anchor-bottom-left .maplibregl-popup-tip,
+.maplibregl-popup-anchor-bottom-right .maplibregl-popup-tip {
+  border-top-color: var(--bg-raised);
+}
+.maplibregl-popup-anchor-left .maplibregl-popup-tip {
+  border-right-color: var(--bg-raised);
+}
+.maplibregl-popup-anchor-right .maplibregl-popup-tip {
+  border-left-color: var(--bg-raised);
+}
+
 @tailwind utilities;

@@ -9,6 +9,7 @@ export const routing = defineRouting({
     "/kampanye": { id: "/kampanye", en: "/campaign" },
     "/kartu": { id: "/kartu", en: "/resident-card" },
     "/peta": { id: "/peta", en: "/map" },
+    "/biodiversitas": { id: "/biodiversitas", en: "/biodiversity" },
     "/wilayah/[slug]": { id: "/wilayah/[slug]", en: "/regions/[slug]" },
     "/cerita/[slug]": { id: "/cerita/[slug]", en: "/stories/[slug]" },
     "/metodologi": { id: "/metodologi", en: "/methodology" },

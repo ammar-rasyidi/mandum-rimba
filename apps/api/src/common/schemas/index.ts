@@ -8,6 +8,3 @@ export * from "./company.schema";
 export * from "./story.schema";
 export * from "./job-run.schema";
 export * from "./protected-area.schema";
-export * from "./species.schema";
-export * from "./species-occurrence.schema";
-export * from "./habitat-ecoregion.schema";

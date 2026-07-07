@@ -1,0 +1,48 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Garis Wallace",
+        "name_en": "Wallace's Line",
+        "author": "A. R. Wallace, 1863"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [115.4, -9.6], [115.6, -8.4], [116.9, -5.2], [117.9, -2.2],
+          [118.5, 0.3], [118.9, 2.6], [119.9, 5.4], [121.6, 7.6], [125.2, 9.9]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Garis Weber",
+        "name_en": "Weber's Line",
+        "author": "M. Weber, 1902"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [124.6, -10.2], [125.1, -6.2], [125.7, -1.5], [126.4, 2.8], [127.1, 7.2]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Garis Lydekker",
+        "name_en": "Lydekker's Line",
+        "author": "R. Lydekker, 1896"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [130.2, -10.3], [130.6, -5.2], [131.1, 0.2], [131.6, 4.2], [132.1, 7.6]
+        ]
+      }
+    }
+  ]
+}

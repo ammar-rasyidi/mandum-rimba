@@ -7,6 +7,17 @@ import { LAYERS, colorExpression, type LayerDef } from "@/lib/layers";
 import { TILES_BASE } from "@/lib/api";
 import LayerPanel from "./LayerPanel";
 import DetailDrawer, { type SelectedFeature } from "./DetailDrawer";
+import SpeciesInfo from "./SpeciesInfo";
+import {
+  getSpecies,
+  getFamilies,
+  FLORA_POINTS_URL,
+  familyColorMap,
+  FAMILY_OTHER_COLOR,
+  type SpeciesProfileData,
+  type FamilyStat,
+} from "@/lib/species";
+import type { ImportResult } from "@/lib/geo-import";
 import { DEFAULT_FILTERS, type MapFilters } from "./filters";
 
 // actual archipelago extent (Sabang to Merauke), not loose padding.
@@ -76,7 +87,11 @@ function fitIndonesia(map: maplibregl.Map) {
   );
 }
 
-export default function MapView() {
+export default function MapView({ group }: { group?: "biodiversity" } = {}) {
+  // each map (deforestation vs biodiversity) shows only its own layer group
+  const groupLayers = LAYERS.filter(
+    (l) => (l.group ?? "main") === (group ?? "main"),
+  );
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const searchMarkerRef = useRef<maplibregl.Marker | null>(null);
@@ -86,6 +101,20 @@ export default function MapView() {
     () => readUrlState().filters,
   );
   const [selected, setSelected] = useState<SelectedFeature | null>(null);
+  // biodiversity map: the currently-searched species and its loaded distribution
+  const [speciesKey, setSpeciesKey] = useState<number | null>(null);
+  const [speciesLabel, setSpeciesLabel] = useState<string>("");
+  const [speciesData, setSpeciesData] = useState<SpeciesProfileData | null>(null);
+  const popupRef = useRef<maplibregl.Popup | null>(null);
+  // biodiversity "diversity view": all flora points coloured by family, + filter
+  const [families, setFamilies] = useState<FamilyStat[]>([]);
+  const [familyColors, setFamilyColors] = useState<Record<string, string>>({});
+  const [selectedFamilies, setSelectedFamilies] = useState<string[]>([]);
+  // /peta: an uploaded project boundary (KMZ/KML/DXF) overlaid on the map
+  const [boundary, setBoundary] = useState<{
+    geojson: GeoJSON.FeatureCollection;
+    name: string;
+  } | null>(null);
   const theme = useSiteTheme();
 
   // pan/zoom to a searched place and drop a green marker at its center. bbox is
@@ -214,8 +243,12 @@ export default function MapView() {
 
     map.on("load", async () => {
       // tilesets for empty collections are never built/uploaded, probe first
-      // so we don't request (and 404 on) layers that have no data yet
-      const tileNames = [...new Set(LAYERS.map((l) => l.tile))];
+      // so we don't request (and 404 on) layers that have no data yet. Only
+      // R2-PMTiles layers are probed; GeoJSON-backed layers (ecoregions, biogeo)
+      // load from the bundled file, so they'd 404 against R2 needlessly.
+      const tileNames = [
+        ...new Set(groupLayers.filter((l) => !l.geojson).map((l) => l.tile)),
+      ];
       const avail = new Set<string>();
       await Promise.all(
         tileNames.map(async (name) => {
@@ -231,8 +264,8 @@ export default function MapView() {
       );
 
       const added = new Set<string>();
-      for (const def of LAYERS) {
-        // local GeoJSON layers (richness grid) load from the bundled file, not R2
+      for (const def of groupLayers) {
+        // local GeoJSON layers (distribution areas) load from the bundled file, not R2
         if (def.geojson) {
           const sourceId = `src-${def.id}`;
           if (!added.has(sourceId)) {
@@ -259,6 +292,51 @@ export default function MapView() {
     });
 
     map.on("click", (e) => {
+      // species-atlas occurrence record: show a provenance popup (dataset, year,
+      // basis, GBIF link) instead of the feature drawer.
+      if (map.getLayer("lyr-sp-points")) {
+        const hits = map.queryRenderedFeatures(e.point, {
+          layers: ["lyr-sp-points"],
+        });
+        if (hits.length > 0) {
+          const p = (hits[0].properties ?? {}) as Record<string, unknown>;
+          const gbif = Number(p.gbifKey) || 0;
+          const html =
+            `<div style="max-width:210px">` +
+            `<strong>${p.basis ?? "record"}</strong>` +
+            (p.year ? ` · ${p.year}` : "") +
+            (p.dataset
+              ? `<br><span style="opacity:.7">dataset ${String(p.dataset).slice(0, 8)}…</span>`
+              : "") +
+            (gbif
+              ? `<br><a href="https://www.gbif.org/occurrence/${gbif}" target="_blank" rel="noreferrer">GBIF record ↗</a>`
+              : "") +
+            `</div>`;
+          popupRef.current?.remove();
+          popupRef.current = new maplibregl.Popup({ closeButton: true })
+            .setLngLat(e.lngLat)
+            .setHTML(html)
+            .addTo(map);
+          return;
+        }
+      }
+      // diversity view: clicking any flora dot opens that species in the side
+      // panel (photo + description + records), following the app theme.
+      if (map.getLayer("lyr-flora-all")) {
+        const hits = map.queryRenderedFeatures(e.point, {
+          layers: ["lyr-flora-all"],
+        });
+        if (hits.length > 0) {
+          const p = (hits[0].properties ?? {}) as Record<string, unknown>;
+          const key = Number(p.k) || 0;
+          if (key) {
+            popupRef.current?.remove();
+            setSpeciesLabel(String(p.c || ""));
+            setSpeciesKey(key);
+          }
+          return;
+        }
+      }
       const layerIds = LAYERS.map((l) => `lyr-${l.id}`).filter((id) =>
         map.getLayer(id),
       );
@@ -413,21 +491,321 @@ export default function MapView() {
     syncUrl(filters);
   }, [filters, ready, syncUrl, theme]);
 
+  // biodiversity map: load the searched species' distribution (real occurrence
+  // records + a derived range outline) and render it. Layers are added/removed
+  // dynamically as the selection changes.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready) return;
+    let cancelled = false;
+
+    const clear = () => {
+      for (const id of [
+        "lyr-sp-range-fill",
+        "lyr-sp-range-line",
+        "lyr-sp-points",
+      ]) {
+        if (map.getLayer(id)) map.removeLayer(id);
+      }
+      for (const s of ["src-sp-range", "src-sp-points"]) {
+        if (map.getSource(s)) map.removeSource(s);
+      }
+      popupRef.current?.remove();
+    };
+
+    if (speciesKey == null) {
+      clear();
+      setSpeciesData(null);
+      return;
+    }
+
+    (async () => {
+      const data = await getSpecies(speciesKey);
+      if (cancelled || !data) return;
+      clear();
+      // show the real occurrence records exactly as they are — raw dots, no
+      // derived range polygon (that was an approximation we don't want to imply).
+      // For collection-sensitive taxa the stored coords are already coarsened
+      // (~22km); render them as soft area blobs (not sharp pinpoints) so the
+      // view stays honest about the obscuring and doesn't imply a precise spot.
+      const sensitive = data.species.sensitive === true;
+      map.addSource("src-sp-points", { type: "geojson", data: data.points });
+      map.addLayer({
+        id: "lyr-sp-points",
+        type: "circle",
+        source: "src-sp-points",
+        paint: {
+          "circle-color": "#ffca28",
+          // sensitive taxa: large, heavily-blurred blobs so the coarsened
+          // (~22km) points overlap into one broad region, not distinct spots
+          "circle-radius": sensitive
+            ? ["interpolate", ["linear"], ["zoom"], 4, 18, 9, 70]
+            : ["interpolate", ["linear"], ["zoom"], 4, 2.2, 12, 5],
+          "circle-stroke-color": "#1b1b1b",
+          "circle-stroke-width": sensitive ? 0 : 0.6,
+          "circle-opacity": sensitive ? 0.16 : 0.9,
+          "circle-blur": sensitive ? 1 : 0,
+        },
+      });
+      setSpeciesData(data);
+
+      const bb = data.species.bbox;
+      if (bb) {
+        const mobile = window.innerWidth <= 720;
+        map.fitBounds(
+          [
+            [bb[0], bb[1]],
+            [bb[2], bb[3]],
+          ],
+          {
+            padding: mobile
+              ? { top: 96, right: 16, bottom: Math.round(window.innerHeight * 0.4), left: 16 }
+              : { top: 96, right: 360, bottom: 40, left: 32 },
+            // don't zoom in tight on sensitive taxa — the coords are coarse
+            maxZoom: sensitive ? 7 : 9,
+            duration: 900,
+          },
+        );
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [speciesKey, ready]);
+
+  // biodiversity "diversity view": load ALL flora points, coloured by family, so
+  // people see at a glance how rich Indonesia's flora is. Loaded once on ready.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready || group !== "biodiversity") return;
+    let cancelled = false;
+    (async () => {
+      const fams = await getFamilies();
+      if (cancelled) return;
+      const colors = familyColorMap(fams);
+      setFamilies(fams);
+      setFamilyColors(colors);
+      if (map.getLayer("lyr-flora-all")) map.removeLayer("lyr-flora-all");
+      if (map.getSource("src-flora-all")) map.removeSource("src-flora-all");
+      // points load straight from R2 (static GeoJSON); props use short keys
+      // f=family, k=speciesKey, c=canonical
+      map.addSource("src-flora-all", { type: "geojson", data: FLORA_POINTS_URL });
+      const match: unknown[] = ["match", ["get", "f"]];
+      for (const [fam, col] of Object.entries(colors)) match.push(fam, col);
+      match.push(FAMILY_OTHER_COLOR);
+      map.addLayer({
+        id: "lyr-flora-all",
+        type: "circle",
+        source: "src-flora-all",
+        paint: {
+          "circle-color": match as unknown as string,
+          // sensitive taxa (x=1) render as large, diffuse blobs (coarsened
+          // ~22km location) so they read as a broad region, not a precise spot.
+          // NOTE: "zoom" must be the direct input of a top-level interpolate —
+          // it can't be nested inside "*"/"case" — so the sensitive size lives
+          // in the interpolate output stops instead.
+          "circle-radius": [
+            "interpolate",
+            ["linear"],
+            ["zoom"],
+            4,
+            ["case", ["==", ["get", "x"], 1], 14, 1.6],
+            10,
+            ["case", ["==", ["get", "x"], 1], 44, 4],
+          ] as unknown as number,
+          "circle-opacity": ["case", ["==", ["get", "x"], 1], 0.16, 0.78] as unknown as number,
+          "circle-blur": ["case", ["==", ["get", "x"], 1], 1, 0] as unknown as number,
+          "circle-stroke-color": "#12232a",
+          // no hard edge on sensitive blobs — keep them fuzzy/area-like
+          "circle-stroke-width": ["case", ["==", ["get", "x"], 1], 0, 0.3] as unknown as number,
+        },
+      });
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [ready, group]);
+
+  // filter the diversity layer by family (empty = show all)
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !map.getLayer("lyr-flora-all")) return;
+    map.setFilter(
+      "lyr-flora-all",
+      selectedFamilies.length === 0
+        ? null
+        : (["in", ["get", "f"], ["literal", selectedFamilies]] as never),
+    );
+  }, [selectedFamilies]);
+
+  // when a single species is selected, hide the all-flora cloud (and show it
+  // again when the selection is cleared) so the one species reads clearly.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !map.getLayer("lyr-flora-all")) return;
+    map.setLayoutProperty(
+      "lyr-flora-all",
+      "visibility",
+      speciesKey == null ? "visible" : "none",
+    );
+  }, [speciesKey, speciesData]);
+
+  // /peta: overlay an uploaded project boundary (KMZ/KML/DXF) and frame it
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready) return;
+    const clear = () => {
+      for (const id of [
+        "lyr-boundary-fill",
+        "lyr-boundary-line",
+        "lyr-boundary-point",
+      ])
+        if (map.getLayer(id)) map.removeLayer(id);
+      if (map.getSource("src-boundary")) map.removeSource("src-boundary");
+    };
+    if (!boundary) {
+      clear();
+      return;
+    }
+    clear();
+    map.addSource("src-boundary", { type: "geojson", data: boundary.geojson });
+    map.addLayer({
+      id: "lyr-boundary-fill",
+      type: "fill",
+      source: "src-boundary",
+      filter: ["==", ["geometry-type"], "Polygon"],
+      paint: { "fill-color": "#e040fb", "fill-opacity": 0.15 },
+    });
+    map.addLayer({
+      id: "lyr-boundary-line",
+      type: "line",
+      source: "src-boundary",
+      paint: {
+        "line-color": "#ea80fc",
+        "line-width": 2.5,
+        "line-opacity": 0.95,
+      },
+    });
+    map.addLayer({
+      id: "lyr-boundary-point",
+      type: "circle",
+      source: "src-boundary",
+      filter: ["==", ["geometry-type"], "Point"],
+      paint: {
+        "circle-color": "#ea80fc",
+        "circle-radius": 4,
+        "circle-stroke-color": "#ffffff",
+        "circle-stroke-width": 1,
+      },
+    });
+    const bb = geojsonBounds(boundary.geojson);
+    if (bb) {
+      const mobile = window.innerWidth <= 720;
+      map.fitBounds(
+        [
+          [bb[0], bb[1]],
+          [bb[2], bb[3]],
+        ],
+        {
+          padding: mobile
+            ? { top: 96, right: 16, bottom: Math.round(window.innerHeight * 0.4), left: 16 }
+            : { top: 96, right: 360, bottom: 40, left: 32 },
+          maxZoom: 15,
+          duration: 900,
+        },
+      );
+    }
+  }, [boundary, ready]);
+
   return (
     <div className="fixed inset-0 flex">
       <div ref={containerRef} className="relative flex-1" />
       <LayerPanel
+        layers={groupLayers}
         availableTiles={availableTiles}
         filters={filters}
         onChange={setFilters}
-        onReset={() => setFilters({ ...DEFAULT_FILTERS })}
+        onReset={() => {
+          setFilters({ ...DEFAULT_FILTERS });
+          setSelectedFamilies([]);
+          setSpeciesKey(null);
+          setSpeciesLabel("");
+        }}
         onGoTo={flyToBounds}
+        onSpeciesSelect={
+          group === "biodiversity"
+            ? (key, label) => {
+                setSpeciesLabel(label);
+                setSpeciesKey(key);
+              }
+            : undefined
+        }
+        speciesLabel={speciesLabel}
+        families={group === "biodiversity" ? families : undefined}
+        familyColors={familyColors}
+        selectedFamilies={selectedFamilies}
+        onToggleFamily={(fam) =>
+          setSelectedFamilies((cur) =>
+            cur.includes(fam)
+              ? cur.filter((f) => f !== fam)
+              : [...cur, fam],
+          )
+        }
+        onClearFamilies={() => setSelectedFamilies([])}
+        onBoundaryLoaded={
+          group === "biodiversity"
+            ? undefined
+            : (r: ImportResult, name: string) =>
+                setBoundary({ geojson: r.geojson, name })
+        }
+        boundaryName={boundary?.name}
+        onClearBoundary={() => setBoundary(null)}
       />
+      {speciesData && (
+        <SpeciesInfo
+          data={speciesData}
+          onClose={() => {
+            setSpeciesKey(null);
+            setSpeciesLabel("");
+          }}
+        />
+      )}
       {selected && (
         <DetailDrawer feature={selected} onClose={() => setSelected(null)} />
       )}
     </div>
   );
+}
+
+/** [w, s, e, n] bounds of every coordinate in a GeoJSON FeatureCollection. */
+function geojsonBounds(
+  fc: GeoJSON.FeatureCollection,
+): [number, number, number, number] | null {
+  let w = Infinity;
+  let s = Infinity;
+  let e = -Infinity;
+  let n = -Infinity;
+  const walk = (c: unknown): void => {
+    if (
+      Array.isArray(c) &&
+      typeof c[0] === "number" &&
+      typeof c[1] === "number"
+    ) {
+      const [x, y] = c as [number, number];
+      if (x < w) w = x;
+      if (x > e) e = x;
+      if (y < s) s = y;
+      if (y > n) n = y;
+    } else if (Array.isArray(c)) {
+      for (const item of c) walk(item);
+    }
+  };
+  for (const f of fc.features)
+    if (f.geometry && "coordinates" in f.geometry)
+      walk((f.geometry as { coordinates: unknown }).coordinates);
+  return Number.isFinite(w) ? [w, s, e, n] : null;
 }
 
 function buildLayer(
@@ -448,7 +826,11 @@ function buildLayer(
       return {
         ...base,
         type: "line",
-        paint: { "line-color": def.color, "line-width": 1, "line-opacity": 0.8 },
+        paint: {
+          "line-color": colorExpression(def.id, def.color) as unknown as string,
+          "line-width": 2.4,
+          "line-opacity": 0.9,
+        },
       };
     case "fill": {
       // Peta Sebaran Satwa: smooth density bands (organic contour polygons).
@@ -463,6 +845,18 @@ function buildLayer(
             "fill-color": c,
             "fill-opacity": 0.4,
             "fill-outline-color": c, // class-coloured edge, like the concessions
+          },
+        };
+      }
+      // fills that carry their own per-feature colour (ecoregions: RESOLVE COLOR)
+      if (def.colorProp) {
+        return {
+          ...base,
+          type: "fill",
+          paint: {
+            "fill-color": ["get", def.colorProp] as unknown as string,
+            "fill-opacity": 0.5,
+            "fill-outline-color": "rgba(255,255,255,0.28)",
           },
         };
       }

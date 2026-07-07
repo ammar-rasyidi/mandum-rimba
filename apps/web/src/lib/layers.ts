@@ -26,6 +26,12 @@ export interface LayerDef {
   defaultOn: boolean;
   sourceName: string;
   sourceUrl: string;
+  /** which map this layer belongs to; omitted = the main deforestation map,
+   *  "biodiversity" = the separate /biodiversitas map */
+  group?: "biodiversity";
+  /** for fills: colour each feature by this GeoJSON property (a hex string),
+   *  e.g. ecoregions carry RESOLVE's official per-ecoregion COLOR */
+  colorProp?: string;
 }
 
 export const LAYERS: LayerDef[] = [
@@ -84,6 +90,41 @@ export const LAYERS: LayerDef[] = [
     sourceUrl:
       "https://www.desinventar.net/DesInventar/profiletab.jsp?countrycode=idn",
   },
+
+  // ================= biodiversity map (/biodiversitas) =================
+  {
+    // Terrestrial ecoregions (RESOLVE 2017): the ecological "rooms" of the
+    // archipelago. Coloured by RESOLVE's official per-ecoregion palette (COLOR),
+    // so Sundaland, Wallacea, and Papua read as distinct worlds at a glance.
+    id: "ecoregions",
+    tile: "ecoregions",
+    kind: "fill",
+    geojson: "/data/ecoregions-id.geojson",
+    colorProp: "COLOR",
+    color: "#66bb6a", // legend swatch (representative)
+    defaultOn: true,
+    group: "biodiversity",
+    sourceName: "RESOLVE Ecoregions 2017 (CC BY 4.0)",
+    sourceUrl: "https://ecoregions.appspot.com/",
+  },
+  {
+    // Biogeographic transition lines (Wallace 1863, Weber, Lydekker): the faunal
+    // divides between Sundaland, Wallacea, and Sahul. Conceptual and approximate,
+    // as these lines are always depicted. Coloured per line (see LAYER_SUBCOLORS).
+    id: "biogeo",
+    tile: "biogeo",
+    kind: "line",
+    geojson: "/data/biogeo-lines.geojson",
+    color: "#ff5252",
+    defaultOn: true,
+    group: "biodiversity",
+    sourceName: "Garis biogeografi (Wallace 1863, Weber, Lydekker)",
+    sourceUrl: "https://en.wikipedia.org/wiki/Wallace_Line",
+  },
+  // NOTE: the old merged flora/fauna "distribution blob" layers were removed.
+  // The biodiversity map is now a per-species atlas: a search box (SpeciesSearch)
+  // loads ONE species' real occurrence records + a derived range outline from the
+  // self-hosted /species API. ecoregions + biogeo above stay as the backdrop.
 ];
 
 /**
@@ -115,6 +156,14 @@ export const LAYER_SUBCOLORS: Record<
       pulp_hti: "#f4511e", // deep-orange 600
       logging: "#ffb300", // amber 600
       mining: "#e53935", // red 600, most intensive
+    },
+  },
+  biogeo: {
+    prop: "name_en",
+    colors: {
+      "Wallace's Line": "#ff5252", // red
+      "Weber's Line": "#ffd740", // amber
+      "Lydekker's Line": "#40c4ff", // blue
     },
   },
   protected: {

@@ -90,6 +90,10 @@ const SOURCES = [
 
 const CHANGELOG = [
   {
+    version: "2026.07.0",
+    note: "Biodiversity map (/biodiversitas) reworked: the endemic-fauna and iconic-flora layers changed from scattered occurrence dots into DISTRIBUTION AREAS — curated GBIF points contoured per island into smooth density areas (fauna coloured by Sundaland/Wallacea/Papua biogeographic zone), the same organic-contour treatment as the Wildlife Distribution layer. The 'Biodiversity record density (GBIF)' raster overlay was removed as unhelpful noise. Two orphaned tilesets (wildlife habitat + occurrence points) that no map layer used were retired from the pipeline and object store.",
+  },
+  {
     version: "2026.06.2",
     note: "Wildlife layer reworked from occurrence points into a habitat-aware Wildlife Distribution layer: GBIF occurrences of threatened + flagship/endemic species (all classes, hundreds of species) are weighted by ESA WorldCover natural-habitat cover, city points are dropped, then density is contoured per island so each species stays on its actual island (a Sumatran tiger never bleeds into Java). Cryptic species whose coordinates are withheld for protection (e.g. Sumatran rhino) are added as clearly-flagged documented-range markers (IUCN/KLHK), not field records. The standalone RESOLVE ecoregion habitat layer was retired; its role is folded into the distribution layer's habitat weighting.",
   },

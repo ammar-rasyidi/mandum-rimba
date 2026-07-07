@@ -2,8 +2,12 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { LAYERS, LAYER_SUBCOLORS, swatchColor } from "@/lib/layers";
+import { LAYER_SUBCOLORS, swatchColor, type LayerDef } from "@/lib/layers";
 import PlaceSearch from "./PlaceSearch";
+import SpeciesSearch from "./SpeciesSearch";
+import BoundaryUpload from "./BoundaryUpload";
+import type { FamilyStat } from "@/lib/species";
+import type { ImportResult } from "@/lib/geo-import";
 import {
   ALERT_SYSTEMS,
   CONCESSION_TYPES,
@@ -15,6 +19,8 @@ import {
 } from "./filters";
 
 interface Props {
+  /** the layers for this map (deforestation map vs biodiversity map) */
+  layers: LayerDef[];
   /** tile names that actually exist on R2; others render disabled */
   availableTiles: string[];
   filters: MapFilters;
@@ -26,6 +32,20 @@ interface Props {
     center: [number, number],
     label: string,
   ) => void;
+  /** biodiversity map only: pick a species to show its distribution */
+  onSpeciesSelect?: (key: number, label: string) => void;
+  /** the currently-selected species label (for the search box) */
+  speciesLabel?: string;
+  /** biodiversity diversity view: top families (colour-coded) + filter */
+  families?: FamilyStat[];
+  familyColors?: Record<string, string>;
+  selectedFamilies?: string[];
+  onToggleFamily?: (family: string) => void;
+  onClearFamilies?: () => void;
+  /** /peta only: overlay an uploaded project boundary (KMZ/KML/DXF) */
+  onBoundaryLoaded?: (result: ImportResult, filename: string) => void;
+  boundaryName?: string;
+  onClearBoundary?: () => void;
 }
 
 /** which sub-filter belongs under which layer row */
@@ -55,11 +75,22 @@ const SUB_FILTERS: Record<
 const HIDDEN_LAYERS = new Set(["alerts", "disasters"]);
 
 export default function LayerPanel({
+  layers,
   availableTiles,
   filters,
   onChange,
   onReset,
   onGoTo,
+  onSpeciesSelect,
+  speciesLabel,
+  families,
+  familyColors,
+  selectedFamilies,
+  onToggleFamily,
+  onClearFamilies,
+  onBoundaryLoaded,
+  boundaryName,
+  onClearBoundary,
 }: Props) {
   const t = useTranslations("map");
   const [minimized, setMinimized] = useState(false);
@@ -110,10 +141,35 @@ export default function LayerPanel({
         </div>
       </header>
 
+      {/* biodiversity map: species search is the primary control — pick any
+          species to see WHERE it lives (records + range outline) */}
+      {onSpeciesSelect && (
+        <div className="mb-3 shrink-0">
+          <SpeciesSearch
+            onSelect={onSpeciesSelect}
+            selectedLabel={speciesLabel}
+          />
+          <p className="mt-1 px-1 text-[0.7rem] text-muted">
+            {t("speciesHint")}
+          </p>
+        </div>
+      )}
+
       {/* place search, pinned with the header, stays fixed above the scroll area */}
       <div className="mb-3 shrink-0">
         <PlaceSearch onGoTo={onGoTo} />
       </div>
+
+      {/* /peta: upload a project boundary (KMZ/KML/DXF) to overlay + screenshot */}
+      {onBoundaryLoaded && (
+        <div className="mb-3 shrink-0">
+          <BoundaryUpload
+            onLoaded={onBoundaryLoaded}
+            loadedName={boundaryName}
+            onClear={onClearBoundary ?? (() => {})}
+          />
+        </div>
+      )}
 
       {/* basemap switcher, stays pinned with the header above the scroll area */}
       <div
@@ -142,7 +198,53 @@ export default function LayerPanel({
           the filter list gets long (negative margin lets the scrollbar sit at
           the panel edge while content keeps its padding) */}
       <div className="-mx-[0.9rem] flex-1 overflow-y-auto px-[0.9rem] [scrollbar-width:thin]">
-      {LAYERS.filter((def) => !HIDDEN_LAYERS.has(def.id)).map((def) => {
+      {families && families.length > 0 && (
+        <section className="border-t border-border pb-[0.6rem] pt-2">
+          <div className="flex items-center justify-between">
+            <span className="text-[0.82rem] font-medium">
+              {t("floraDiversity")}
+            </span>
+            {selectedFamilies && selectedFamilies.length > 0 && (
+              <button className={panelBtn} onClick={onClearFamilies}>
+                {t("reset")}
+              </button>
+            )}
+          </div>
+          <p className="mb-[0.5rem] mt-[0.15rem] text-[0.72rem] text-muted">
+            {t("floraDiversityStat", {
+              species: families.reduce((a, f) => a + f.species, 0),
+              families: families.length,
+            })}
+          </p>
+          <div className="flex flex-wrap gap-[0.35rem]">
+            {families.map((f) => {
+              const on =
+                !selectedFamilies?.length || selectedFamilies.includes(f.family);
+              const color = familyColors?.[f.family] ?? "#90a4ae";
+              return (
+                <button
+                  key={f.family}
+                  onClick={() => onToggleFamily?.(f.family)}
+                  className={`inline-flex cursor-pointer select-none items-center gap-[0.3rem] rounded-full border px-[0.55rem] py-[0.16rem] text-[0.74rem] transition-[color,border-color,opacity] ${
+                    on
+                      ? "border-[var(--glass-border)] text-foreground"
+                      : "border-transparent text-muted opacity-50"
+                  }`}
+                  title={`${f.species} spesies · ${f.records} catatan`}
+                >
+                  <span
+                    className="h-2 w-2 shrink-0 rounded-full"
+                    style={{ background: color }}
+                  />
+                  {f.family}
+                  <span className="text-muted">{f.species}</span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      )}
+      {layers.filter((def) => !HIDDEN_LAYERS.has(def.id)).map((def) => {
         const available = availableTiles.includes(def.tile);
         const active = available && filters.layers.includes(def.id);
         const sub = SUB_FILTERS[def.id];

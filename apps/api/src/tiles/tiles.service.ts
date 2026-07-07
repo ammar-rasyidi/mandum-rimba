@@ -15,18 +15,13 @@ import {
   ConcessionDocument,
   Disaster,
   DisasterDocument,
-  HabitatEcoregion,
-  HabitatEcoregionDocument,
   ProtectedArea,
   ProtectedAreaDocument,
   Region,
   RegionDocument,
-  SpeciesOccurrence,
-  SpeciesOccurrenceDocument,
 } from "../common/schemas";
 import { JobLockService } from "../common/job-lock.service";
 import { ArchiverService } from "../common/archiver.service";
-import { FLAGSHIP_SPECIES } from "../ingest/data/flagship-species";
 import {
   JobRegistryService,
   cronEnabled,
@@ -62,10 +57,6 @@ export class TilesService implements OnModuleInit {
     @InjectModel(ProtectedArea.name)
     private protectedModel: Model<ProtectedAreaDocument>,
     @InjectModel(Disaster.name) private disasterModel: Model<DisasterDocument>,
-    @InjectModel(SpeciesOccurrence.name)
-    private occModel: Model<SpeciesOccurrenceDocument>,
-    @InjectModel(HabitatEcoregion.name)
-    private habitatModel: Model<HabitatEcoregionDocument>,
     private readonly locks: JobLockService,
     private readonly archiver: ArchiverService,
     private readonly registry: JobRegistryService,
@@ -284,62 +275,6 @@ export class TilesService implements OnModuleInit {
             }),
           ),
         tippecanoeArgs: ["-zg", "--drop-densest-as-needed"],
-      },
-      {
-        name: "habitat",
-        changeKey: async () => this.habitatModel.estimatedDocumentCount(),
-        export: (path) =>
-          this.streamCursor(
-            path,
-            this.habitatModel.find().lean().cursor(),
-            (d: Record<string, any>) => ({
-              type: "Feature",
-              geometry: d.geom,
-              properties: {
-                id: String(d._id),
-                ecoName: d.ecoName,
-                biome: d.biomeName,
-                species: (d.speciesSlugs ?? []).join(","),
-              },
-            }),
-          ),
-        tippecanoeArgs: ["-zg", "--coalesce-densest-as-needed"],
-      },
-      {
-        name: "species",
-        changeKey: async () => this.occModel.estimatedDocumentCount(),
-        export: (path) => {
-          // slug → common name (id/en) from the curated flagship list, so the
-          // popup shows a familiar name, not the scientific name alone
-          const names = new Map(
-            FLAGSHIP_SPECIES.map((s) => [
-              s.slug,
-              { id: s.commonNameId, en: s.commonNameEn },
-            ]),
-          );
-          return this.streamCursor(
-            path,
-            this.occModel.find().lean().cursor(),
-            (d: Record<string, any>) => ({
-              type: "Feature",
-              geometry: d.geom,
-              properties: {
-                id: String(d._id),
-                name: names.get(d.speciesSlug)?.id ?? d.speciesSlug,
-                nameEn: names.get(d.speciesSlug)?.en ?? d.speciesSlug,
-                sci: d.scientificName,
-                status: d.iucnStatus, // CR | EN | VU, drives the status filters
-                year: d.year ?? 0,
-                basis: d.basisOfRecord,
-              },
-            }),
-          );
-        },
-        tippecanoeArgs: [
-          "-zg",
-          "--drop-densest-as-needed",
-          "--extend-zooms-if-still-dropping",
-        ],
       },
     ];
   }

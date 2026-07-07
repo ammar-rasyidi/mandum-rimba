@@ -49,7 +49,7 @@ upserts into the database. Run order (`JOB_ORDER`):
 
 1. **Ingest jobs** -> database:
    `gfw-alerts`, `gfw-annual`, `bnpb-dibi`, `concessions`, `modi-esdm`,
-   `mining`, `wdpa`, `habitat`, `trase`, `species`, `nusantara-atlas`.
+   `mining`, `wdpa`, `trase`, `nusantara-atlas`.
    Sources without a stable machine endpoint are **skipped cleanly** when
    unconfigured, so the pipeline runs with whatever keys you have.
 2. **`tiles`** -> builds vector **PMTiles** from the ingested geometry and
@@ -64,7 +64,9 @@ Implementations live in `apps/api/src/ingest/*.service.ts`.
   regions, companies, stories). Shared by the serving API and the pipeline.
 - **Object store** (S3-compatible), the built **PMTiles** vector layers plus raw
   source archives. Only the pipeline writes; the browser reads from its public
-  URL.
+  URL. Raw archives (`raw/<job>/<date>/…`) are download-only provenance the app
+  never reads back, so each source keeps **only its latest snapshot** — the
+  archiver prunes older dates after every run to stop storage ballooning.
 
 ## 4. Serving
 
@@ -83,8 +85,11 @@ Implementations live in `apps/api/src/ingest/*.service.ts`.
   (`NEXT_PUBLIC_API_BASE_URL`).
 - **Bundled data**, a few small, static datasets ship inside the web build
   (`apps/web/src/data` and `apps/web/public/data`): the **wildlife distribution**
-  layer (`species-distribution.geojson`), the campaign / KTP "nearest species"
-  index (`wildlife-points.json`), conservation areas, and species common names.
+  layer (`species-distribution.geojson`), the **biodiversity-map** ecoregions /
+  biogeographic lines and the endemic **fauna & flora distribution areas**
+  (`endemic-fauna-dist-id.geojson`, `endemic-flora-dist-id.geojson`), the
+  campaign / KTP "nearest species" index (`wildlife-points.json`), and species
+  common names.
 
 ## The wildlife distribution layer (offline build)
 
@@ -108,6 +113,10 @@ Occurrence coordinates are validated against an Indonesia land mask and the
 species' realm, and pre-1990 museum specimens are dropped, so the map reflects
 present-day presence. The full build is in
 [`scripts/species-distribution`](./scripts/species-distribution).
+
+The `/biodiversitas` map's **endemic fauna & flora distribution areas** are built
+the same way (curated GBIF points contoured per island into smooth areas) by a
+sibling offline build, [`scripts/biodiversity-distribution`](./scripts/biodiversity-distribution).
 
 ## Editorial guarantees baked into the flow
 

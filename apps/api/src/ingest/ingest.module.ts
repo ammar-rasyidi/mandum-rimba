@@ -8,8 +8,7 @@ import { WdpaService } from "./wdpa.service";
 import { TraseService } from "./trase.service";
 import { NusantaraAtlasService } from "./nusantara-atlas.service";
 import { MiningService } from "./mining.service";
-import { SpeciesService } from "./species.service";
-import { HabitatService } from "./habitat.service";
+import { GbifOccurrencesService } from "./gbif-occurrences.service";
 
 @Module({
   providers: [
@@ -22,8 +21,7 @@ import { HabitatService } from "./habitat.service";
     TraseService,
     NusantaraAtlasService,
     MiningService,
-    SpeciesService,
-    HabitatService,
+    GbifOccurrencesService,
   ],
 })
 export class IngestModule {}

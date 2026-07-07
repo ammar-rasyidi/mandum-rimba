@@ -7,6 +7,7 @@ import { Link, usePathname } from "@/i18n/navigation";
 /** Static (param-free) routes usable as a plain Link href. */
 type StaticPath =
   | "/peta"
+  | "/biodiversitas"
   | "/metodologi"
   | "/sumber-data"
   | "/data"
@@ -122,6 +123,7 @@ export default function SiteNav() {
 
   const links: { href: StaticPath; label: string }[] = [
     { href: "/peta", label: t("map") },
+    { href: "/biodiversitas", label: t("biodiversity") },
     { href: "/metodologi", label: t("methodology") },
     { href: "/sumber-data", label: t("sources") },
     { href: "/data", label: t("data") },

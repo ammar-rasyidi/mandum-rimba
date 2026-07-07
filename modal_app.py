@@ -83,10 +83,9 @@ INGEST_JOBS = [
     "modi-esdm",
     "mining",
     "wdpa",
-    "habitat",
     "trase",
-    "species",
     "nusantara-atlas",
+    "gbif-occurrences",
 ]
 
 # Full pipeline: ingest first (so polygons/points exist), THEN tiles builds
@@ -126,10 +125,11 @@ def _run_many(jobs: list[str]) -> None:
         raise RuntimeError(f"finished with failures: {failed}")
 
 
-# Weekly, Sunday 18:00 UTC = Monday 01:00 WIB. The upstream sources refresh on
-# the order of months, so a daily run is wasteful; once a week keeps the map
-# current without churn. (Trigger manually any time with run_job for a one-off.)
-@app.function(secrets=[env_secret], schedule=modal.Cron("0 18 * * 0"), timeout=6 * 3600)
+# Every 6 months: 1 Jan & 1 Jul at 18:00 UTC = 2nd 01:00 WIB. The upstream sources
+# (GBIF, WDPA, GFW, ...) refresh on the order of months-to-years, so twice a year
+# keeps the map current without churn or compute cost. (Trigger manually any time
+# with run_job for a one-off refresh.)
+@app.function(secrets=[env_secret], schedule=modal.Cron("0 18 1 1,7 *"), timeout=6 * 3600)
 def pipeline() -> None:
     _run_many(JOB_ORDER)
 

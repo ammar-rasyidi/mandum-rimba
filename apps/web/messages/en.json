@@ -7,6 +7,7 @@
   "nav": {
     "about": "About",
     "map": "Map",
+    "biodiversity": "Biodiversity",
     "stories": "Stories",
     "methodology": "Methodology",
     "data": "Data",
@@ -142,8 +143,14 @@
     "daysBack": "Alert day range",
     "reset": "Reset",
     "minimize": "Minimize",
-    "searchPlace": "Search a place…",
+    "searchPlace": "Search a place or paste coordinates…",
     "searching": "Searching…",
+    "goToCoord": "Go to coordinate",
+    "uploadBoundary": "Upload boundary (KMZ / KML)",
+    "uploadParsing": "Parsing file…",
+    "uploadError": "Couldn't read the file",
+    "boundaryLoaded": "Boundary loaded",
+    "clearBoundary": "Clear boundary",
     "searchNoResults": "No places found",
     "basemap": "Basemap",
     "basemaps": {
@@ -196,6 +203,24 @@
     "fieldDensity": "Record density",
     "fieldDate": "Data as of",
     "speciesHere": "Wildlife recorded around here",
+    "taxaHere": "Recorded in this range",
+    "floraType": "Type",
+    "floraEndemic": "Endemic status",
+    "floraRange": "Range",
+    "floraHabitat": "Habitat",
+    "floraStatus": "Conservation status",
+    "floraProtected": "Protection",
+    "citesTitle": "CITES appendix (international trade regulated)",
+    "searchSpecies": "Search species… e.g. Rafflesia arnoldii",
+    "speciesHint": "Type a plant's scientific name to see where it lives (e.g. Shorea, Nepenthes, Dipterocarpus).",
+    "recordsCount": "{n} records",
+    "floraName": "Common name",
+    "floraFamily": "Family",
+    "rangeDerivedNote": "Each dot is a real GBIF occurrence record (not an interpolated range).",
+    "viewOnGbif": "View on GBIF ↗",
+    "floraDiversity": "Flora diversity (by family)",
+    "floraDiversityStat": "{species} species across {families} families shown",
+    "viewDistribution": "View distribution →",
     "speciesNone": "No species of conservation concern recorded at this point.",
     "fieldDataPeriod": "Source data period",
     "docRange": "Documented range (IUCN / KLHK), not a field observation",
@@ -227,8 +252,15 @@
       "concessions": "Concessions (palm / pulp / logging / mining)",
       "protected": "Protected & moratorium areas",
       "species-dist": "Wildlife Distribution",
-      "disasters": "Disasters (floods, landslides)"
-    }
+      "disasters": "Disasters (floods, landslides)",
+      "ecoregions": "Ecoregions",
+      "biogeo": "Biogeographic lines (Wallace/Weber/Lydekker)",
+      "endemic": "Endemic wildlife distribution (Sundaland/Wallacea/Papua)",
+      "flora": "Endemic & iconic flora distribution"
+    },
+    "sensitiveNote": "Location coarsened to protect this collection-sensitive species.",
+    "loadingPhoto": "Loading photo…",
+    "loadingInfo": "Loading species info…"
   },
   "region": {
     "lossPerYear": "Tree cover loss per year (ha)",
@@ -323,11 +355,26 @@
     "involveTitle": "Get involved",
     "involveIntro": "You don't need to write code to help. What we need most right now:",
     "involveItems": [
-      { "title": "Data corrections", "body": "if a coordinate, status, or source is wrong, tell us with a link to the original source." },
-      { "title": "Layer or species suggestions", "body": "credible public data that deserves a place on the map." },
-      { "title": "Design & methodology feedback", "body": "what's confusing, or what could be made clearer." },
-      { "title": "Spread the word", "body": "share the map with people who care about Indonesia's forests and wildlife." },
-      { "title": "Code contributions", "body": "open as soon as the public repository and its contribution guide are ready." }
+      {
+        "title": "Data corrections",
+        "body": "if a coordinate, status, or source is wrong, tell us with a link to the original source."
+      },
+      {
+        "title": "Layer or species suggestions",
+        "body": "credible public data that deserves a place on the map."
+      },
+      {
+        "title": "Design & methodology feedback",
+        "body": "what's confusing, or what could be made clearer."
+      },
+      {
+        "title": "Spread the word",
+        "body": "share the map with people who care about Indonesia's forests and wildlife."
+      },
+      {
+        "title": "Code contributions",
+        "body": "open as soon as the public repository and its contribution guide are ready."
+      }
     ],
     "contactTitle": "Contact us",
     "contactBody": "Have a correction, a suggestion, or a question? There's no dedicated inbox yet, so DM me directly on Threads at"
@@ -342,10 +389,22 @@
     "whyBody": "Mandum Rimba, the map you are looking at, needs a server, a domain, and the data pipeline that keeps it alive and up to date every day. Lam Rimba, the game, is a bigger world still: full of 3D assets, sound, animation, and many things that take both time and money. For the first time I am opening the door to support, so both can keep growing.",
     "useTitle": "Where your support goes",
     "useItems": [
-      { "title": "Assets and production", "body": "3D models of the wildlife and its forest, animation, music, and sound, down to the small details that make the rimba feel alive. Some I build myself, some I have to buy or make with paid tools." },
-      { "title": "Releasing to the app stores", "body": "the Apple App Store and Google Play developer accounts each carry their own registration fees. This is what lets Lam Rimba reach your phone, free to download." },
-      { "title": "Running and upkeep", "body": "the servers, domains, and data pipeline that keep Mandum Rimba and Lam Rimba running and updated, day after day." },
-      { "title": "Time to build it", "body": "most of my time and focus now goes here, tending this small rimba bit by bit until it is truly done." }
+      {
+        "title": "Assets and production",
+        "body": "3D models of the wildlife and its forest, animation, music, and sound, down to the small details that make the rimba feel alive. Some I build myself, some I have to buy or make with paid tools."
+      },
+      {
+        "title": "Releasing to the app stores",
+        "body": "the Apple App Store and Google Play developer accounts each carry their own registration fees. This is what lets Lam Rimba reach your phone, free to download."
+      },
+      {
+        "title": "Running and upkeep",
+        "body": "the servers, domains, and data pipeline that keep Mandum Rimba and Lam Rimba running and updated, day after day."
+      },
+      {
+        "title": "Time to build it",
+        "body": "most of my time and focus now goes here, tending this small rimba bit by bit until it is truly done."
+      }
     ],
     "freeHelpTitle": "Other ways to help",
     "freeHelpBody": "Support does not have to be money. These matter just as much:",

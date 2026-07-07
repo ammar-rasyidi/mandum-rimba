@@ -1,11 +1,14 @@
 import { Injectable, Logger } from "@nestjs/common";
 import {
+  DeleteObjectsCommand,
+  ListObjectsV2Command,
   PutObjectCommand,
   S3Client,
 } from "@aws-sdk/client-s3";
 import { createHash } from "node:crypto";
 import { createReadStream } from "node:fs";
 import { stat } from "node:fs/promises";
+import { gzipSync } from "node:zlib";
 
 /**
  * Cloudflare R2 (S3-compatible) writer. Used for:
@@ -52,6 +55,28 @@ export class ArchiverService {
     await this.put(key, JSON.stringify(body), "application/json");
   }
 
+  /** PUT a JSON object gzip-compressed (Content-Encoding: gzip) — for the static
+   *  species atlas on R2 (index / points / per-species files). Browsers fetch
+   *  and decompress transparently. */
+  async putGzipJson(
+    key: string,
+    obj: unknown,
+    contentType = "application/json",
+  ): Promise<void> {
+    if (!this.client) return;
+    const body = gzipSync(Buffer.from(JSON.stringify(obj)));
+    await this.client.send(
+      new PutObjectCommand({
+        Bucket: this.bucket,
+        Key: key,
+        Body: body,
+        ContentType: contentType,
+        ContentEncoding: "gzip",
+        CacheControl: "public, max-age=3600",
+      }),
+    );
+  }
+
   async put(
     key: string,
     body: string | Buffer,
@@ -88,7 +113,10 @@ export class ArchiverService {
     this.logger.log(`uploaded r2://${this.bucket}/${key} (${size} bytes)`);
   }
 
-  /** Archive a raw source payload under raw/<job>/<yyyy-mm-dd>/<name>. */
+  /** Archive a raw source payload under raw/<job>/<yyyy-mm-dd>/<name>, then keep
+   *  ONLY the current run's snapshot for this job (older dated snapshots are
+   *  pruned). Nothing reads raw/ back — it's download-only provenance — so
+   *  retaining every historical run just balloons storage (5 GB before this). */
   async archiveRaw(
     job: string,
     name: string,
@@ -98,6 +126,49 @@ export class ArchiverService {
     const date = new Date().toISOString().slice(0, 10);
     const key = `raw/${job}/${date}/${name}`;
     await this.put(key, payload, contentType);
+    await this.pruneRawExcept(job, date);
     return key;
+  }
+
+  /** Delete every raw/<job>/ object whose date segment is not `keepDate`, so a
+   *  source keeps only its latest snapshot. Best-effort: a prune failure logs a
+   *  warning but never fails the ingest job that called it. */
+  private async pruneRawExcept(job: string, keepDate: string): Promise<void> {
+    if (!this.client) return;
+    try {
+      const prefix = `raw/${job}/`;
+      const stale: { Key: string }[] = [];
+      let token: string | undefined;
+      do {
+        const page = await this.client.send(
+          new ListObjectsV2Command({
+            Bucket: this.bucket,
+            Prefix: prefix,
+            ContinuationToken: token,
+          }),
+        );
+        for (const obj of page.Contents ?? []) {
+          const date = obj.Key?.slice(prefix.length).split("/")[0];
+          if (obj.Key && date && date !== keepDate) stale.push({ Key: obj.Key });
+        }
+        token = page.IsTruncated ? page.NextContinuationToken : undefined;
+      } while (token);
+
+      for (let i = 0; i < stale.length; i += 1000) {
+        await this.client.send(
+          new DeleteObjectsCommand({
+            Bucket: this.bucket,
+            Delete: { Objects: stale.slice(i, i + 1000), Quiet: true },
+          }),
+        );
+      }
+      if (stale.length) {
+        this.logger.log(`pruned ${stale.length} stale raw/${job} snapshot(s)`);
+      }
+    } catch (err) {
+      this.logger.warn(
+        `raw prune for ${job} failed (non-fatal): ${(err as Error).message}`,
+      );
+    }
   }
 }

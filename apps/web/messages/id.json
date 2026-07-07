@@ -7,6 +7,7 @@
   "nav": {
     "about": "Tentang",
     "map": "Peta",
+    "biodiversity": "Biodiversitas",
     "stories": "Cerita",
     "methodology": "Metodologi",
     "data": "Data",
@@ -142,8 +143,14 @@
     "daysBack": "Rentang hari peringatan",
     "reset": "Atur ulang",
     "minimize": "Kecilkan",
-    "searchPlace": "Cari tempat…",
+    "searchPlace": "Cari tempat atau tempel koordinat…",
     "searching": "Mencari…",
+    "goToCoord": "Menuju koordinat",
+    "uploadBoundary": "Unggah batas (KMZ / KML)",
+    "uploadParsing": "Memproses berkas…",
+    "uploadError": "Gagal membaca berkas",
+    "boundaryLoaded": "Batas dimuat",
+    "clearBoundary": "Hapus batas",
     "searchNoResults": "Tempat tidak ditemukan",
     "basemap": "Peta dasar",
     "basemaps": {
@@ -196,6 +203,24 @@
     "fieldDensity": "Kepadatan catatan",
     "fieldDate": "Data per",
     "speciesHere": "Satwa tercatat di sekitar sini",
+    "taxaHere": "Tercatat di sebaran ini",
+    "floraType": "Jenis",
+    "floraEndemic": "Status endemik",
+    "floraRange": "Sebaran",
+    "floraHabitat": "Habitat",
+    "floraStatus": "Status konservasi",
+    "floraProtected": "Perlindungan",
+    "citesTitle": "Apendiks CITES (perdagangan internasional diatur)",
+    "searchSpecies": "Cari spesies… mis. Rafflesia arnoldii",
+    "speciesHint": "Ketik nama ilmiah tumbuhan untuk melihat sebarannya (mis. Shorea, Nepenthes, Dipterocarpus).",
+    "recordsCount": "{n} catatan",
+    "floraName": "Nama lokal",
+    "floraFamily": "Suku (famili)",
+    "rangeDerivedNote": "Setiap titik adalah catatan perjumpaan nyata dari GBIF (bukan sebaran interpolasi).",
+    "viewOnGbif": "Lihat di GBIF ↗",
+    "floraDiversity": "Keanekaragaman flora (per suku)",
+    "floraDiversityStat": "{species} spesies dalam {families} suku ditampilkan",
+    "viewDistribution": "Lihat sebaran →",
     "speciesNone": "Belum ada catatan spesies prioritas konservasi di titik ini.",
     "fieldDataPeriod": "Periode data sumber",
     "docRange": "Sebaran terdokumentasi (IUCN / KLHK), bukan pengamatan lapangan",
@@ -227,8 +252,15 @@
       "concessions": "Konsesi (sawit / HTI / logging / tambang)",
       "protected": "Kawasan lindung & moratorium",
       "species-dist": "Peta Sebaran Satwa",
-      "disasters": "Bencana (banjir, longsor)"
-    }
+      "disasters": "Bencana (banjir, longsor)",
+      "ecoregions": "Ekoregion",
+      "biogeo": "Garis biogeografi (Wallace/Weber/Lydekker)",
+      "endemic": "Sebaran satwa endemik (Sundaland/Wallacea/Papua)",
+      "flora": "Sebaran flora endemik & ikonik"
+    },
+    "sensitiveNote": "Lokasi dikaburkan untuk melindungi spesies yang rawan diburu/dikoleksi.",
+    "loadingPhoto": "Memuat foto…",
+    "loadingInfo": "Memuat info spesies…"
   },
   "region": {
     "lossPerYear": "Kehilangan tutupan pohon per tahun (ha)",
@@ -323,11 +355,26 @@
     "involveTitle": "Ikut berkontribusi",
     "involveIntro": "Kamu tidak perlu bisa menulis kode untuk membantu. Yang paling kami butuhkan sekarang:",
     "involveItems": [
-      { "title": "Koreksi data", "body": "kalau ada koordinat, status, atau sumber yang keliru, kabari kami dengan tautan ke sumber aslinya." },
-      { "title": "Usulan lapisan atau spesies", "body": "data publik yang kredibel dan layak masuk ke peta." },
-      { "title": "Masukan tampilan & metodologi", "body": "apa yang membingungkan, atau yang bisa dibuat lebih jelas." },
-      { "title": "Sebarkan", "body": "bagikan peta ini ke orang-orang yang peduli pada hutan dan satwa Indonesia." },
-      { "title": "Kontribusi kode", "body": "akan dibuka begitu repositori publik dan panduan kontribusinya siap." }
+      {
+        "title": "Koreksi data",
+        "body": "kalau ada koordinat, status, atau sumber yang keliru, kabari kami dengan tautan ke sumber aslinya."
+      },
+      {
+        "title": "Usulan lapisan atau spesies",
+        "body": "data publik yang kredibel dan layak masuk ke peta."
+      },
+      {
+        "title": "Masukan tampilan & metodologi",
+        "body": "apa yang membingungkan, atau yang bisa dibuat lebih jelas."
+      },
+      {
+        "title": "Sebarkan",
+        "body": "bagikan peta ini ke orang-orang yang peduli pada hutan dan satwa Indonesia."
+      },
+      {
+        "title": "Kontribusi kode",
+        "body": "akan dibuka begitu repositori publik dan panduan kontribusinya siap."
+      }
     ],
     "contactTitle": "Hubungi kami",
     "contactBody": "Punya koreksi, usulan, atau pertanyaan? Belum ada email khusus, jadi DM aku langsung di Threads"
@@ -342,10 +389,22 @@
     "whyBody": "Mandum Rimba, peta yang sedang kamu buka, perlu server, domain, dan pipeline data yang menjaganya tetap hidup dan terus diperbarui tiap hari. Lam Rimba, game-nya, dunia yang lebih besar lagi: penuh aset 3D, suara, animasi, dan banyak hal yang butuh waktu sekaligus biaya. Untuk pertama kalinya saya memberanikan diri membuka pintu dukungan, supaya keduanya bisa terus tumbuh.",
     "useTitle": "Ke mana dukunganmu pergi",
     "useItems": [
-      { "title": "Aset & produksi", "body": "model 3D satwa dan hutannya, animasi, musik, dan efek suara, sampai detail kecil yang membuat rimbanya terasa hidup. Sebagian saya buat sendiri, sebagian perlu dibeli atau dikerjakan dengan alat berbayar." },
-      { "title": "Rilis ke toko aplikasi", "body": "akun developer App Store dan Play Store punya biaya pendaftarannya sendiri. Ini yang membuat Lam Rimba bisa sampai langsung ke ponselmu dan tetap gratis diunduh." },
-      { "title": "Operasional & perawatan", "body": "server, domain, dan pipeline data yang menjaga Mandum Rimba dan Lam Rimba tetap berjalan serta terus diperbarui, hari demi hari." },
-      { "title": "Waktu untuk mengerjakannya", "body": "sebagian besar waktu dan fokus saya kini tercurah di sini, merawat rimba kecil ini pelan-pelan sampai benar-benar jadi." }
+      {
+        "title": "Aset & produksi",
+        "body": "model 3D satwa dan hutannya, animasi, musik, dan efek suara, sampai detail kecil yang membuat rimbanya terasa hidup. Sebagian saya buat sendiri, sebagian perlu dibeli atau dikerjakan dengan alat berbayar."
+      },
+      {
+        "title": "Rilis ke toko aplikasi",
+        "body": "akun developer App Store dan Play Store punya biaya pendaftarannya sendiri. Ini yang membuat Lam Rimba bisa sampai langsung ke ponselmu dan tetap gratis diunduh."
+      },
+      {
+        "title": "Operasional & perawatan",
+        "body": "server, domain, dan pipeline data yang menjaga Mandum Rimba dan Lam Rimba tetap berjalan serta terus diperbarui, hari demi hari."
+      },
+      {
+        "title": "Waktu untuk mengerjakannya",
+        "body": "sebagian besar waktu dan fokus saya kini tercurah di sini, merawat rimba kecil ini pelan-pelan sampai benar-benar jadi."
+      }
     ],
     "freeHelpTitle": "Cara lain untuk membantu",
     "freeHelpBody": "Dukungan tidak harus berupa uang. Yang ini sama berartinya:",

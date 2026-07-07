@@ -11,18 +11,12 @@ import {
   DisasterSchema,
   ForestLossAnnual,
   ForestLossAnnualSchema,
-  HabitatEcoregion,
-  HabitatEcoregionSchema,
   JobRun,
   JobRunSchema,
   ProtectedArea,
   ProtectedAreaSchema,
   Region,
   RegionSchema,
-  Species,
-  SpeciesSchema,
-  SpeciesOccurrence,
-  SpeciesOccurrenceSchema,
   Story,
   StorySchema,
   Watershed,
@@ -44,9 +38,6 @@ const models = MongooseModule.forFeature([
   { name: Story.name, schema: StorySchema },
   { name: JobRun.name, schema: JobRunSchema },
   { name: ProtectedArea.name, schema: ProtectedAreaSchema },
-  { name: Species.name, schema: SpeciesSchema },
-  { name: SpeciesOccurrence.name, schema: SpeciesOccurrenceSchema },
-  { name: HabitatEcoregion.name, schema: HabitatEcoregionSchema },
 ]);
 
 @Global()

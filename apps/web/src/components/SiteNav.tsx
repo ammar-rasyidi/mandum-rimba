@@ -101,7 +101,7 @@ export default function SiteNav() {
   // close the sheet when resizing up to desktop
   useEffect(() => {
     const onResize = () => {
-      if (window.innerWidth >= 768 && open) setOpen(false);
+      if (window.innerWidth >= 1024 && open) setOpen(false);
     };
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
@@ -192,7 +192,9 @@ export default function SiteNav() {
   return (
     <>
       {/* ── Desktop island ── */}
-      <div className="pointer-events-none fixed inset-x-0 top-0 z-50 hidden justify-center pt-4 md:flex">
+      {/* lg, not md: the full link row is ~1000px wide with Indonesian labels,
+          so tablet widths get the mobile pills instead of an overflowing island */}
+      <div className="pointer-events-none fixed inset-x-0 top-0 z-50 hidden justify-center pt-4 lg:flex">
         <nav
           aria-label={tSite("name")}
           className="glass pointer-events-auto flex max-w-[calc(100vw-2rem)] items-center gap-1 rounded-2xl px-4 py-2.5"
@@ -222,7 +224,7 @@ export default function SiteNav() {
       </div>
 
       {/* ── Mobile: two pills ── */}
-      <div className="pointer-events-none fixed inset-x-0 top-0 z-50 flex items-center justify-between px-4 pt-4 md:hidden">
+      <div className="pointer-events-none fixed inset-x-0 top-0 z-50 flex items-center justify-between px-4 pt-4 lg:hidden">
         <div className="glass pointer-events-auto flex items-center rounded-2xl px-4 py-2.5">
           <Logo h={26} />
         </div>
@@ -241,9 +243,11 @@ export default function SiteNav() {
 
       {/* ── Mobile full-screen sheet ── */}
       {open && (
-        <div className="fixed inset-0 z-40 flex flex-col bg-[var(--overlay)] backdrop-blur-xl animate-[panel-in_0.2s_ease] md:hidden">
+        <div className="fixed inset-0 z-40 flex flex-col bg-[var(--overlay)] backdrop-blur-xl animate-[panel-in_0.2s_ease] lg:hidden">
           <div className="h-20 shrink-0" onClick={() => setOpen(false)} />
-          <div className="flex flex-1 flex-col px-6 pb-12 pt-4">
+          {/* body scroll is locked while open, so the sheet itself must scroll
+              when the links overflow short/landscape viewports */}
+          <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-6 pb-[max(3rem,env(safe-area-inset-bottom))] pt-4">
             <div className="flex flex-col">
               {links.map(({ href, label }) => (
                 <Link

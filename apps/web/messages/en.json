@@ -225,6 +225,7 @@
     "fieldDataPeriod": "Source data period",
     "docRange": "Documented range (IUCN / KLHK), not a field observation",
     "docFootnote": "* documented range (IUCN / KLHK), not from observation records",
+    "photoCredit": "📷 Photos from Wikimedia Commons (CC / public domain), shown where a freely-licensed image exists.",
     "iucn": {
       "LC": "Least Concern",
       "NT": "Near Threatened",

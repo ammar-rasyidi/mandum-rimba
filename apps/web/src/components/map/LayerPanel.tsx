@@ -121,10 +121,13 @@ export default function LayerPanel({
 
   return (
     <aside
-      className="glass absolute right-3 top-[5.75rem] z-[5] flex max-h-[calc(100%-16rem)] w-[308px] animate-[panel-in_0.22s_ease] flex-col overflow-hidden rounded-[18px] px-[0.9rem] pb-[0.9rem] pt-3 text-[0.88rem] max-[720px]:inset-x-0 max-[720px]:bottom-0 max-[720px]:top-auto max-[720px]:max-h-[48%] max-[720px]:w-full max-[720px]:rounded-[18px_18px_0_0]"
+      className="glass absolute right-3 top-[5.75rem] z-[5] flex max-h-[calc(100%-16rem)] w-[308px] animate-[panel-in_0.22s_ease] flex-col overflow-hidden rounded-[18px] px-[0.9rem] pb-[0.9rem] pt-3 text-[0.88rem] max-[720px]:inset-x-0 max-[720px]:bottom-0 max-[720px]:top-auto max-[720px]:max-h-[72%] max-[720px]:w-full max-[720px]:overflow-y-auto max-[720px]:overscroll-contain max-[720px]:rounded-[18px_18px_0_0]"
       aria-label={t("layers")}
     >
-      <header className="mb-[0.6rem] flex shrink-0 items-center justify-between">
+      {/* on mobile the whole sheet scrolls as one unit (see the layer-list div
+          below), so the header sticks to keep Reset/minimize reachable; the
+          full-bleed padding + glass bg cover content scrolling behind it */}
+      <header className="mb-[0.6rem] flex shrink-0 items-center justify-between max-[720px]:sticky max-[720px]:top-0 max-[720px]:z-10 max-[720px]:-mx-[0.9rem] max-[720px]:-mt-3 max-[720px]:mb-2 max-[720px]:bg-[var(--glass-bg)] max-[720px]:px-[0.9rem] max-[720px]:pb-2 max-[720px]:pt-3">
         <h2 className="m-0 text-[0.95rem] tracking-[0.02em]">{t("layers")}</h2>
         <div className="flex gap-[0.35rem]">
           <button className={panelBtn} onClick={onReset}>
@@ -197,7 +200,7 @@ export default function LayerPanel({
       {/* layers with per-layer sub-filters, the only part that scrolls when
           the filter list gets long (negative margin lets the scrollbar sit at
           the panel edge while content keeps its padding) */}
-      <div className="-mx-[0.9rem] flex-1 overflow-y-auto px-[0.9rem] [scrollbar-width:thin]">
+      <div className="-mx-[0.9rem] flex-1 overflow-y-auto px-[0.9rem] [scrollbar-width:thin] max-[720px]:mx-0 max-[720px]:flex-none max-[720px]:overflow-visible max-[720px]:px-0">
       {families && families.length > 0 && (
         <section className="border-t border-border pb-[0.6rem] pt-2">
           <div className="flex items-center justify-between">

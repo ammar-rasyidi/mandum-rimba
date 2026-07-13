@@ -2,6 +2,7 @@
 
 import { useTranslations, useLocale } from "next-intl";
 import type { LayerDef } from "@/lib/layers";
+import SpeciesThumb from "./SpeciesThumb";
 import speciesNamesRaw from "@/data/species-names.json";
 import floraSpeciesRaw from "@/data/flora-species.json";
 import faunaSpeciesRaw from "@/data/fauna-species.json";
@@ -123,52 +124,75 @@ export default function DetailDrawer({
           <p className="m-0 mt-2 text-muted">{t("speciesNone")}</p>
         ) : (
           <>
-            <p className="m-0 mb-1 text-[0.78rem] text-muted">
+            <p className="m-0 mb-2 text-[0.78rem] text-muted">
               {t("speciesHere")}
             </p>
-            <dl className="m-0 [&_dd]:m-0 [&_dd]:[overflow-wrap:anywhere] [&_dt]:mt-[0.6rem] [&_dt]:text-[0.78rem] [&_dt]:font-semibold [&_dt]:text-accent">
+            <div className="m-0 flex flex-col gap-3">
               {present.map((c) => (
-                <div key={c}>
-                  <dt>{t(`filterValues.${c}`)}</dt>
-                  <dd>
-                    {byClass[c].map(({ sci, cat, doc }, i) => {
+                <section key={c}>
+                  <h3 className="m-0 mb-1.5 flex items-center gap-1.5 text-[0.78rem] font-semibold text-accent">
+                    {t(`filterValues.${c}`)}
+                    <span className="font-normal text-muted">
+                      · {byClass[c].length}
+                    </span>
+                  </h3>
+                  <ul className="m-0 flex list-none flex-col gap-1.5 p-0">
+                    {byClass[c].map(({ sci, cat, doc }) => {
                       const cn = SPECIES_NAMES[sci];
                       const common =
                         locale === "en"
                           ? (cn?.en ?? cn?.id)
                           : (cn?.id ?? cn?.en);
                       return (
-                        <span key={sci}>
-                          {i > 0 ? ", " : ""}
-                          {common ? `${common} ` : ""}
-                          <i className="text-muted">
-                            {common ? `(${sci})` : sci}
-                          </i>
-                          {["NT", "VU", "EN", "CR", "EW", "EX"].includes(
-                            cat,
-                          ) ? (
-                            <span
-                              className="ml-1 rounded-[4px] bg-[var(--glass-highlight)] px-1 py-px text-[0.62rem] font-semibold tracking-[0.04em] text-accent"
-                              title={t(`iucn.${cat}`)}
-                            >
-                              {cat}
-                            </span>
-                          ) : null}
-                          {doc ? (
-                            <span
-                              className="ml-0.5 cursor-help font-semibold text-accent"
-                              title={t("docRange")}
-                            >
-                              *
-                            </span>
-                          ) : null}
-                        </span>
+                        <li
+                          key={sci}
+                          className="flex items-center gap-2.5 rounded-[12px] border border-[var(--glass-border)] bg-[var(--glass-highlight)] p-1.5 pr-2.5"
+                        >
+                          <SpeciesThumb
+                            sci={sci}
+                            cls={c}
+                            label={common || undefined}
+                          />
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
+                              <span className="text-[0.82rem] font-medium leading-tight">
+                                {common || sci}
+                              </span>
+                              {["NT", "VU", "EN", "CR", "EW", "EX"].includes(
+                                cat,
+                              ) ? (
+                                <span
+                                  className="rounded-[4px] bg-[var(--glass-highlight)] px-1 py-px text-[0.62rem] font-semibold tracking-[0.04em] text-accent"
+                                  title={t(`iucn.${cat}`)}
+                                >
+                                  {cat}
+                                </span>
+                              ) : null}
+                              {doc ? (
+                                <span
+                                  className="cursor-help text-[0.7rem] font-semibold text-accent"
+                                  title={t("docRange")}
+                                >
+                                  *
+                                </span>
+                              ) : null}
+                            </div>
+                            {common && (
+                              <i className="block text-[0.72rem] leading-tight text-muted [overflow-wrap:anywhere]">
+                                {sci}
+                              </i>
+                            )}
+                          </div>
+                        </li>
                       );
                     })}
-                  </dd>
-                </div>
+                  </ul>
+                </section>
               ))}
-            </dl>
+            </div>
+            <p className="m-0 mt-2 text-[0.68rem] italic text-muted">
+              {t("photoCredit")}
+            </p>
             {present.some((c) => byClass[c].some((s) => s.doc)) && (
               <p className="m-0 mt-2 text-[0.72rem] italic text-muted">
                 {t("docFootnote")}

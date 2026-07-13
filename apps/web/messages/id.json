@@ -225,6 +225,7 @@
     "fieldDataPeriod": "Periode data sumber",
     "docRange": "Sebaran terdokumentasi (IUCN / KLHK), bukan pengamatan lapangan",
     "docFootnote": "* sebaran terdokumentasi (IUCN / KLHK), bukan dari catatan pengamatan",
+    "photoCredit": "📷 Foto dari Wikimedia Commons (CC / domain publik), ditampilkan bila tersedia gambar berlisensi bebas.",
     "iucn": {
       "LC": "Risiko Rendah",
       "NT": "Hampir Terancam",

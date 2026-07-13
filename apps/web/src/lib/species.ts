@@ -231,6 +231,90 @@ export async function enrichSpecies(
   };
 }
 
+/** Lightweight CC/public-domain thumbnail by scientific name, for the locality
+ *  "wildlife recorded here" list — that payload carries only the name, not a
+ *  GBIF key, so we go straight to Wikipedia's REST summary (which follows
+ *  redirects from the binomial to the common-name article and returns a
+ *  Wikimedia Commons lead image). Cached per name so a species that recurs
+ *  across many map points is fetched once, and `null` is cached too so a miss
+ *  isn't retried on every re-render. */
+const _thumbCache = new Map<string, SpeciesMedia | null>();
+
+// Wikimedia asks browser clients to identify themselves; without it, bursts of
+// anonymous requests get throttled (429) after a handful succeed. `User-Agent`
+// is a forbidden header in the browser, so we send `Api-User-Agent`, which
+// Wikimedia's REST API accepts for exactly this case.
+const WIKI_UA =
+  "MandumRimba/1.0 (https://mandumrimba.org) wildlife-map";
+
+// A locality can list dozens of species; even with lazy loading, a fast scroll
+// can trigger many at once. Cap concurrent Wikipedia requests so we never burst
+// into a 429. Simple promise gate — acquire before fetching, release after.
+const MAX_CONCURRENT = 4;
+let _active = 0;
+const _waiters: (() => void)[] = [];
+function acquire(): Promise<void> {
+  if (_active < MAX_CONCURRENT) {
+    _active++;
+    return Promise.resolve();
+  }
+  return new Promise((resolve) => _waiters.push(resolve));
+}
+function release() {
+  _active--;
+  const next = _waiters.shift();
+  if (next) {
+    _active++;
+    next();
+  }
+}
+
+async function wikiThumb(title: string): Promise<string> {
+  // en first: scientific binomials are far better covered on en.wikipedia
+  for (const lang of ["en", "id"]) {
+    try {
+      const r = await fetch(
+        `https://${lang}.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`,
+        { headers: { "Api-User-Agent": WIKI_UA } },
+      );
+      if (!r.ok) continue;
+      const j = (await r.json()) as {
+        type?: string;
+        thumbnail?: { source?: string };
+      };
+      if (j.type === "disambiguation") continue;
+      if (j.thumbnail?.source) return j.thumbnail.source;
+    } catch {
+      /* try next language */
+    }
+  }
+  return "";
+}
+
+export async function fetchSpeciesThumb(
+  sci: string,
+): Promise<SpeciesMedia | null> {
+  const cached = _thumbCache.get(sci);
+  if (cached !== undefined) return cached;
+
+  await acquire();
+  let url = "";
+  try {
+    const genus = sci.split(" ")[0] ?? sci;
+    // try the full binomial, then fall back to the genus page
+    url = await wikiThumb(sci);
+    if (!url && genus !== sci) url = await wikiThumb(genus);
+  } finally {
+    release();
+  }
+
+  const media: SpeciesMedia | null = url
+    ? { url, license: "CC / Wikimedia Commons", creator: "Wikimedia" }
+    : null;
+  _thumbCache.set(sci, media);
+  return media;
+}
+
 /** Load one species' profile + occurrence records from R2 (lazy, on click). */
 export async function getSpecies(
   key: number,

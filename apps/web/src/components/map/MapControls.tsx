@@ -49,9 +49,12 @@ const STEP = 45; // deg per quick tap
 export default function MapControls({
   mapRef,
   ready,
+  panelOpen,
 }: {
   mapRef: React.MutableRefObject<MapLibreMap | null>;
   ready: boolean;
+  /** layer sheet expanded — hide the controls on mobile so it doesn't cover them */
+  panelOpen: boolean;
 }) {
   const t = useTranslations("map");
   const [bearing, setBearing] = useState(0);
@@ -137,9 +140,15 @@ export default function MapControls({
 
   // vertical on both; mobile sits top-right just below the hamburger (clear of
   // the layer options in the bottom sheet), desktop sits bottom-left (clear of
-  // the top-right layer panel)
+  // the top-right layer panel). When the sheet is expanded it can still reach
+  // the controls on mobile, so hide them there while it's open (desktop keeps
+  // them — the panel is top-right, nowhere near the bottom-left controls).
   return (
-    <div className="pointer-events-none absolute right-3 top-[4.5rem] z-[6] flex flex-col gap-2 md:bottom-8 md:left-3 md:right-auto md:top-auto">
+    <div
+      className={`pointer-events-none absolute right-3 top-[4.5rem] z-[6] flex-col gap-2 md:bottom-8 md:left-3 md:right-auto md:top-auto md:flex ${
+        panelOpen ? "hidden" : "flex"
+      }`}
+    >
       {/* zoom */}
       <div className="glass pointer-events-auto flex flex-col overflow-hidden rounded-2xl">
         <button className={btn} onClick={() => zoom(1)} aria-label={t("zoomIn")} title={t("zoomIn")}>

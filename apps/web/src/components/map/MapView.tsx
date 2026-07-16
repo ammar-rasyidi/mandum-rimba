@@ -132,6 +132,9 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
   } | null>(null);
   // guided realm tour: the realm whose caption is currently showing (null = none)
   const [tourRealm, setTourRealm] = useState<string | null>(null);
+  // layer panel collapsed to a pill — lifted so the nav controls can hide behind
+  // the expanded sheet on mobile
+  const [layerMinimized, setLayerMinimized] = useState(false);
   const theme = useSiteTheme();
 
   // pan/zoom to a searched place and drop a green marker at its center. bbox is
@@ -938,7 +941,11 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
           light, night black in dark) shows there instead of the page bleeding
           through. Hidden under the opaque basemap in the flat view. */}
       <div ref={containerRef} className="relative flex-1 bg-[var(--map-sky)]" />
-      <MapControls mapRef={mapRef} ready={ready} />
+      <MapControls
+        mapRef={mapRef}
+        ready={ready}
+        panelOpen={!layerMinimized}
+      />
       <LayerPanel
         layers={groupLayers}
         availableTiles={availableTiles}
@@ -981,6 +988,8 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
         onClearBoundary={() => setBoundary(null)}
         onFlyToRealm={flyToRealm}
         onPlayTour={playTour}
+        minimized={layerMinimized}
+        onMinimizedChange={setLayerMinimized}
       />
       {/* guided-tour caption: realm name + one line on the wildlife it holds */}
       {tourRealm && (

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+
 import { useTranslations } from "next-intl";
 import { LAYER_SUBCOLORS, swatchColor, type LayerDef } from "@/lib/layers";
 import PlaceSearch from "./PlaceSearch";
@@ -50,6 +50,10 @@ interface Props {
   /** guided globe tour: fly to a biogeographic realm / play the full tour */
   onFlyToRealm?: (realm: string) => void;
   onPlayTour?: () => void;
+  /** minimized (collapsed to a pill) — lifted so the map nav controls can hide
+   *  behind the expanded sheet on mobile */
+  minimized: boolean;
+  onMinimizedChange: (v: boolean) => void;
 }
 
 /** the three biogeographic realms, in west-to-east tour order */
@@ -103,15 +107,16 @@ export default function LayerPanel({
   onClearBoundary,
   onFlyToRealm,
   onPlayTour,
+  minimized,
+  onMinimizedChange,
 }: Props) {
   const t = useTranslations("map");
-  const [minimized, setMinimized] = useState(false);
 
   if (minimized) {
     return (
       <button
         className="glass absolute right-3 top-[5.75rem] z-[5] cursor-pointer rounded-full px-[1.1rem] py-[0.55rem] text-[0.85rem] text-foreground transition-[transform,border-color] hover:-translate-y-px max-[720px]:bottom-5 max-[720px]:top-auto"
-        onClick={() => setMinimized(false)}
+        onClick={() => onMinimizedChange(false)}
         aria-label={t("layers")}
       >
         ☰ {t("layers")}
@@ -147,7 +152,7 @@ export default function LayerPanel({
           </button>
           <button
             className={panelBtn}
-            onClick={() => setMinimized(true)}
+            onClick={() => onMinimizedChange(true)}
             aria-label={t("minimize")}
             title={t("minimize")}
           >

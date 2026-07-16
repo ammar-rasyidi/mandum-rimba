@@ -157,6 +157,43 @@
       "dark": "Peta",
       "satellite": "Satelit"
     },
+    "view": "Tampilan",
+    "views": {
+      "flat": "Datar",
+      "globe": "Globe",
+      "terrain": "Terrain 3D"
+    },
+    "viewHints": {
+      "flat": "Peta datar (tampilan analitik bawaan)",
+      "globe": "Lihat Indonesia dalam globe 3D",
+      "terrain": "Globe 3D dengan elevasi nyata — miringkan untuk melihat gunung dan lembah"
+    },
+    "realmTour": "Jelajah realm",
+    "realmTourPlay": "Tur",
+    "realmTourPlayHint": "Terbangkan globe melewati ketiga realm",
+    "realms": {
+      "sundaland": {
+        "short": "Sundaland",
+        "name": "Paparan Sunda (Sundaland)",
+        "desc": "Sumatra, Kalimantan, dan Jawa — rumah harimau, orangutan, dan gajah."
+      },
+      "wallacea": {
+        "short": "Wallacea",
+        "name": "Wallacea",
+        "desc": "Sulawesi, Maluku, dan Nusa Tenggara — zona transisi unik: anoa, babirusa, komodo."
+      },
+      "papua": {
+        "short": "Papua",
+        "name": "Papua",
+        "desc": "Tanah Papua dan pulau-pulaunya — cenderawasih, kanguru pohon, dan ekidna."
+      }
+    },
+    "zoomIn": "Perbesar",
+    "zoomOut": "Perkecil",
+    "rotateLeft": "Putar kiri",
+    "rotateRight": "Putar kanan",
+    "rotateHint": "Ketuk untuk memutar, tahan untuk berputar",
+    "resetNorth": "Kembali ke utara",
     "filterValues": {
       "radd": "RADD (10m)",
       "glad_l": "GLAD-L (30m)",

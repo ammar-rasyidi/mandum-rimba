@@ -25,6 +25,9 @@
   --glass-border: rgba(250, 250, 250, 0.1);
   --glass-highlight: rgba(250, 250, 250, 0.06);
   --glass-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  /* sky behind the globe/terrain views (canvas is transparent above the
+     horizon there) — night sky in dark mode */
+  --map-sky: #080b13;
   color-scheme: dark;
 }
 
@@ -44,6 +47,8 @@
   --glass-border: rgba(33, 33, 33, 0.08);
   --glass-highlight: rgba(255, 255, 255, 0.7);
   --glass-shadow: 0 12px 40px rgba(33, 33, 33, 0.12);
+  /* sky blue behind the globe/terrain views in light mode */
+  --map-sky: #a9d5f0;
   color-scheme: light;
 }
 
@@ -61,6 +66,26 @@ body {
     -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
     Arial, sans-serif;
   line-height: 1.6;
+}
+
+/* Preflight is off, so reset native <button> chrome ourselves — otherwise the
+   UA border, background, focus ring and the mobile tap-highlight show through
+   (the "native border when pressed" look). Every button is styled via classes,
+   and utilities (`border`, `bg-*`, `text-*`) still win by specificity, so a
+   button that opts into a border keeps it. Keyboard focus stays visible. */
+button {
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  user-select: none;
+}
+button:focus:not(:focus-visible) {
+  outline: none;
 }
 a {
   color: var(--link);

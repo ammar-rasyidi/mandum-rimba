@@ -14,7 +14,7 @@
     "@tmcw/togeojson": "^7.1.2",
     "@vercel/analytics": "^2.0.1",
     "jszip": "^3.10.1",
-    "maplibre-gl": "^4.7.1",
+    "maplibre-gl": "^5.24.0",
     "next": "^14.2.21",
     "next-intl": "^3.26.3",
     "pmtiles": "^3.2.1",

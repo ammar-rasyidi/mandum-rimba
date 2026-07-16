@@ -8,6 +8,9 @@ import { TILES_BASE } from "@/lib/api";
 import LayerPanel from "./LayerPanel";
 import DetailDrawer, { type SelectedFeature } from "./DetailDrawer";
 import SpeciesInfo from "./SpeciesInfo";
+import RealmCaption from "./RealmCaption";
+import MapControls from "./MapControls";
+import mountainsData from "@/data/mountains.json";
 import {
   getSpecies,
   getFamilies,
@@ -58,6 +61,10 @@ function readUrlState(): { filters: MapFilters } {
     p.has(key) ? p.get(key)!.split(",").filter(Boolean) : null;
 
   filters.basemap = p.get("base") === "satellite" ? "satellite" : "dark";
+  filters.viewMode =
+    p.get("view") === "globe" || p.get("view") === "terrain"
+      ? (p.get("view") as MapFilters["viewMode"])
+      : "flat";
   filters.layers = list("layers") ?? filters.layers;
   filters.days = Number(p.get("days")) || filters.days;
   filters.systems = list("sys") ?? filters.systems;
@@ -87,6 +94,14 @@ function fitIndonesia(map: maplibregl.Map) {
   );
 }
 
+// Indonesia's three biogeographic realms — the guided globe tour flies to each.
+// Centres/zoom frame the realm on the globe; labels/descriptions come from i18n.
+export const REALMS = [
+  { id: "sundaland", center: [104, -1] as [number, number], zoom: 4.2 },
+  { id: "wallacea", center: [122, -3] as [number, number], zoom: 4.4 },
+  { id: "papua", center: [138, -4.5] as [number, number], zoom: 4.5 },
+];
+
 export default function MapView({ group }: { group?: "biodiversity" } = {}) {
   // each map (deforestation vs biodiversity) shows only its own layer group
   const groupLayers = LAYERS.filter(
@@ -115,6 +130,8 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
     geojson: GeoJSON.FeatureCollection;
     name: string;
   } | null>(null);
+  // guided realm tour: the realm whose caption is currently showing (null = none)
+  const [tourRealm, setTourRealm] = useState<string | null>(null);
   const theme = useSiteTheme();
 
   // pan/zoom to a searched place and drop a green marker at its center. bbox is
@@ -153,6 +170,39 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
     [],
   );
 
+  // guided globe tour of the three biogeographic realms. Flying to a realm
+  // switches into the globe view (if flat) so it always reads as a globe
+  // experience, then shows a short caption. `playTour` sequences all three.
+  const tourTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const stopTour = useCallback(() => {
+    tourTimers.current.forEach(clearTimeout);
+    tourTimers.current = [];
+  }, []);
+  const flyToRealm = useCallback((id: string) => {
+    const map = mapRef.current;
+    const realm = REALMS.find((r) => r.id === id);
+    if (!map || !realm) return;
+    // ensure a 3D view; the flyTo below takes over the camera either way
+    setFilters((f) => (f.viewMode === "flat" ? { ...f, viewMode: "globe" } : f));
+    map.flyTo({
+      center: realm.center,
+      zoom: realm.zoom,
+      pitch: 0,
+      bearing: 0,
+      duration: 2400,
+      essential: true,
+    });
+    setTourRealm(id);
+    tourTimers.current.push(setTimeout(() => setTourRealm(null), 5200));
+  }, []);
+  const playTour = useCallback(() => {
+    stopTour();
+    REALMS.forEach((r, i) => {
+      tourTimers.current.push(setTimeout(() => flyToRealm(r.id), i * 5200));
+    });
+  }, [flyToRealm, stopTour]);
+  useEffect(() => stopTour, [stopTour]); // clear timers on unmount
+
   // every view is shareable: state lives in the URL
   const syncUrl = useCallback((f: MapFilters) => {
     const p = new URLSearchParams(window.location.search);
@@ -161,6 +211,8 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
     p.delete("lat");
     p.delete("z");
     p.set("base", f.basemap);
+    if (f.viewMode === "flat") p.delete("view");
+    else p.set("view", f.viewMode);
     p.set("layers", f.layers.join(","));
     p.set("days", String(f.days));
     p.set("sys", f.systems.join(","));
@@ -181,6 +233,9 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
       container: containerRef.current,
       style: {
         version: 8,
+        // free public glyph server (OpenMapTiles fonts) — needed to render the
+        // mountain-name labels; the raster basemaps themselves carry no text
+        glyphs: "https://fonts.openmaptiles.org/{fontstack}/{range}.pbf",
         sources: {
           "basemap-dark": {
             type: "raster",
@@ -235,7 +290,8 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
     mapRef.current = map;
     // initial view ALWAYS frames the archipelago in the visible area
     fitIndonesia(map);
-    map.addControl(new maplibregl.NavigationControl(), "bottom-right");
+    // zoom + rotate + compass live in the custom, on-brand <MapControls> overlay
+    // (rendered in JSX below) instead of the default NavigationControl
     map.addControl(
       new maplibregl.ScaleControl({ maxWidth: 120, unit: "metric" }),
       "bottom-left",
@@ -287,6 +343,56 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
         }
         map.addLayer(buildLayer(def, sourceId));
       }
+
+      // major-mountain name labels, on top of everything. Hidden by default;
+      // shown only on the satellite basemap (where the imagery carries no text).
+      // A ▲ glyph stands in for a summit marker so no icon image is needed.
+      map.addSource("mountains", {
+        type: "geojson",
+        data: mountainsData as GeoJSON.FeatureCollection,
+        attribution: "Peaks © OpenStreetMap contributors (ODbL)",
+      });
+      map.addLayer({
+        id: "lyr-mountains",
+        type: "symbol",
+        source: "mountains",
+        // labels appear once you're zoomed in near a mountain (~2 km scale bar),
+        // so wider views stay clean instead of crowded with names
+        minzoom: 12,
+        layout: {
+          // name, plus the elevation line only when we have it (some volcanoes
+          // carry no `ele`); the ▲ glyph stands in for a summit marker
+          "text-field": [
+            "case",
+            ["has", "ele"],
+            [
+              "concat",
+              "▲ ",
+              ["get", "name"],
+              "\n",
+              ["to-string", ["get", "ele"]],
+              " m",
+            ],
+            ["concat", "▲ ", ["get", "name"]],
+          ],
+          "text-font": ["Noto Sans Regular"],
+          "text-size": ["interpolate", ["linear"], ["zoom"], 5, 11, 9, 13],
+          "text-anchor": "top",
+          "text-offset": [0, 0.2],
+          "text-max-width": 8,
+          "text-line-height": 1.1,
+          // highest peaks win collisions first, so the giants show at low zoom
+          // and lesser summits fill in as you zoom in
+          "symbol-sort-key": ["-", 9000, ["coalesce", ["get", "ele"], 0]],
+          visibility: "none",
+        },
+        paint: {
+          "text-color": "#ffffff",
+          "text-halo-color": "rgba(0,0,0,0.85)",
+          "text-halo-width": 1.5,
+        },
+      });
+
       setAvailableTiles([...avail]);
       setReady(true);
     });
@@ -437,6 +543,16 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
       );
     }
 
+    // mountain-name labels ride with the satellite basemap (the map/dark
+    // basemaps already label their own peaks)
+    if (map.getLayer("lyr-mountains")) {
+      map.setLayoutProperty(
+        "lyr-mountains",
+        "visibility",
+        filters.basemap === "satellite" ? "visible" : "none",
+      );
+    }
+
     // layer visibility
     for (const def of LAYERS) {
       const id = `lyr-${def.id}`;
@@ -490,6 +606,102 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
 
     syncUrl(filters);
   }, [filters, ready, syncUrl, theme]);
+
+  // view mode: flat mercator (default), 3D globe, or globe + real terrain.
+  // Kept in its own effect so switching projection/terrain doesn't re-run on
+  // every unrelated filter change (which would fight the camera animation).
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready) return;
+    const mode = filters.viewMode;
+
+    // register the elevation source lazily — only when terrain is first used,
+    // so the flat/globe views never fetch DEM tiles. AWS Terrain Tiles
+    // (Mapzen / AWS Open Data): free, public, no API key.
+    const DEM = "terrain-dem";
+    if (mode === "terrain" && !map.getSource(DEM)) {
+      map.addSource(DEM, {
+        type: "raster-dem",
+        tiles: [
+          "https://elevation-tiles-prod.s3.amazonaws.com/terrarium/{z}/{x}/{y}.png",
+        ],
+        encoding: "terrarium",
+        tileSize: 256,
+        maxzoom: 13,
+        attribution: "Elevation: Terrain Tiles (AWS Open Data) | Mandum Rimba",
+      });
+    }
+
+    // globe projection backs both the globe and terrain views (v5); flat is
+    // the plain mercator analytical map.
+    map.setProjection({ type: mode === "flat" ? "mercator" : "globe" });
+    // elevation only in terrain mode
+    // exaggeration >1 makes the relief (and the draped layers over it) read as
+    // more pronounced folds; the fill/line layers drape onto this mesh for free
+    // exaggeration 1.0 = true elevation. MapLibre freezes elevation while you
+    // pan (constant camera height) and recomputes the zoom on drag-end to match
+    // the new centre's terrain height — that recompute is the "zoom in/out after
+    // I stop dragging" jump, and it scales with elevation × exaggeration. Keeping
+    // exaggeration at 1.0 keeps that jump to the natural minimum while still
+    // showing real relief. (>1 amplifies the folds but also the jump.)
+    map.setTerrain(mode === "terrain" ? { source: DEM, exaggeration: 1.0 } : null);
+    // tilt so relief reads as 3D in terrain mode; flatten for the other two.
+    // In terrain view the pitch pushes the subject low in the frame, so add
+    // bottom padding to lift the globe up the screen; reset it otherwise.
+    const h = map.getContainer().clientHeight || 800;
+    map.easeTo({
+      pitch: mode === "terrain" ? 62 : 0,
+      padding: {
+        top: 0,
+        right: 0,
+        left: 0,
+        bottom: mode === "terrain" ? Math.round(h * 0.18) : 0,
+      },
+      duration: 700,
+    });
+  }, [filters.viewMode, ready]);
+
+  // atmospheric sky for the globe/terrain views — "Earth from space": a blue
+  // day atmosphere in light, deep-space night in dark. The atmosphere halo
+  // fades out by mid-zoom so it never hazes the terrain when zoomed in. The
+  // container's --map-sky paints the void beyond the atmosphere.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready) return;
+    // atmosphere strong on the far-out globe, gone by the time you're in terrain
+    const atmosphere = [
+      "interpolate",
+      ["linear"],
+      ["zoom"],
+      0,
+      0.9,
+      5,
+      0.6,
+      8,
+      0,
+    ] as unknown as number;
+    map.setSky(
+      theme === "light"
+        ? {
+            "sky-color": "#7ab3e8",
+            "sky-horizon-blend": 0.7,
+            "horizon-color": "#cfe6f7",
+            "horizon-fog-blend": 0.5,
+            "fog-color": "#eaf4fc",
+            "fog-ground-blend": 0.4,
+            "atmosphere-blend": atmosphere,
+          }
+        : {
+            "sky-color": "#0b1d3a",
+            "sky-horizon-blend": 0.6,
+            "horizon-color": "#0a2a5c",
+            "horizon-fog-blend": 0.5,
+            "fog-color": "#05070d",
+            "fog-ground-blend": 0.4,
+            "atmosphere-blend": atmosphere,
+          },
+    );
+  }, [theme, ready]);
 
   // biodiversity map: load the searched species' distribution (real occurrence
   // records + a derived range outline) and render it. Layers are added/removed
@@ -721,7 +933,12 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
 
   return (
     <div className="fixed inset-0 flex">
-      <div ref={containerRef} className="relative flex-1" />
+      {/* opaque sky behind the map: in globe & terrain views the canvas is
+          transparent above the horizon, so this theme-aware colour (sky blue in
+          light, night black in dark) shows there instead of the page bleeding
+          through. Hidden under the opaque basemap in the flat view. */}
+      <div ref={containerRef} className="relative flex-1 bg-[var(--map-sky)]" />
+      <MapControls mapRef={mapRef} ready={ready} />
       <LayerPanel
         layers={groupLayers}
         availableTiles={availableTiles}
@@ -762,7 +979,13 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
         }
         boundaryName={boundary?.name}
         onClearBoundary={() => setBoundary(null)}
+        onFlyToRealm={flyToRealm}
+        onPlayTour={playTour}
       />
+      {/* guided-tour caption: realm name + one line on the wildlife it holds */}
+      {tourRealm && (
+        <RealmCaption realm={tourRealm} onClose={() => setTourRealm(null)} />
+      )}
       {speciesData && (
         <SpeciesInfo
           data={speciesData}

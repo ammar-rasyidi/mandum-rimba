@@ -14,6 +14,7 @@ import {
   DISASTER_TYPES,
   PROTECTED_CATEGORIES,
   SPECIES_CLASSES,
+  VIEW_MODES,
   type Basemap,
   type MapFilters,
 } from "./filters";
@@ -46,7 +47,16 @@ interface Props {
   onBoundaryLoaded?: (result: ImportResult, filename: string) => void;
   boundaryName?: string;
   onClearBoundary?: () => void;
+  /** guided globe tour: fly to a biogeographic realm / play the full tour */
+  onFlyToRealm?: (realm: string) => void;
+  onPlayTour?: () => void;
 }
+
+/** the three biogeographic realms, in west-to-east tour order */
+const REALM_IDS = ["sundaland", "wallacea", "papua"];
+// TEMP: hide the guided realm-tour control for now (flip to true to bring it
+// back — all the wiring/logic stays intact behind this flag)
+const SHOW_REALM_TOUR = false;
 
 /** which sub-filter belongs under which layer row */
 const SUB_FILTERS: Record<
@@ -91,6 +101,8 @@ export default function LayerPanel({
   onBoundaryLoaded,
   boundaryName,
   onClearBoundary,
+  onFlyToRealm,
+  onPlayTour,
 }: Props) {
   const t = useTranslations("map");
   const [minimized, setMinimized] = useState(false);
@@ -127,7 +139,7 @@ export default function LayerPanel({
       {/* on mobile the whole sheet scrolls as one unit (see the layer-list div
           below), so the header sticks to keep Reset/minimize reachable; the
           full-bleed padding + glass bg cover content scrolling behind it */}
-      <header className="mb-[0.6rem] flex shrink-0 items-center justify-between max-[720px]:sticky max-[720px]:top-0 max-[720px]:z-10 max-[720px]:-mx-[0.9rem] max-[720px]:-mt-3 max-[720px]:mb-2 max-[720px]:bg-[var(--glass-bg)] max-[720px]:px-[0.9rem] max-[720px]:pb-2 max-[720px]:pt-3">
+      <header className="mb-[0.6rem] flex shrink-0 items-center justify-between max-[720px]:sticky max-[720px]:-top-4 max-[720px]:z-20 max-[720px]:-mx-[0.9rem] max-[720px]:-mt-3 max-[720px]:mb-2 max-[720px]:bg-[var(--bg)] max-[720px]:px-[0.9rem] max-[720px]:pb-2 max-[720px]:pt-3">
         <h2 className="m-0 text-[0.95rem] tracking-[0.02em]">{t("layers")}</h2>
         <div className="flex gap-[0.35rem]">
           <button className={panelBtn} onClick={onReset}>
@@ -196,6 +208,60 @@ export default function LayerPanel({
           </button>
         ))}
       </div>
+
+      {/* view mode: flat mercator / 3D globe / globe + real terrain */}
+      <div
+        className="mb-3 flex shrink-0 gap-[0.4rem]"
+        role="radiogroup"
+        aria-label={t("view")}
+      >
+        {VIEW_MODES.map((v) => (
+          <button
+            key={v}
+            role="radio"
+            aria-checked={filters.viewMode === v}
+            title={t(`viewHints.${v}`)}
+            className={`flex-1 cursor-pointer rounded-xl border py-[0.38rem] text-[0.8rem] transition-[background-color,border-color,color] ${
+              filters.viewMode === v
+                ? "bg-[var(--accent-dim)] text-accent"
+                : "border-[var(--glass-border)] bg-[var(--glass-highlight)] text-muted hover:text-foreground"
+            }`}
+            onClick={() => set("viewMode", v)}
+          >
+            {t(`views.${v}`)}
+          </button>
+        ))}
+      </div>
+
+      {/* guided globe tour of the three biogeographic realms */}
+      {SHOW_REALM_TOUR &&  onFlyToRealm && (
+        <div className="mb-3 shrink-0">
+          <div className="mb-[0.4rem] flex items-center justify-between">
+            <span className="text-[0.78rem] text-muted">{t("realmTour")}</span>
+            {onPlayTour && (
+              <button
+                className={panelBtn}
+                onClick={onPlayTour}
+                title={t("realmTourPlayHint")}
+              >
+                ▶ {t("realmTourPlay")}
+              </button>
+            )}
+          </div>
+          <div className="flex gap-[0.4rem]">
+            {REALM_IDS.map((r) => (
+              <button
+                key={r}
+                onClick={() => onFlyToRealm(r)}
+                title={t(`realms.${r}.desc`)}
+                className="flex-1 cursor-pointer rounded-xl border border-[var(--glass-border)] bg-[var(--glass-highlight)] py-[0.38rem] text-[0.78rem] text-muted transition-[background-color,border-color,color] hover:border-[var(--text-dim)] hover:text-foreground"
+              >
+                {t(`realms.${r}.short`)}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* layers with per-layer sub-filters, the only part that scrolls when
           the filter list gets long (negative margin lets the scrollbar sit at

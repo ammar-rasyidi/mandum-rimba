@@ -157,6 +157,43 @@
       "dark": "Map",
       "satellite": "Satellite"
     },
+    "view": "View",
+    "views": {
+      "flat": "Flat",
+      "globe": "Globe",
+      "terrain": "3D Terrain"
+    },
+    "viewHints": {
+      "flat": "Flat map (default analytical view)",
+      "globe": "See Indonesia on a 3D globe",
+      "terrain": "3D globe with real elevation — tilt to see mountains and valleys"
+    },
+    "realmTour": "Explore realms",
+    "realmTourPlay": "Tour",
+    "realmTourPlayHint": "Fly the globe through all three realms",
+    "realms": {
+      "sundaland": {
+        "short": "Sundaland",
+        "name": "Sundaland",
+        "desc": "Sumatra, Borneo and Java — home to tigers, orangutans and elephants."
+      },
+      "wallacea": {
+        "short": "Wallacea",
+        "name": "Wallacea",
+        "desc": "Sulawesi, Maluku and the Lesser Sundas — a singular transition zone: anoa, babirusa, Komodo dragon."
+      },
+      "papua": {
+        "short": "Papua",
+        "name": "Papua",
+        "desc": "New Guinea and its islands — birds-of-paradise, tree kangaroos and echidnas."
+      }
+    },
+    "zoomIn": "Zoom in",
+    "zoomOut": "Zoom out",
+    "rotateLeft": "Rotate left",
+    "rotateRight": "Rotate right",
+    "rotateHint": "Tap to turn, hold to spin",
+    "resetNorth": "Reset to north",
     "filterValues": {
       "radd": "RADD (10m)",
       "glad_l": "GLAD-L (30m)",

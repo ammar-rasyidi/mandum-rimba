@@ -2,8 +2,14 @@ import { LAYERS } from "@/lib/layers";
 
 export type Basemap = "dark" | "satellite";
 
+// how the map is rendered: flat mercator (default analytical view), a 3D globe,
+// or a globe with real elevation (3D terrain). See MapView for how each is applied.
+export type ViewMode = "flat" | "globe" | "terrain";
+export const VIEW_MODES: ViewMode[] = ["flat", "globe", "terrain"];
+
 export interface MapFilters {
   basemap: Basemap;
+  viewMode: ViewMode;
   layers: string[];
   days: number; // alert window, 7..90
   systems: string[]; // radd | glad_l | glad_s2
@@ -33,6 +39,7 @@ export const SPECIES_CLASSES = ["aves", "mammalia", "reptilia", "amphibia"];
 
 export const DEFAULT_FILTERS: MapFilters = {
   basemap: "dark",
+  viewMode: "flat",
   layers: LAYERS.filter((l) => l.defaultOn).map((l) => l.id),
   days: 90,
   systems: [...ALERT_SYSTEMS],

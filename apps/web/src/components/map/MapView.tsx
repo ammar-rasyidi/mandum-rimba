@@ -945,6 +945,7 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
         mapRef={mapRef}
         ready={ready}
         panelOpen={!layerMinimized}
+        detailOpen={!!(selected || speciesData)}
       />
       <LayerPanel
         layers={groupLayers}

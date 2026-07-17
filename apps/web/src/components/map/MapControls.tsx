@@ -50,11 +50,15 @@ export default function MapControls({
   mapRef,
   ready,
   panelOpen,
+  detailOpen,
 }: {
   mapRef: React.MutableRefObject<MapLibreMap | null>;
   ready: boolean;
   /** layer sheet expanded — hide the controls on mobile so it doesn't cover them */
   panelOpen: boolean;
+  /** a left-side detail popup is open — hide the controls on desktop (they sit
+   *  bottom-left, under the popup) */
+  detailOpen: boolean;
 }) {
   const t = useTranslations("map");
   const [bearing, setBearing] = useState(0);
@@ -138,16 +142,16 @@ export default function MapControls({
     "flex h-9 w-9 items-center justify-center text-muted transition-colors hover:text-foreground active:bg-[var(--glass-highlight)] md:h-11 md:w-11";
   const divider = <div className="h-px w-full bg-[var(--glass-border)]" />;
 
-  // vertical on both; mobile sits top-right just below the hamburger (clear of
-  // the layer options in the bottom sheet), desktop sits bottom-left (clear of
-  // the top-right layer panel). When the sheet is expanded it can still reach
-  // the controls on mobile, so hide them there while it's open (desktop keeps
-  // them — the panel is top-right, nowhere near the bottom-left controls).
+  // vertical on both; mobile sits top-right below the hamburger, desktop sits
+  // bottom-left. Hide when a panel would cover the controls: on mobile that's
+  // the expanded layer sheet (or a detail popup); on desktop it's a left-side
+  // detail popup (the layer panel is top-right, nowhere near bottom-left).
+  const mobileHidden = panelOpen || detailOpen;
   return (
     <div
-      className={`pointer-events-none absolute right-3 top-[4.5rem] z-[6] flex-col gap-2 md:bottom-8 md:left-3 md:right-auto md:top-auto md:flex ${
-        panelOpen ? "hidden" : "flex"
-      }`}
+      className={`pointer-events-none absolute right-3 top-[4.5rem] z-[6] flex-col gap-2 md:bottom-8 md:left-3 md:right-auto md:top-auto ${
+        mobileHidden ? "hidden" : "flex"
+      } ${detailOpen ? "md:hidden" : "md:flex"}`}
     >
       {/* zoom */}
       <div className="glass pointer-events-auto flex flex-col overflow-hidden rounded-2xl">

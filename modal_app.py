@@ -86,6 +86,7 @@ INGEST_JOBS = [
     "trase",
     "nusantara-atlas",
     "gbif-occurrences",
+    "wetlands",
 ]
 
 # Full pipeline: ingest first (so polygons/points exist), THEN tiles builds

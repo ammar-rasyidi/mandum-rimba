@@ -9,6 +9,7 @@ import { TraseService } from "./trase.service";
 import { NusantaraAtlasService } from "./nusantara-atlas.service";
 import { MiningService } from "./mining.service";
 import { GbifOccurrencesService } from "./gbif-occurrences.service";
+import { WetlandsService } from "./wetlands.service";
 
 @Module({
   providers: [
@@ -22,6 +23,7 @@ import { GbifOccurrencesService } from "./gbif-occurrences.service";
     NusantaraAtlasService,
     MiningService,
     GbifOccurrencesService,
+    WetlandsService,
   ],
 })
 export class IngestModule {}

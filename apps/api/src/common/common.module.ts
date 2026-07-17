@@ -21,6 +21,8 @@ import {
   StorySchema,
   Watershed,
   WatershedSchema,
+  Wetland,
+  WetlandSchema,
 } from "./schemas";
 import { JobLockService } from "./job-lock.service";
 import { ArchiverService } from "./archiver.service";
@@ -38,6 +40,7 @@ const models = MongooseModule.forFeature([
   { name: Story.name, schema: StorySchema },
   { name: JobRun.name, schema: JobRunSchema },
   { name: ProtectedArea.name, schema: ProtectedAreaSchema },
+  { name: Wetland.name, schema: WetlandSchema },
 ]);
 
 @Global()

@@ -8,3 +8,4 @@ export * from "./company.schema";
 export * from "./story.schema";
 export * from "./job-run.schema";
 export * from "./protected-area.schema";
+export * from "./wetland.schema";

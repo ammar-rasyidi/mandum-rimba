@@ -67,6 +67,16 @@ const SOURCES = [
     license: "Public data",
   },
   {
+    name: "Global Mangrove Watch v3, Indonesia mangrove extent (2020) from satellite imagery",
+    url: "https://www.globalmangrovewatch.org",
+    license: "CC BY 4.0",
+  },
+  {
+    name: "Global Forest Watch, Indonesia peat lands (peatland extent)",
+    url: "https://data.globalforestwatch.org/datasets/d52e0e67ad21401cbf3a2c002599cf58_10",
+    license: "CC BY 4.0",
+  },
+  {
     name: "Trase, palm exporter ↔ deforestation linkage",
     url: "https://trase.earth",
     license: "CC BY 4.0",
@@ -89,6 +99,10 @@ const SOURCES = [
 ];
 
 const CHANGELOG = [
+  {
+    version: "2026.07.1",
+    note: "Two coastal & wetland habitat layers added to the main map (/peta): Mangroves (Global Mangrove Watch v3, ~223.900 polygons, 2020 extent) and Peatlands (Global Forest Watch 'Indonesia peat lands'). Both are carbon-rich, fire-prone ecosystems and critical wildlife habitat. Default-visible layers were retuned so the map opens on the human-pressure vs. protection story: concessions, protected & moratorium areas, mangroves, and peatlands are on by default; the Wildlife Distribution layer is now off by default (opt-in) to reduce initial clutter.",
+  },
   {
     version: "2026.07.0",
     note: "Biodiversity map (/biodiversitas) reworked: the endemic-fauna and iconic-flora layers changed from scattered occurrence dots into DISTRIBUTION AREAS — curated GBIF points contoured per island into smooth density areas (fauna coloured by Sundaland/Wallacea/Papua biogeographic zone), the same organic-contour treatment as the Wildlife Distribution layer. The 'Biodiversity record density (GBIF)' raster overlay was removed as unhelpful noise. Two orphaned tilesets (wildlife habitat + occurrence points) that no map layer used were retired from the pipeline and object store.",

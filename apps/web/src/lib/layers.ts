@@ -45,7 +45,7 @@ export const LAYERS: LayerDef[] = [
     kind: "fill",
     geojson: "/data/species-distribution.geojson",
     color: "#8e24aa", // top density band (legend swatch)
-    defaultOn: true,
+    defaultOn: false,
     sourceName: "GBIF occurrences (IUCN threatened, all classes)",
     sourceUrl: "https://www.gbif.org",
   },
@@ -54,7 +54,7 @@ export const LAYERS: LayerDef[] = [
     tile: "concessions",
     kind: "fill",
     color: "#fb8c00", // orange 600, extractive (coloured by type below)
-    defaultOn: false,
+    defaultOn: true,
     sourceName: "GFW concession layers (Greenpeace-derived)",
     sourceUrl:
       "https://data.globalforestwatch.org/search?q=Indonesia%20concessions",
@@ -67,6 +67,30 @@ export const LAYERS: LayerDef[] = [
     defaultOn: true,
     sourceName: "Protected Planet (WDPA) + KLHK PIPPIB",
     sourceUrl: "https://www.protectedplanet.net",
+  },
+  {
+    // Mangrove extent, critical coastal habitat (proboscis monkey, birds, fish
+    // nurseries). Light-blue (coastal), not green — green vanishes into the
+    // vegetated basemap. PMTiles built from GMW; shown once the tiles land on R2.
+    id: "mangrove",
+    tile: "mangrove",
+    kind: "fill",
+    color: "#00b0ff", // light-blue A400
+    defaultOn: true,
+    sourceName: "Global Mangrove Watch v3 (CC BY 4.0)",
+    sourceUrl: "https://www.globalmangrovewatch.org/",
+  },
+  {
+    // Peatland extent, carbon-rich, fire-prone wetland habitat. Brown = peat
+    // soil. PMTiles built from the "Indonesia peat lands" vector hosted on GFW.
+    id: "peatland",
+    tile: "peatland",
+    kind: "fill",
+    color: "#6d4c41", // brown 600
+    defaultOn: true,
+    sourceName: "Indonesia peat lands (Global Forest Watch)",
+    sourceUrl:
+      "https://data.globalforestwatch.org/datasets/d52e0e67ad21401cbf3a2c002599cf58_10",
   },
   // ---- circles (drawn on top) ----
   {

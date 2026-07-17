@@ -289,6 +289,8 @@
       "alerts": "Peringatan deforestasi (90 hari)",
       "concessions": "Konsesi (sawit / HTI / logging / tambang)",
       "protected": "Kawasan lindung & moratorium",
+      "mangrove": "Mangrove",
+      "peatland": "Gambut",
       "species-dist": "Peta Sebaran Satwa",
       "disasters": "Bencana (banjir, longsor)",
       "ecoregions": "Ekoregion",

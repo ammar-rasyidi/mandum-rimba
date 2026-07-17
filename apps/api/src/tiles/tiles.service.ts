@@ -19,6 +19,8 @@ import {
   ProtectedAreaDocument,
   Region,
   RegionDocument,
+  Wetland,
+  WetlandDocument,
 } from "../common/schemas";
 import { JobLockService } from "../common/job-lock.service";
 import { ArchiverService } from "../common/archiver.service";
@@ -57,6 +59,7 @@ export class TilesService implements OnModuleInit {
     @InjectModel(ProtectedArea.name)
     private protectedModel: Model<ProtectedAreaDocument>,
     @InjectModel(Disaster.name) private disasterModel: Model<DisasterDocument>,
+    @InjectModel(Wetland.name) private wetlandModel: Model<WetlandDocument>,
     private readonly locks: JobLockService,
     private readonly archiver: ArchiverService,
     private readonly registry: JobRegistryService,
@@ -276,6 +279,36 @@ export class TilesService implements OnModuleInit {
           ),
         tippecanoeArgs: ["-zg", "--drop-densest-as-needed"],
       },
+      // wetland habitat extents, one PMTiles per kind from the shared collection
+      ...(["mangrove", "peatland"] as const).map((kind) => ({
+        name: kind,
+        changeKey: async () => {
+          const count = await this.wetlandModel.countDocuments({ kind });
+          const latest = await this.wetlandModel
+            .findOne({ kind })
+            .sort({ retrievedAt: -1 })
+            .select("retrievedAt");
+          return (
+            count + Math.floor((latest?.retrievedAt?.getTime() ?? 0) / 1000)
+          );
+        },
+        export: (path: string) =>
+          this.streamCursor(
+            path,
+            this.wetlandModel.find({ kind }).lean().cursor(),
+            (d: Record<string, any>) => ({
+              type: "Feature",
+              geometry: d.geom,
+              properties: {
+                id: String(d._id),
+                name: d.name ?? "",
+                areaHa: d.areaHa ?? 0,
+                source: d.source,
+              },
+            }),
+          ),
+        tippecanoeArgs: ["-zg", "--coalesce-densest-as-needed"],
+      })),
     ];
   }
 

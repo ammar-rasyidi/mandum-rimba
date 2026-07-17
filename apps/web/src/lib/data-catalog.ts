@@ -92,6 +92,43 @@ export const DATA_CATALOG: DatasetEntry[] = [
     status: "active",
   },
   {
+    layer: "mangrove",
+    name: {
+      id: "Mangrove (Global Mangrove Watch v3)",
+      en: "Mangroves (Global Mangrove Watch v3)",
+    },
+    org: "Global Mangrove Watch (UNEP-WCMC, JAXA, Aberystwyth University, dsb.)",
+    url: "https://www.globalmangrovewatch.org/",
+    license: "CC BY 4.0",
+    updated: "v3 (ekstent 2020)",
+    coverage: {
+      id: "Indonesia (~223.900 poligon)",
+      en: "Indonesia (~223,900 polygons)",
+    },
+    description: {
+      id: "Sebaran mangrove Indonesia dari citra satelit (ekstent 2020), habitat pesisir kritis bagi bekantan, buaya, burung air, dan area pembibitan ikan.",
+      en: "Indonesia's mangrove extent from satellite imagery (2020), a critical coastal habitat for proboscis monkeys, crocodiles, water birds, and fish nurseries.",
+    },
+    status: "active",
+  },
+  {
+    layer: "peatland",
+    name: {
+      id: "Gambut (Indonesia peat lands)",
+      en: "Peatlands (Indonesia peat lands)",
+    },
+    org: "Global Forest Watch",
+    url: "https://data.globalforestwatch.org/datasets/d52e0e67ad21401cbf3a2c002599cf58_10",
+    license: "CC BY 4.0",
+    updated: "GFW open data",
+    coverage: { id: "Indonesia (1.524 poligon)", en: "Indonesia (1,524 polygons)" },
+    description: {
+      id: "Sebaran lahan gambut Indonesia, ekosistem kaya karbon dan rawan kebakaran, habitat penting yang lenyap saat dikeringkan dan dibakar.",
+      en: "Indonesia's peatland extent, a carbon-rich, fire-prone ecosystem and important habitat that vanishes when drained and burned.",
+    },
+    status: "active",
+  },
+  {
     layer: "concessions",
     name: {
       id: "Tambang, jejak lahan (Maus et al. 2022)",

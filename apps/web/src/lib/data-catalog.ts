@@ -117,10 +117,10 @@ export const DATA_CATALOG: DatasetEntry[] = [
       id: "Gambut (Indonesia peat lands)",
       en: "Peatlands (Indonesia peat lands)",
     },
-    org: "Global Forest Watch",
+    org: "Global Forest Watch (sumber: Wetlands International / Wahyunto dkk.)",
     url: "https://data.globalforestwatch.org/datasets/d52e0e67ad21401cbf3a2c002599cf58_10",
     license: "CC BY 4.0",
-    updated: "GFW open data",
+    updated: "Peta gambut 2003–2006 (1:250.000)",
     coverage: { id: "Indonesia (1.524 poligon)", en: "Indonesia (1,524 polygons)" },
     description: {
       id: "Sebaran lahan gambut Indonesia, ekosistem kaya karbon dan rawan kebakaran, habitat penting yang lenyap saat dikeringkan dan dibakar.",

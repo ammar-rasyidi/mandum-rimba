@@ -345,6 +345,70 @@ export default function DetailDrawer({
     );
   }
 
+  // Wetland habitat (mangrove / peatland): raw tiles carry no useful per-feature
+  // data, so the click handler hands us a clean { areaHa, areaExact }. Show what
+  // the habitat is + why it matters, plus the polygon's area (exact from the
+  // source for peatland, an on-map estimate for mangrove).
+  if (layer.id === "mangrove" || layer.id === "peatland") {
+    // dataset vintage (year of the underlying mapping, not when we ingested it):
+    // GMW v3 baseline extent = 2020; GFW "Indonesia peat lands" is the Wetlands
+    // International / Wahyunto et al. 1:250k peat maps (2003–2006).
+    const WETLAND_YEAR: Record<string, string> = {
+      mangrove: "2020",
+      peatland: "2003–2006",
+    };
+    const dataYear = WETLAND_YEAR[layer.id];
+    const ha = Number(properties.areaHa) || 0;
+    const exact = Boolean(properties.areaExact);
+    const haText =
+      ha > 0
+        ? `${exact ? "" : "~"}${Math.round(ha).toLocaleString("id-ID")} ha`
+        : null;
+    return (
+      <aside
+        className="glass absolute left-3 top-[5.75rem] z-[5] max-h-[calc(100%-8rem)] w-[320px] animate-[panel-in_0.22s_ease] overflow-y-auto rounded-[18px] p-4 text-[0.88rem] max-[720px]:inset-x-2 max-[720px]:top-[5.25rem] max-[720px]:max-h-[55%] max-[720px]:w-auto"
+        aria-label={t("detail")}
+      >
+        <button className={closeBtn} onClick={onClose}>
+          {t("close")}
+        </button>
+        <h2 className="m-0 mb-1.5 text-base">{t(`layerNames.${layer.id}`)}</h2>
+        <p className="m-0 mb-1 text-[0.82rem] leading-snug text-muted">
+          {t(`wetlandInfo.${layer.id}`)}
+        </p>
+        <dl className="m-0 [&_dd]:m-0 [&_dt]:mt-[0.6rem] [&_dt]:text-[0.75rem] [&_dt]:uppercase [&_dt]:tracking-[0.04em] [&_dt]:text-muted">
+          {haText && (
+            <div>
+              <dt>{t("fieldArea")}</dt>
+              <dd>
+                {haText}
+                {!exact && (
+                  <span className="ml-1 text-[0.72rem] italic text-muted">
+                    ({t("areaEstimated")})
+                  </span>
+                )}
+              </dd>
+            </div>
+          )}
+          {dataYear && (
+            <div>
+              <dt>{t("dataYear")}</dt>
+              <dd>{dataYear}</dd>
+            </div>
+          )}
+          <div>
+            <dt>{t("source")}</dt>
+            <dd>
+              <a href={layer.sourceUrl} target="_blank" rel="noreferrer">
+                {layer.sourceName}, {t("viewEvidence")}
+              </a>
+            </dd>
+          </div>
+        </dl>
+      </aside>
+    );
+  }
+
   // for bilingual common-name pairs (species), keep only the active locale's
   const hidden = new Set(HIDDEN_KEYS);
   if (properties.name !== undefined && properties.nameEn !== undefined) {

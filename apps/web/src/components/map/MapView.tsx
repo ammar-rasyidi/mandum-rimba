@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import maplibregl from "maplibre-gl";
 import { Protocol } from "pmtiles";
 import { LAYERS, colorExpression, type LayerDef } from "@/lib/layers";
+import { geodesicAreaHa } from "@/lib/geo-area";
 import { TILES_BASE } from "@/lib/api";
 import LayerPanel from "./LayerPanel";
 import DetailDrawer, { type SelectedFeature } from "./DetailDrawer";
@@ -512,6 +513,19 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
       const f = features[0];
       const def = LAYERS.find((l) => `lyr-${l.id}` === f.layer.id);
       if (!def) return;
+      // Wetland habitat layers: the raw tiles carry only junk source fields
+      // (peatland) or nothing at all (mangrove), so replace the property bag
+      // with just the useful area. Peatland ships an exact per-polygon
+      // shape_Area (m²); mangrove has none, so measure the clicked geometry.
+      if (def.id === "peatland" || def.id === "mangrove") {
+        const shapeArea = Number(
+          (f.properties as Record<string, unknown>)?.shape_Area,
+        );
+        const exact = def.id === "peatland" && shapeArea > 0;
+        const areaHa = exact ? shapeArea / 10_000 : geodesicAreaHa(f.geometry);
+        setSelected({ layer: def, properties: { areaHa, areaExact: exact } });
+        return;
+      }
       setSelected({
         layer: def,
         properties: f.properties as Record<string, unknown>,

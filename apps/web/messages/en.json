@@ -236,6 +236,12 @@
     "fieldArea": "Area",
     "dataYear": "Data year",
     "areaEstimated": "estimated from the map",
+    "loading": "Loading…",
+    "play": "Play",
+    "pause": "Pause",
+    "lossTimelineTitle": "Forest loss over time",
+    "lossLostThisYear": "lost this year",
+    "lossLegendLess": "less",
     "wetlandInfo": {
       "mangrove": "Mangrove forest: a coastal vegetation belt that buffers erosion and storms, stores 'blue' carbon many times that of inland forest, and is a fish nursery and home for proboscis monkeys, crocodiles, and water birds. 2020 extent from satellite imagery (Global Mangrove Watch v3).",
       "peatland": "Peatland: carbon-rich wetland soil built up over millennia. Drained and burned it releases enormous carbon and drives the haze; kept wet it is vital habitat for orangutans, tigers, and swamp wildlife."
@@ -298,6 +304,7 @@
       "mangrove": "Mangroves",
       "peatland": "Peatlands",
       "species-dist": "Wildlife Distribution",
+      "forestloss": "Forest loss over time",
       "disasters": "Disasters (floods, landslides)",
       "ecoregions": "Ecoregions",
       "biogeo": "Biogeographic lines (Wallace/Weber/Lydekker)",

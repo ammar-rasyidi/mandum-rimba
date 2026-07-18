@@ -47,6 +47,46 @@ export class RegionsController {
       .sort({ name: 1 });
   }
 
+  /**
+   * Compact per-region × per-year tree-cover-loss matrix, for the animated
+   * choropleth timeline on /peta. Loss values are aligned to the `years` array
+   * by index, so the payload stays small (one number array per region). Province
+   * level by default (≈38 polygons, readable animation); pass ?level=kabupaten
+   * for the finer grid.
+   */
+  @Get("loss-matrix")
+  async lossMatrix(@Query("level") level = "province") {
+    const regions = await this.regionModel
+      .find({ level })
+      .select("_id name nameEn");
+    const ids = regions.map((r) => r._id);
+    const rows = await this.lossModel
+      .find({ regionId: { $in: ids } })
+      .select("regionId year lossHa");
+
+    const years = [...new Set(rows.map((r) => r.year))].sort((a, b) => a - b);
+    const yearIndex = new Map(years.map((y, i) => [y, i]));
+    const byRegion = new Map<string, number[]>();
+    for (const r of rows) {
+      const id = String(r.regionId);
+      let arr = byRegion.get(id);
+      if (!arr) {
+        arr = new Array(years.length).fill(0);
+        byRegion.set(id, arr);
+      }
+      arr[yearIndex.get(r.year)!] = Math.round(r.lossHa);
+    }
+
+    let max = 0;
+    const out = regions.map((r) => {
+      const loss = byRegion.get(String(r._id)) ?? new Array(years.length).fill(0);
+      for (const v of loss) if (v > max) max = v;
+      return { id: String(r._id), name: r.name, nameEn: r.nameEn, loss };
+    });
+
+    return { years, max, level, regions: out };
+  }
+
   @Get(":idOrSlug/summary")
   async summary(@Param("idOrSlug") idOrSlug: string) {
     const region = await this.regionModel

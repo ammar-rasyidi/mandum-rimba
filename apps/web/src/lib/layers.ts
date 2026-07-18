@@ -92,6 +92,20 @@ export const LAYERS: LayerDef[] = [
     sourceUrl:
       "https://data.globalforestwatch.org/datasets/d52e0e67ad21401cbf3a2c002599cf58_10",
   },
+  {
+    // Forest loss over time: an animated choropleth. Each province shades by the
+    // hectares of tree-cover loss in the year the timeline slider is on. Unlike
+    // every other layer it isn't its own geometry, it paints the shared `regions`
+    // tiles by feature-state from the ForestLossAnnual aggregate (Hansen/UMD via
+    // GFW). Rendered + driven specially in MapView (see ForestLossTimeline).
+    id: "forestloss",
+    tile: "regions",
+    kind: "fill",
+    color: "#ff5722", // deep-orange 500, "loss" — matches LossChart
+    defaultOn: false,
+    sourceName: "Hansen/UMD tree cover loss (via Global Forest Watch)",
+    sourceUrl: "https://www.globalforestwatch.org/",
+  },
   // ---- circles (drawn on top) ----
   {
     id: "alerts",

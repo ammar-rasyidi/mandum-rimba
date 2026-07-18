@@ -236,6 +236,12 @@
     "fieldArea": "Luas",
     "dataYear": "Tahun data",
     "areaEstimated": "perkiraan dari peta",
+    "loading": "Memuat…",
+    "play": "Putar",
+    "pause": "Jeda",
+    "lossTimelineTitle": "Kehilangan hutan dari waktu ke waktu",
+    "lossLostThisYear": "hilang tahun ini",
+    "lossLegendLess": "sedikit",
     "wetlandInfo": {
       "mangrove": "Hutan mangrove: sabuk vegetasi pesisir yang menahan abrasi dan badai, menyimpan karbon 'biru' berkali lipat hutan darat, serta jadi tempat memijah ikan dan rumah bekantan, buaya, dan burung air. Ekstent 2020 dari citra satelit (Global Mangrove Watch v3).",
       "peatland": "Lahan gambut: tanah basah kaya karbon yang terbentuk ribuan tahun. Bila dikeringkan dan dibakar ia melepas karbon raksasa dan memicu kabut asap; bila tetap basah ia habitat penting orangutan, harimau, dan satwa rawa."
@@ -298,6 +304,7 @@
       "mangrove": "Mangrove",
       "peatland": "Gambut",
       "species-dist": "Peta Sebaran Satwa",
+      "forestloss": "Kehilangan hutan (per tahun)",
       "disasters": "Bencana (banjir, longsor)",
       "ecoregions": "Ekoregion",
       "biogeo": "Garis biogeografi (Wallace/Weber/Lydekker)",

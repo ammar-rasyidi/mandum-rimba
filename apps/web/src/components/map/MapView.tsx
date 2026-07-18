@@ -11,6 +11,12 @@ import DetailDrawer, { type SelectedFeature } from "./DetailDrawer";
 import SpeciesInfo from "./SpeciesInfo";
 import RealmCaption from "./RealmCaption";
 import MapControls from "./MapControls";
+import ForestLossTimeline from "./ForestLossTimeline";
+import {
+  fetchLossMatrix,
+  lossFillExpression,
+  type LossMatrix,
+} from "@/lib/forest-loss";
 import mountainsData from "@/data/mountains.json";
 import {
   getSpecies,
@@ -136,6 +142,15 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
   // layer panel collapsed to a pill — lifted so the nav controls can hide behind
   // the expanded sheet on mobile
   const [layerMinimized, setLayerMinimized] = useState(false);
+  // forest-loss timeline: the per-region×per-year loss matrix, the year the
+  // slider is on, and whether it's auto-playing. Refs mirror the first two so
+  // the map's sourcedata listener can re-apply feature-state without re-binding.
+  const [lossData, setLossData] = useState<LossMatrix | null>(null);
+  const [lossYearIdx, setLossYearIdx] = useState(0);
+  const [lossPlaying, setLossPlaying] = useState(false);
+  const lossDataRef = useRef<LossMatrix | null>(null);
+  const lossYearIdxRef = useRef(0);
+  const showLoss = filters.layers.includes("forestloss");
   const theme = useSiteTheme();
 
   // pan/zoom to a searched place and drop a green marker at its center. bbox is
@@ -226,6 +241,93 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
     p.set("cls", f.speciesClasses.join(","));
     window.history.replaceState(null, "", `?${p.toString()}`);
   }, []);
+
+  // ---------- forest-loss timeline ----------
+  // mirror data + year into refs so the map's sourcedata handler (bound once)
+  // always reads the current values
+  useEffect(() => {
+    lossDataRef.current = lossData;
+  }, [lossData]);
+  useEffect(() => {
+    lossYearIdxRef.current = lossYearIdx;
+  }, [lossYearIdx]);
+
+  // write each province's loss for the active year onto its feature, so the
+  // choropleth paint (a step over feature-state) can colour it
+  const applyLossYear = useCallback(() => {
+    const map = mapRef.current;
+    const data = lossDataRef.current;
+    if (!map || !data || !map.getLayer("lyr-forestloss")) return;
+    const yi = lossYearIdxRef.current;
+    for (const r of data.regions) {
+      map.setFeatureState(
+        { source: "src-loss-regions", sourceLayer: "regions", id: r.id },
+        { loss: r.loss[yi] ?? 0 },
+      );
+    }
+  }, []);
+
+  // fetch the matrix the first time the layer is switched on
+  useEffect(() => {
+    if (!showLoss || lossData) return;
+    let alive = true;
+    fetchLossMatrix("province").then((d) => {
+      if (!alive || !d || d.years.length === 0) return;
+      setLossData(d);
+      setLossYearIdx(d.years.length - 1); // open on the most recent year
+    });
+    return () => {
+      alive = false;
+    };
+  }, [showLoss, lossData]);
+
+  // re-apply feature-state whenever the data or year changes
+  useEffect(() => {
+    applyLossYear();
+  }, [lossData, lossYearIdx, applyLossYear]);
+
+  // feature-state is per-tile and drops when a tile reloads (pan/zoom); the
+  // regions source finishing a load is the cue to write the year's values again
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready) return;
+    const onData = (e: maplibregl.MapSourceDataEvent) => {
+      if (e.sourceId === "src-loss-regions" && e.isSourceLoaded) applyLossYear();
+    };
+    map.on("sourcedata", onData);
+    return () => {
+      map.off("sourcedata", onData);
+    };
+  }, [ready, applyLossYear]);
+
+  // auto-advance while playing; stop at the last year
+  useEffect(() => {
+    if (!lossPlaying || !lossData) return;
+    const n = lossData.years.length;
+    const timer = setInterval(() => {
+      setLossYearIdx((i) => {
+        if (i >= n - 1) {
+          setLossPlaying(false);
+          return i;
+        }
+        return i + 1;
+      });
+    }, 900);
+    return () => clearInterval(timer);
+  }, [lossPlaying, lossData]);
+
+  const toggleLossPlay = useCallback(() => {
+    setLossPlaying((p) => {
+      if (!p && lossDataRef.current) {
+        const n = lossDataRef.current.years.length;
+        if (lossYearIdxRef.current >= n - 1) setLossYearIdx(0); // replay from start
+      }
+      return !p;
+    });
+  }, []);
+
+  const lossTotalHa =
+    lossData?.regions.reduce((s, r) => s + (r.loss[lossYearIdx] ?? 0), 0) ?? 0;
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
@@ -323,8 +425,39 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
         }),
       );
 
+      // forest-loss choropleth: paints the shared `regions` tiles (province
+      // level) by feature-state, added first so the data layers below draw on
+      // top and stay legible. Values are written per year by <ForestLossTimeline>.
+      if (avail.has("regions")) {
+        map.addSource("src-loss-regions", {
+          type: "vector",
+          url: `pmtiles://${TILES_BASE}/tiles/regions.pmtiles`,
+          promoteId: "id",
+        });
+        map.addLayer({
+          id: "lyr-forestloss",
+          type: "fill",
+          source: "src-loss-regions",
+          "source-layer": "regions",
+          filter: ["==", ["get", "level"], "province"],
+          layout: {
+            visibility: filters.layers.includes("forestloss")
+              ? "visible"
+              : "none",
+          },
+          paint: {
+            "fill-color": lossFillExpression() as never,
+            "fill-opacity": 0.72,
+            "fill-outline-color": "rgba(0,0,0,0.28)",
+          },
+        });
+      }
+
       const added = new Set<string>();
       for (const def of groupLayers) {
+        // forest-loss is not its own geometry; it's painted on the regions tiles
+        // above by feature-state, so skip the generic builder for it.
+        if (def.id === "forestloss") continue;
         // local GeoJSON layers (distribution areas) load from the bundled file, not R2
         if (def.geojson) {
           const sourceId = `src-${def.id}`;
@@ -1021,6 +1154,20 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
       )}
       {selected && (
         <DetailDrawer feature={selected} onClose={() => setSelected(null)} />
+      )}
+      {showLoss && (
+        <ForestLossTimeline
+          years={lossData?.years ?? []}
+          idx={lossYearIdx}
+          onIdx={(i) => {
+            setLossPlaying(false);
+            setLossYearIdx(i);
+          }}
+          playing={lossPlaying}
+          onPlayToggle={toggleLossPlay}
+          totalHa={lossTotalHa}
+          loading={!lossData}
+        />
       )}
     </div>
   );

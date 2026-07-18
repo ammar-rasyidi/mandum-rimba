@@ -54,6 +54,10 @@ interface Props {
    *  behind the expanded sheet on mobile */
   minimized: boolean;
   onMinimizedChange: (v: boolean) => void;
+  /** "float": the desktop card, absolutely positioned over the map.
+   *  "sheet": chrome-less flow content rendered inside MobilePanelSheet
+   *  (which brings its own frame, scrolling and drag gesture). */
+  variant?: "float" | "sheet";
 }
 
 /** the three biogeographic realms, in west-to-east tour order */
@@ -109,10 +113,11 @@ export default function LayerPanel({
   onPlayTour,
   minimized,
   onMinimizedChange,
+  variant = "float",
 }: Props) {
   const t = useTranslations("map");
 
-  if (minimized) {
+  if (minimized && variant === "float") {
     return (
       <button
         className="glass absolute right-3 top-[5.75rem] z-[5] cursor-pointer rounded-full px-[1.1rem] py-[0.55rem] text-[0.85rem] text-foreground transition-[transform,border-color] hover:-translate-y-px max-[720px]:bottom-5 max-[720px]:top-auto"
@@ -138,13 +143,23 @@ export default function LayerPanel({
 
   return (
     <aside
-      className="glass absolute right-3 top-[5.75rem] z-[5] flex max-h-[calc(100%-16rem)] w-[308px] animate-[panel-in_0.22s_ease] flex-col overflow-hidden rounded-[18px] px-[0.9rem] pb-[0.9rem] pt-3 text-[0.88rem] max-[720px]:inset-x-0 max-[720px]:bottom-0 max-[720px]:top-auto max-[720px]:max-h-[72%] max-[720px]:w-full max-[720px]:overflow-y-auto max-[720px]:overscroll-contain max-[720px]:rounded-[18px_18px_0_0]"
+      className={
+        variant === "sheet"
+          ? "flex flex-col px-[0.9rem] pb-[0.9rem] pt-1 text-[0.88rem]"
+          : "glass absolute right-3 top-[5.75rem] z-[5] flex max-h-[calc(100%-16rem)] w-[308px] animate-[panel-in_0.22s_ease] flex-col overflow-hidden rounded-[18px] px-[0.9rem] pb-[0.9rem] pt-3 text-[0.88rem] max-[720px]:inset-x-0 max-[720px]:bottom-0 max-[720px]:top-auto max-[720px]:max-h-[72%] max-[720px]:w-full max-[720px]:overflow-y-auto max-[720px]:overscroll-contain max-[720px]:rounded-[18px_18px_0_0]"
+      }
       aria-label={t("layers")}
     >
       {/* on mobile the whole sheet scrolls as one unit (see the layer-list div
           below), so the header sticks to keep Reset/minimize reachable; the
           full-bleed padding + glass bg cover content scrolling behind it */}
-      <header className="mb-[0.6rem] flex shrink-0 items-center justify-between max-[720px]:sticky max-[720px]:-top-4 max-[720px]:z-20 max-[720px]:-mx-[0.9rem] max-[720px]:-mt-3 max-[720px]:mb-2 max-[720px]:bg-[var(--bg)] max-[720px]:px-[0.9rem] max-[720px]:pb-2 max-[720px]:pt-3">
+      <header
+        className={
+          variant === "sheet"
+            ? "sticky top-0 z-20 -mx-[0.9rem] mb-2 flex shrink-0 items-center justify-between bg-[var(--glass-bg)] px-[0.9rem] pb-2 pt-1"
+            : "mb-[0.6rem] flex shrink-0 items-center justify-between max-[720px]:sticky max-[720px]:-top-4 max-[720px]:z-20 max-[720px]:-mx-[0.9rem] max-[720px]:-mt-3 max-[720px]:mb-2 max-[720px]:bg-[var(--bg)] max-[720px]:px-[0.9rem] max-[720px]:pb-2 max-[720px]:pt-3"
+        }
+      >
         <h2 className="m-0 text-[0.95rem] tracking-[0.02em]">{t("layers")}</h2>
         <div className="flex gap-[0.35rem]">
           <button className={panelBtn} onClick={onReset}>

@@ -58,7 +58,7 @@ export class RegionsController {
   async lossMatrix(@Query("level") level = "province") {
     const regions = await this.regionModel
       .find({ level })
-      .select("_id name nameEn");
+      .select("_id slug name nameEn");
     const ids = regions.map((r) => r._id);
     const rows = await this.lossModel
       .find({ regionId: { $in: ids } })

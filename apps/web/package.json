@@ -20,8 +20,7 @@
     "pmtiles": "^3.2.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "recharts": "^2.15.0",
-    "vaul": "^1.1.2"
+    "recharts": "^2.15.0"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",

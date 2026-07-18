@@ -7,12 +7,6 @@ import { LAYERS, colorExpression, type LayerDef } from "@/lib/layers";
 import { geodesicAreaHa } from "@/lib/geo-area";
 import { TILES_BASE } from "@/lib/api";
 import LayerPanel from "./LayerPanel";
-import MobilePanelSheet, {
-  SHEET_FULL,
-  SHEET_PEEK,
-  type SheetSnap,
-} from "./MobilePanelSheet";
-import { useIsMobile } from "@/hooks/useIsMobile";
 import DetailDrawer, { type SelectedFeature } from "./DetailDrawer";
 import SpeciesInfo from "./SpeciesInfo";
 import RealmCaption from "./RealmCaption";
@@ -148,14 +142,10 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
   // layer panel collapsed to a pill — lifted so the nav controls can hide behind
   // the expanded sheet on mobile
   const [layerMinimized, setLayerMinimized] = useState(false);
-  // phones: the layer panel rides in a swipeable bottom sheet instead
-  const isMobile = useIsMobile();
-  const [sheetSnap, setSheetSnap] = useState<SheetSnap>(SHEET_PEEK);
   // forest-loss timeline: the per-region×per-year loss matrix, the year the
   // slider is on, and whether it's auto-playing. Refs mirror the first two so
   // the map's sourcedata listener can re-apply feature-state without re-binding.
   const [lossData, setLossData] = useState<LossMatrix | null>(null);
-  const [lossError, setLossError] = useState(false);
   const [lossYearIdx, setLossYearIdx] = useState(0);
   const [lossPlaying, setLossPlaying] = useState(false);
   const lossDataRef = useRef<LossMatrix | null>(null);
@@ -277,25 +267,19 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
     }
   }, []);
 
-  // fetch the matrix the first time the layer is switched on. We still store an
-  // empty result (or flag an error) so the timeline can say "no data yet"
-  // instead of spinning on "Loading…" forever against an unpopulated DB.
+  // fetch the matrix the first time the layer is switched on
   useEffect(() => {
-    if (!showLoss || lossData || lossError) return;
+    if (!showLoss || lossData) return;
     let alive = true;
     fetchLossMatrix("province").then((d) => {
-      if (!alive) return;
-      if (!d) {
-        setLossError(true);
-        return;
-      }
+      if (!alive || !d || d.years.length === 0) return;
       setLossData(d);
-      if (d.years.length > 0) setLossYearIdx(d.years.length - 1); // latest year
+      setLossYearIdx(d.years.length - 1); // open on the most recent year
     });
     return () => {
       alive = false;
     };
-  }, [showLoss, lossData, lossError]);
+  }, [showLoss, lossData]);
 
   // re-apply feature-state whenever the data or year changes
   useEffect(() => {
@@ -1107,14 +1091,10 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
       <MapControls
         mapRef={mapRef}
         ready={ready}
-        panelOpen={isMobile ? sheetSnap === SHEET_FULL : !layerMinimized}
+        panelOpen={!layerMinimized}
         detailOpen={!!(selected || speciesData)}
       />
-      <LayerPanelHost
-        isMobile={isMobile}
-        sheetSnap={sheetSnap}
-        onSheetSnap={setSheetSnap}
-        sheetTitle="Layers"
+      <LayerPanel
         layers={groupLayers}
         availableTiles={availableTiles}
         filters={filters}
@@ -1175,10 +1155,7 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
       {selected && (
         <DetailDrawer feature={selected} onClose={() => setSelected(null)} />
       )}
-      {/* gate on `ready` (false on the server and the first client render, so
-          they match) — `showLoss` derives from URL-seeded filters and would
-          otherwise mismatch during hydration when the URL has forestloss on */}
-      {ready && showLoss && (
+      {showLoss && (
         <ForestLossTimeline
           years={lossData?.years ?? []}
           idx={lossYearIdx}
@@ -1189,8 +1166,7 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
           playing={lossPlaying}
           onPlayToggle={toggleLossPlay}
           totalHa={lossTotalHa}
-          loading={!lossData && !lossError}
-          unavailable={lossError || (!!lossData && lossData.years.length === 0)}
+          loading={!lossData}
         />
       )}
     </div>
@@ -1324,32 +1300,4 @@ function buildLayer(
         },
       };
   }
-}
-
-/** Renders the layer panel either as the desktop floating card or, on
- *  phones, inside the swipeable bottom sheet (peek/full snap points; the
- *  panel's own minimize button drops the sheet back to peek). */
-function LayerPanelHost({
-  isMobile,
-  sheetSnap,
-  onSheetSnap,
-  sheetTitle,
-  ...panelProps
-}: {
-  isMobile: boolean;
-  sheetSnap: SheetSnap;
-  onSheetSnap: (snap: SheetSnap) => void;
-  sheetTitle: string;
-} & React.ComponentProps<typeof LayerPanel>) {
-  if (!isMobile) return <LayerPanel {...panelProps} />;
-  return (
-    <MobilePanelSheet snap={sheetSnap} onSnapChange={onSheetSnap} title={sheetTitle}>
-      <LayerPanel
-        {...panelProps}
-        variant="sheet"
-        minimized={false}
-        onMinimizedChange={(v) => onSheetSnap(v ? SHEET_PEEK : SHEET_FULL)}
-      />
-    </MobilePanelSheet>
-  );
 }

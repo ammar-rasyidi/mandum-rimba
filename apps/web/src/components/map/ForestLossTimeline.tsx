@@ -16,7 +16,6 @@ export default function ForestLossTimeline({
   onPlayToggle,
   totalHa,
   loading,
-  unavailable,
 }: {
   years: number[];
   idx: number;
@@ -25,7 +24,6 @@ export default function ForestLossTimeline({
   onPlayToggle: () => void;
   totalHa: number;
   loading: boolean;
-  unavailable: boolean;
 }) {
   const t = useTranslations("map");
   const year = years[idx];
@@ -43,10 +41,6 @@ export default function ForestLossTimeline({
           </p>
           {loading ? (
             <p className="m-0 text-[0.9rem] text-muted">{t("loading")}</p>
-          ) : unavailable ? (
-            <p className="m-0 text-[0.9rem] text-muted">
-              {t("lossUnavailable")}
-            </p>
           ) : (
             <p className="m-0 leading-tight">
               <span className="text-[1.35rem] font-semibold tabular-nums">
@@ -79,44 +73,36 @@ export default function ForestLossTimeline({
         </button>
       </div>
 
-      {!unavailable && (
-        <>
-          <input
-            type="range"
-            min={0}
-            max={Math.max(last, 0)}
-            step={1}
-            value={idx}
-            disabled={loading || years.length === 0}
-            onChange={(e) => onIdx(Number(e.target.value))}
-            aria-label={t("lossTimelineTitle")}
-            className="w-full cursor-pointer accent-[#ff5722] disabled:opacity-40"
-          />
-          {years.length > 0 && (
-            <div className="mt-0.5 flex justify-between text-[0.68rem] tabular-nums text-muted">
-              <span>{years[0]}</span>
-              <span>{years[last]}</span>
-            </div>
-          )}
-
-          {/* legend: the same ramp the map uses */}
-          <div className="mt-2 flex items-center gap-1.5 text-[0.64rem] text-muted">
-            <span className="shrink-0">{t("lossLegendLess")}</span>
-            <span className="flex h-2.5 flex-1 overflow-hidden rounded-full">
-              {LOSS_STOPS.map(([, color]) => (
-                <span
-                  key={color}
-                  className="flex-1"
-                  style={{ background: color }}
-                />
-              ))}
-            </span>
-            <span className="shrink-0">
-              {shortHa(LOSS_STOPS[LOSS_STOPS.length - 1][0])}+ ha
-            </span>
-          </div>
-        </>
+      <input
+        type="range"
+        min={0}
+        max={Math.max(last, 0)}
+        step={1}
+        value={idx}
+        disabled={loading || years.length === 0}
+        onChange={(e) => onIdx(Number(e.target.value))}
+        aria-label={t("lossTimelineTitle")}
+        className="w-full cursor-pointer accent-[#ff5722] disabled:opacity-40"
+      />
+      {years.length > 0 && (
+        <div className="mt-0.5 flex justify-between text-[0.68rem] tabular-nums text-muted">
+          <span>{years[0]}</span>
+          <span>{years[last]}</span>
+        </div>
       )}
+
+      {/* legend: the same ramp the map uses */}
+      <div className="mt-2 flex items-center gap-1.5 text-[0.64rem] text-muted">
+        <span className="shrink-0">{t("lossLegendLess")}</span>
+        <span className="flex h-2.5 flex-1 overflow-hidden rounded-full">
+          {LOSS_STOPS.map(([, color]) => (
+            <span key={color} className="flex-1" style={{ background: color }} />
+          ))}
+        </span>
+        <span className="shrink-0">
+          {shortHa(LOSS_STOPS[LOSS_STOPS.length - 1][0])}+ ha
+        </span>
+      </div>
     </div>
   );
 }

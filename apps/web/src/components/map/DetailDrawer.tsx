@@ -405,6 +405,9 @@ export default function DetailDrawer({
             </dd>
           </div>
         </dl>
+        <p className="m-0 mt-2.5 border-t border-[var(--glass-border)] pt-2 text-[0.68rem] italic leading-snug text-muted">
+          {t("popupDisclaimer")}
+        </p>
       </aside>
     );
   }
@@ -476,6 +479,12 @@ export default function DetailDrawer({
           </dd>
         </div>
       </dl>
+      {/* UU ITE safety: this data is third-party and shown as-is, not an
+          accusation. Concession/mining features (which name companies) get the
+          stronger note. */}
+      <p className="m-0 mt-2.5 border-t border-[var(--glass-border)] pt-2 text-[0.68rem] italic leading-snug text-muted">
+        {t(layer.id === "concessions" ? "popupConcessionNote" : "popupDisclaimer")}
+      </p>
     </aside>
   );
 }

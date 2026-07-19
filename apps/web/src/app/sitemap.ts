@@ -17,6 +17,8 @@ const ROUTES: { paths: { id: string; en: string }; priority: number }[] = [
   { paths: { id: "/data", en: "/data" }, priority: 0.6 },
   { paths: { id: "/status", en: "/status" }, priority: 0.5 },
   { paths: { id: "/apresiasi", en: "/credits" }, priority: 0.5 },
+  { paths: { id: "/ketentuan", en: "/disclaimer" }, priority: 0.3 },
+  { paths: { id: "/privasi", en: "/privacy" }, priority: 0.3 },
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {

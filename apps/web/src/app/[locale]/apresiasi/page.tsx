@@ -226,6 +226,7 @@ export default async function CreditsPage({
           })}
         </div>
       )}
+      <p className="text-[0.9rem] text-muted">{t("supportersQris")}</p>
       <p className="text-[0.9rem]">
         {t("supportersCta")}{" "}
         <Link href="/dukung">{t("supportersCtaLink")}</Link>.

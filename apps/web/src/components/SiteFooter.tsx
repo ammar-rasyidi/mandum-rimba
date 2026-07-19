@@ -11,7 +11,9 @@ type StaticPath =
   | "/status"
   | "/apresiasi"
   | "/proyek"
-  | "/dukung";
+  | "/dukung"
+  | "/ketentuan"
+  | "/privasi";
 
 const colTitle =
   "mb-3 text-[0.72rem] font-semibold uppercase tracking-[0.14em] text-muted";
@@ -35,6 +37,8 @@ export default async function SiteFooter({ locale }: { locale: string }) {
     { href: "/sumber-data", label: tNav("sources") },
     { href: "/status", label: tNav("status") },
     { href: "/apresiasi", label: tNav("credits") },
+    { href: "/ketentuan", label: t("terms") },
+    { href: "/privasi", label: t("privacy") },
   ];
 
   const year = new Date().getFullYear();
@@ -122,7 +126,12 @@ export default async function SiteFooter({ locale }: { locale: string }) {
           <p className="m-0">
             © {year} {tSite("name")}. {t("rights")}
           </p>
-          <p className="m-0 max-w-[42rem] md:text-right">{t("disclaimer")}</p>
+          <p className="m-0 max-w-[42rem] md:text-right">
+            {t("disclaimer")}{" "}
+            <Link href="/ketentuan" className="underline hover:text-foreground">
+              {t("terms")}
+            </Link>
+          </p>
         </div>
       </div>
     </footer>

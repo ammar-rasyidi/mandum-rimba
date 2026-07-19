@@ -100,6 +100,11 @@ export default async function DataSourcesPage({
       <h1>{t("title")}</h1>
       <p>{t("intro")}</p>
 
+      <aside className="not-prose my-5 rounded-xl border border-border bg-surface px-4 py-3.5 text-[0.9rem] leading-relaxed text-muted">
+        <strong className="text-foreground">{t("disclaimerTitle")}</strong>
+        <p className="mb-0 mt-1.5">{t("disclaimerBody")}</p>
+      </aside>
+
       <h2>{t("activeTitle")}</h2>
       <div className={sourceList}>
         {DATA_CATALOG.map((entry, i) => (

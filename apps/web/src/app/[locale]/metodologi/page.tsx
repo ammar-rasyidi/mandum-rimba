@@ -12,7 +12,7 @@ export async function generateMetadata({
 
 const SOURCES = [
   {
-    name: "Global Forest Watch, RADD / GLAD alerts, UMD annual tree cover loss",
+    name: "Global Forest Watch, RADD / GLAD alerts, and UMD/Hansen tree cover loss (2001–2025, >30% canopy, live encoded raster tiles)",
     url: "https://data-api.globalforestwatch.org",
     license: "CC BY 4.0",
   },
@@ -57,9 +57,9 @@ const SOURCES = [
     license: "CC BY 4.0",
   },
   {
-    name: "Protected Planet (WDPA), protected areas",
+    name: "Protected Planet (WDPA), protected areas (UNEP-WCMC & IUCN)",
     url: "https://www.protectedplanet.net",
-    license: "WDPA terms (no redistribution)",
+    license: "WDPA terms: non-commercial display with attribution + link, no downloads/redistribution",
   },
   {
     name: "KLHK PIPPIB, forest moratorium",
@@ -99,6 +99,10 @@ const SOURCES = [
 ];
 
 const CHANGELOG = [
+  {
+    version: "2026.07.2",
+    note: "Added a Tree cover loss layer to the main map (/peta): the Hansen/UMD annual tree cover loss raster (>30% canopy) streamed live from Global Forest Watch's encoded tiles, decoded per-pixel in the browser and coloured by loss density (amber → deep red), with a 2001–2025 timeline you can scrub or play to watch loss accumulate. It replaces an earlier province-level loss choropleth. Tree cover loss is not always deforestation, so the layer is presented as loss, not as a deforestation verdict.",
+  },
   {
     version: "2026.07.1",
     note: "Two coastal & wetland habitat layers added to the main map (/peta): Mangroves (Global Mangrove Watch v3, ~223.900 polygons, 2020 extent) and Peatlands (Global Forest Watch 'Indonesia peat lands'). Both are carbon-rich, fire-prone ecosystems and critical wildlife habitat. Default-visible layers were retuned so the map opens on the human-pressure vs. protection story: concessions, protected & moratorium areas, mangroves, and peatlands are on by default; the Wildlife Distribution layer is now off by default (opt-in) to reduce initial clutter.",
@@ -147,6 +151,9 @@ export default async function MethodologyPage({
 
       <h2>{t("limitsTitle")}</h2>
       <p>{t("limitsBody")}</p>
+
+      <h2>{t("disclaimerTitle")}</h2>
+      <p>{t("disclaimerBody")}</p>
 
       <h2>{t("changelogTitle")}</h2>
       <ul>

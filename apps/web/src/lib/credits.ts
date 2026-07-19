@@ -74,6 +74,7 @@ export const SUPPORTERS: Supporter[] = [
   { name: "@nabilmdiana", socialUrl: "https://www.threads.com/@nabilmdiana" },
   { name: "@farahvulcanoell", socialUrl: "https://www.threads.com/@farahvulcanoell" },
   { name: "Novfirman", socialUrl: "" },
+  { name: "Yusmadi Yusuf", socialUrl: "" },
 ];
 
 /** Organizations whose open data powers the map (full detail on /sumber-data). */

@@ -236,7 +236,7 @@
     "fieldArea": "Area",
     "dataYear": "Data year",
     "popupDisclaimer": "Public third-party data, shown as-is and possibly outdated. Names and boundaries come from the source dataset, not from us, and are not an allegation that any law was broken.",
-    "popupConcessionNote": "A concession or mined-area boundary is a dated snapshot from the source, not proof of any wrongdoing. Tree cover loss inside it is not, by itself, illegal deforestation.",
+    "popupConcessionNote": "Concession and mined-area boundaries come from public datasets for a given point in time and are shown for information only. The presence of a concession does not indicate any legal violation or particular activity. Tree cover loss inside or around a concession does not always mean deforestation and needs further, context-specific analysis.",
     "areaEstimated": "estimated from the map",
     "loading": "Loading…",
     "play": "Play",
@@ -244,7 +244,7 @@
     "lossTimelineTitle": "Tree cover loss",
     "lossThrough": "through",
     "lossCanopyNote": ">{pct}% canopy density",
-    "lossNotDeforestation": "Tree cover loss is not always deforestation.",
+    "lossNotDeforestation": "Source: Hansen/UMD (Global Forest Watch), shown for information. Tree cover loss is not the same as deforestation and does not indicate any particular party or activity; interpretation needs further, context-specific analysis.",
     "lossDensityLow": "sparse",
     "lossDensityHigh": "dense",
     "wetlandInfo": {
@@ -551,5 +551,14 @@
     "s6Body": "We will update this page if our data practices change.",
     "contactCta": "Ask a privacy question (Threads DM)",
     "contactNote": "Privacy questions and requests are welcome."
+  },
+  "gate": {
+    "title": "Before you explore",
+    "body": "Mandum Rimba shows public, third-party data as-is, for education. We draw no conclusions and accuse no one; names and boundaries come from the source datasets, not from us, and an overlap between layers is context, not a verdict. We uphold the presumption of innocence.",
+    "readMore": "Disclaimer & Terms",
+    "sources": "Data Sources",
+    "methodology": "Methodology",
+    "privacy": "Privacy",
+    "accept": "I understand"
   }
 }

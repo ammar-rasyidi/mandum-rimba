@@ -8,6 +8,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { routing } from "@/i18n/routing";
 import SiteNav from "@/components/SiteNav";
 import SiteFooter from "@/components/SiteFooter";
+import DisclaimerGate from "@/components/DisclaimerGate";
 import "../globals.css";
 import "maplibre-gl/dist/maplibre-gl.css";
 
@@ -150,6 +151,16 @@ export default async function LocaleLayout({
   return (
     <html lang={locale} data-theme={theme} suppressHydrationWarning>
       <head>
+        {/* Swallow unhandled errors that originate in browser extensions (e.g.
+            MetaMask's "Failed to connect to MetaMask" from its injected
+            inpage.js) so Next's dev error overlay doesn't surface them. Runs in
+            the head, before Next's runtime registers its own handlers, and
+            matches ONLY extension/MetaMask sources — our own errors pass through. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){function ext(x){try{return /metamask|chrome-extension:\\/\\//i.test((x&&(x.stack||x.message||x))+"")}catch(e){return false}}window.addEventListener("unhandledrejection",function(e){if(ext(e.reason)){e.preventDefault();e.stopImmediatePropagation()}},true);window.addEventListener("error",function(e){if(ext(e.error)||(e.filename&&e.filename.indexOf("chrome-extension://")===0)){e.stopImmediatePropagation()}},true)})();`,
+          }}
+        />
         {/* Pre-paint: prefer the cookie, else a stored choice, else the OS
             preference on first visit, and seed the cookie so the server gets
             it right on the next render. Avoids any flash of the wrong theme. */}
@@ -169,6 +180,8 @@ export default async function LocaleLayout({
           <SiteNav />
           <div className="pt-20">{children}</div>
           <SiteFooter locale={locale} />
+          {/* first-visit UU ITE disclaimer, acknowledged once */}
+          <DisclaimerGate />
         </NextIntlClientProvider>
         {/* GA only when configured, so dev builds never report into prod */}
         {GA_ID && <GoogleAnalytics gaId={GA_ID} />}

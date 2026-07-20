@@ -26,6 +26,11 @@ export interface LayerDef {
   defaultOn: boolean;
   sourceName: string;
   sourceUrl: string;
+  /** dataset vintage shown as "Data year" in the feature popup — the year(s)
+   *  the source data represents (e.g. "2020", "2019–2025"). Kept in step with
+   *  the Sumber Data catalog's `updated` column. Helps make clear that e.g. a
+   *  concession boundary is a dated snapshot, not a live legal record. */
+  dataYear?: string;
   /** which map this layer belongs to; omitted = the main deforestation map,
    *  "biodiversity" = the separate /biodiversitas map */
   group?: "biodiversity";
@@ -93,15 +98,14 @@ export const LAYERS: LayerDef[] = [
       "https://data.globalforestwatch.org/datasets/d52e0e67ad21401cbf3a2c002599cf58_10",
   },
   {
-    // Forest loss over time: an animated choropleth. Each province shades by the
-    // hectares of tree-cover loss in the year the timeline slider is on. Unlike
-    // every other layer it isn't its own geometry, it paints the shared `regions`
-    // tiles by feature-state from the ForestLossAnnual aggregate (Hansen/UMD via
-    // GFW). Rendered + driven specially in MapView (see ForestLossTimeline).
+    // Tree cover loss over time (2001–2025, >30% canopy): GFW's live encoded
+    // raster (Hansen/UMD), streamed straight from GFW's CDN — not our own tiles.
+    // Rendered + driven specially in MapView (raster-color + ForestLossTimeline),
+    // so `tile` is only a placeholder for the panel/legend plumbing.
     id: "forestloss",
-    tile: "regions",
+    tile: "forestloss",
     kind: "fill",
-    color: "#ff5722", // deep-orange 500, "loss" — matches LossChart
+    color: "#f92c8b", // GFW tree-cover-loss magenta
     defaultOn: false,
     sourceName: "Hansen/UMD tree cover loss (via Global Forest Watch)",
     sourceUrl: "https://www.globalforestwatch.org/",

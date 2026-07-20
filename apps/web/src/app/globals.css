@@ -106,6 +106,19 @@ a:hover {
   }
 }
 
+/* Rise + fade for a horizontally-centred card: keeps translateX(-50%) through
+   the whole animation so it doesn't slide in from the side. */
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 12px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
 /* ===== Reusable primitives (composed with utilities in the JSX) ===== */
 @layer components {
   /* Apple-style frosted glass surface (backdrop-filter + saturate isn't a
@@ -159,6 +172,57 @@ a:hover {
     height: 4px;
     border-radius: 9999px;
     background: var(--border);
+  }
+
+  /* Forest-loss timeline slider. The input itself is fully transparent; the
+     visible track is an 8px pill painted ONLY on the track pseudo-element via
+     --track-bg (density ramp up to the thumb, then transparent). White thumb
+     ringed in the loss pink. */
+  .loss-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 20px;
+    background: transparent;
+    outline: none;
+    cursor: pointer;
+  }
+  .loss-slider::-webkit-slider-runnable-track {
+    height: 8px;
+    border-radius: 9999px;
+    background: var(--track-bg, transparent);
+  }
+  .loss-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    margin-top: -5px; /* centre the 18px thumb on the 8px track */
+    border-radius: 9999px;
+    background: #fff;
+    border: 2px solid #dc6699;
+    box-shadow: var(--shadow);
+    cursor: grab;
+  }
+  .loss-slider::-webkit-slider-thumb:active {
+    cursor: grabbing;
+  }
+  .loss-slider::-moz-range-track {
+    height: 8px;
+    border-radius: 9999px;
+    background: var(--track-bg, transparent);
+  }
+  .loss-slider::-moz-range-progress {
+    background: transparent;
+  }
+  .loss-slider::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 9999px;
+    background: #fff;
+    border: 2px solid #dc6699;
+    box-shadow: var(--shadow);
+    cursor: grab;
   }
 
   /* Long-form content typography (methodology, data, sources, credits, …). */

@@ -236,7 +236,7 @@
     "fieldArea": "Luas",
     "dataYear": "Tahun data",
     "popupDisclaimer": "Data publik pihak ketiga, ditampilkan apa adanya dan bisa kedaluwarsa. Nama dan batas berasal dari dataset sumbernya, bukan dari kami, dan bukan pernyataan bahwa ada hukum yang dilanggar.",
-    "popupConcessionNote": "Batas konsesi atau area tambang adalah snapshot bertanggal dari sumber, bukan bukti pelanggaran. Kehilangan tutupan pohon di dalamnya belum tentu deforestasi ilegal.",
+    "popupConcessionNote": "Batas konsesi atau area tambang berasal dari dataset publik pada waktu tertentu dan disajikan untuk tujuan informasi. Keberadaan konsesi tidak menunjukkan adanya pelanggaran hukum atau aktivitas tertentu. Kehilangan tutupan pohon di dalam maupun di sekitar konsesi tidak selalu berarti deforestasi dan memerlukan analisis lebih lanjut sesuai konteksnya.",
     "areaEstimated": "perkiraan dari peta",
     "loading": "Memuat…",
     "play": "Putar",
@@ -244,7 +244,7 @@
     "lossTimelineTitle": "Kehilangan tutupan pohon",
     "lossThrough": "s.d.",
     "lossCanopyNote": ">{pct}% kerapatan tajuk",
-    "lossNotDeforestation": "Kehilangan tutupan pohon tak selalu berarti deforestasi.",
+    "lossNotDeforestation": "Sumber Hansen/UMD (Global Forest Watch), disajikan untuk informasi. Kehilangan tutupan pohon tidak sama dengan deforestasi dan tidak menunjukkan pihak atau aktivitas tertentu; interpretasinya memerlukan analisis lebih lanjut sesuai konteks.",
     "lossDensityLow": "jarang",
     "lossDensityHigh": "padat",
     "wetlandInfo": {
@@ -551,5 +551,14 @@
     "s6Body": "Kami akan memperbarui halaman ini jika praktik data kami berubah.",
     "contactCta": "Tanya soal privasi (DM Threads)",
     "contactNote": "Pertanyaan dan permintaan soal privasi kami terima dengan baik."
+  },
+  "gate": {
+    "title": "Sebelum menjelajah",
+    "body": "Mandum Rimba menampilkan data publik pihak ketiga apa adanya, untuk edukasi. Kami tidak menarik kesimpulan dan tidak menuduh siapa pun; nama dan batas berasal dari dataset sumbernya, bukan dari kami, dan irisan antar-lapisan adalah konteks, bukan vonis. Kami menjunjung asas praduga tak bersalah.",
+    "readMore": "Ketentuan & Sanggahan",
+    "sources": "Sumber Data",
+    "methodology": "Metodologi",
+    "privacy": "Privasi",
+    "accept": "Saya mengerti"
   }
 }

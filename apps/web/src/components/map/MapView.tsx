@@ -7,16 +7,22 @@ import { LAYERS, colorExpression, type LayerDef } from "@/lib/layers";
 import { geodesicAreaHa } from "@/lib/geo-area";
 import { TILES_BASE } from "@/lib/api";
 import LayerPanel from "./LayerPanel";
+import MobilePanelSheet, {
+  SHEET_FULL,
+  SHEET_PEEK,
+  type SheetSnap,
+} from "./MobilePanelSheet";
+import { useIsMobile } from "@/hooks/useIsMobile";
 import DetailDrawer, { type SelectedFeature } from "./DetailDrawer";
 import SpeciesInfo from "./SpeciesInfo";
 import RealmCaption from "./RealmCaption";
 import MapControls from "./MapControls";
 import ForestLossTimeline from "./ForestLossTimeline";
+import { LOSS_ATTRIBUTION, LOSS_YEARS } from "@/lib/forest-loss";
 import {
-  fetchLossMatrix,
-  lossFillExpression,
-  type LossMatrix,
-} from "@/lib/forest-loss";
+  registerGfwLossProtocol,
+  gfwLossTiles,
+} from "@/lib/gfw-loss-protocol";
 import mountainsData from "@/data/mountains.json";
 import {
   getSpecies,
@@ -35,6 +41,10 @@ import { DEFAULT_FILTERS, type MapFilters } from "./filters";
 const INDONESIA_BOUNDS: [number, number, number, number] = [
   94.5, -11.2, 141.5, 6.5,
 ];
+
+// Southeast Asia extent (Myanmar → Papua, incl. mainland SEA + the Philippines):
+// caps the global GFW loss tileset to the region instead of the whole world.
+const SEA_BOUNDS: [number, number, number, number] = [92, -11.2, 141.5, 29];
 
 /** site theme (data-theme on <html>), kept in sync for the basemap choice */
 function useSiteTheme(): "light" | "dark" {
@@ -142,14 +152,14 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
   // layer panel collapsed to a pill — lifted so the nav controls can hide behind
   // the expanded sheet on mobile
   const [layerMinimized, setLayerMinimized] = useState(false);
-  // forest-loss timeline: the per-region×per-year loss matrix, the year the
-  // slider is on, and whether it's auto-playing. Refs mirror the first two so
-  // the map's sourcedata listener can re-apply feature-state without re-binding.
-  const [lossData, setLossData] = useState<LossMatrix | null>(null);
-  const [lossYearIdx, setLossYearIdx] = useState(0);
+  // phones: the layer panel rides in a swipeable bottom sheet instead
+  const isMobile = useIsMobile();
+  const [sheetSnap, setSheetSnap] = useState<SheetSnap>(SHEET_PEEK);
+  // GFW tree-cover-loss timeline: the year the slider is on (index into
+  // LOSS_YEARS, cumulative 2001..year) and whether it's auto-playing. The
+  // raster tiles come live from GFW, so there's no data of our own to load.
+  const [lossYearIdx, setLossYearIdx] = useState(LOSS_YEARS.length - 1);
   const [lossPlaying, setLossPlaying] = useState(false);
-  const lossDataRef = useRef<LossMatrix | null>(null);
-  const lossYearIdxRef = useRef(0);
   const showLoss = filters.layers.includes("forestloss");
   const theme = useSiteTheme();
 
@@ -242,98 +252,49 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
     window.history.replaceState(null, "", `?${p.toString()}`);
   }, []);
 
-  // ---------- forest-loss timeline ----------
-  // mirror data + year into refs so the map's sourcedata handler (bound once)
-  // always reads the current values
-  useEffect(() => {
-    lossDataRef.current = lossData;
-  }, [lossData]);
-  useEffect(() => {
-    lossYearIdxRef.current = lossYearIdx;
-  }, [lossYearIdx]);
-
-  // write each province's loss for the active year onto its feature, so the
-  // choropleth paint (a step over feature-state) can colour it
-  const applyLossYear = useCallback(() => {
-    const map = mapRef.current;
-    const data = lossDataRef.current;
-    if (!map || !data || !map.getLayer("lyr-forestloss")) return;
-    const yi = lossYearIdxRef.current;
-    for (const r of data.regions) {
-      map.setFeatureState(
-        { source: "src-loss-regions", sourceLayer: "regions", id: r.id },
-        { loss: r.loss[yi] ?? 0 },
-      );
-    }
-  }, []);
-
-  // fetch the matrix the first time the layer is switched on
-  useEffect(() => {
-    if (!showLoss || lossData) return;
-    let alive = true;
-    fetchLossMatrix("province").then((d) => {
-      if (!alive || !d || d.years.length === 0) return;
-      setLossData(d);
-      setLossYearIdx(d.years.length - 1); // open on the most recent year
-    });
-    return () => {
-      alive = false;
-    };
-  }, [showLoss, lossData]);
-
-  // re-apply feature-state whenever the data or year changes
-  useEffect(() => {
-    applyLossYear();
-  }, [lossData, lossYearIdx, applyLossYear]);
-
-  // feature-state is per-tile and drops when a tile reloads (pan/zoom); the
-  // regions source finishing a load is the cue to write the year's values again
+  // ---------- GFW tree-cover-loss timeline ----------
+  // re-point the raster tiles at the chosen end year; the gfwloss:// protocol
+  // recolours each tile to reveal loss cumulatively through that year
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !ready) return;
-    const onData = (e: maplibregl.MapSourceDataEvent) => {
-      if (e.sourceId === "src-loss-regions" && e.isSourceLoaded) applyLossYear();
-    };
-    map.on("sourcedata", onData);
-    return () => {
-      map.off("sourcedata", onData);
-    };
-  }, [ready, applyLossYear]);
+    const src = map.getSource("src-gfw-loss") as
+      | maplibregl.RasterTileSource
+      | undefined;
+    src?.setTiles([gfwLossTiles(LOSS_YEARS[lossYearIdx])]);
+  }, [ready, lossYearIdx]);
 
   // auto-advance while playing; stop at the last year
   useEffect(() => {
-    if (!lossPlaying || !lossData) return;
-    const n = lossData.years.length;
+    if (!lossPlaying) return;
     const timer = setInterval(() => {
       setLossYearIdx((i) => {
-        if (i >= n - 1) {
+        if (i >= LOSS_YEARS.length - 1) {
           setLossPlaying(false);
           return i;
         }
         return i + 1;
       });
-    }, 900);
+    }, 700);
     return () => clearInterval(timer);
-  }, [lossPlaying, lossData]);
+  }, [lossPlaying]);
 
   const toggleLossPlay = useCallback(() => {
     setLossPlaying((p) => {
-      if (!p && lossDataRef.current) {
-        const n = lossDataRef.current.years.length;
-        if (lossYearIdxRef.current >= n - 1) setLossYearIdx(0); // replay from start
+      // replay from the start if we're paused at the last year
+      if (!p) {
+        setLossYearIdx((i) => (i >= LOSS_YEARS.length - 1 ? 0 : i));
       }
       return !p;
     });
   }, []);
-
-  const lossTotalHa =
-    lossData?.regions.reduce((s, r) => s + (r.loss[lossYearIdx] ?? 0), 0) ?? 0;
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
     const protocol = new Protocol();
     maplibregl.addProtocol("pmtiles", protocol.tile);
+    registerGfwLossProtocol(); // gfwloss:// — recolours GFW loss tiles by year
 
     const map = new maplibregl.Map({
       container: containerRef.current,
@@ -425,38 +386,38 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
         }),
       );
 
-      // forest-loss choropleth: paints the shared `regions` tiles (province
-      // level) by feature-state, added first so the data layers below draw on
-      // top and stay legible. Values are written per year by <ForestLossTimeline>.
-      if (avail.has("regions")) {
-        map.addSource("src-loss-regions", {
-          type: "vector",
-          url: `pmtiles://${TILES_BASE}/tiles/regions.pmtiles`,
-          promoteId: "id",
-        });
-        map.addLayer({
-          id: "lyr-forestloss",
-          type: "fill",
-          source: "src-loss-regions",
-          "source-layer": "regions",
-          filter: ["==", ["get", "level"], "province"],
-          layout: {
-            visibility: filters.layers.includes("forestloss")
-              ? "visible"
-              : "none",
-          },
-          paint: {
-            "fill-color": lossFillExpression() as never,
-            "fill-opacity": 0.72,
-            "fill-outline-color": "rgba(0,0,0,0.28)",
-          },
-        });
-      }
+      // GFW tree-cover-loss: a live encoded raster from GFW's CDN, added first
+      // (under the data layers). MapLibre v5 raster-color reads the year from the
+      // blue channel; <ForestLossTimeline> recolours it to reveal loss through
+      // the chosen year. No tiles of our own — nothing to probe on R2.
+      map.addSource("src-gfw-loss", {
+        type: "raster",
+        tiles: [gfwLossTiles(LOSS_YEARS[lossYearIdx])],
+        tileSize: 512,
+        minzoom: 0,
+        maxzoom: 12,
+        // limit the global GFW tileset to Southeast Asia — don't paint loss
+        // across the whole world
+        bounds: SEA_BOUNDS,
+        attribution: LOSS_ATTRIBUTION,
+      });
+      map.addLayer({
+        id: "lyr-forestloss",
+        type: "raster",
+        source: "src-gfw-loss",
+        layout: {
+          visibility: filters.layers.includes("forestloss")
+            ? "visible"
+            : "none",
+        },
+        paint: { "raster-opacity": 1 },
+      });
+      avail.add("forestloss"); // live GFW raster, always available in the legend
 
       const added = new Set<string>();
       for (const def of groupLayers) {
-        // forest-loss is not its own geometry; it's painted on the regions tiles
-        // above by feature-state, so skip the generic builder for it.
+        // forest-loss is the GFW raster added above, not a vector tileset —
+        // skip the generic builder for it.
         if (def.id === "forestloss") continue;
         // local GeoJSON layers (distribution areas) load from the bundled file, not R2
         if (def.geojson) {
@@ -472,9 +433,17 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
         if (!avail.has(def.tile)) continue;
         const sourceId = `src-${def.tile}`;
         if (!added.has(sourceId)) {
+          // Protected Planet / WDPA requires visible attribution + a link back
+          // (non-commercial display is permitted; downloads are not). Every
+          // other layer is credited too, matching the "every layer cited" rule.
+          const attribution =
+            def.id === "protected"
+              ? 'Protected areas: <a href="https://www.protectedplanet.net" target="_blank" rel="noreferrer">Protected Planet / WDPA</a> (UNEP-WCMC & IUCN) · KLHK PIPPIB'
+              : `<a href="${def.sourceUrl}" target="_blank" rel="noreferrer">${def.sourceName}</a>`;
           map.addSource(sourceId, {
             type: "vector",
             url: `pmtiles://${TILES_BASE}/tiles/${def.tile}.pmtiles`,
+            attribution,
           });
           added.add(sourceId);
         }
@@ -1091,10 +1060,14 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
       <MapControls
         mapRef={mapRef}
         ready={ready}
-        panelOpen={!layerMinimized}
+        panelOpen={isMobile ? sheetSnap === SHEET_FULL : !layerMinimized}
         detailOpen={!!(selected || speciesData)}
       />
-      <LayerPanel
+      <LayerPanelHost
+        isMobile={isMobile}
+        sheetSnap={sheetSnap}
+        onSheetSnap={setSheetSnap}
+        sheetTitle="Layers"
         layers={groupLayers}
         availableTiles={availableTiles}
         filters={filters}
@@ -1155,9 +1128,12 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
       {selected && (
         <DetailDrawer feature={selected} onClose={() => setSelected(null)} />
       )}
-      {showLoss && (
+      {/* gate on `ready` (false on the server and the first client render) so
+          showLoss — which derives from URL-seeded filters — can't mismatch
+          during hydration when the URL has forestloss on */}
+      {ready && showLoss && !(isMobile && sheetSnap === SHEET_FULL) && (
         <ForestLossTimeline
-          years={lossData?.years ?? []}
+          years={LOSS_YEARS}
           idx={lossYearIdx}
           onIdx={(i) => {
             setLossPlaying(false);
@@ -1165,8 +1141,7 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
           }}
           playing={lossPlaying}
           onPlayToggle={toggleLossPlay}
-          totalHa={lossTotalHa}
-          loading={!lossData}
+          mobile={isMobile}
         />
       )}
     </div>
@@ -1300,4 +1275,32 @@ function buildLayer(
         },
       };
   }
+}
+
+/** Renders the layer panel either as the desktop floating card or, on
+ *  phones, inside the swipeable bottom sheet (peek/full snap points; the
+ *  panel's own minimize button drops the sheet back to peek). */
+function LayerPanelHost({
+  isMobile,
+  sheetSnap,
+  onSheetSnap,
+  sheetTitle,
+  ...panelProps
+}: {
+  isMobile: boolean;
+  sheetSnap: SheetSnap;
+  onSheetSnap: (snap: SheetSnap) => void;
+  sheetTitle: string;
+} & React.ComponentProps<typeof LayerPanel>) {
+  if (!isMobile) return <LayerPanel {...panelProps} />;
+  return (
+    <MobilePanelSheet snap={sheetSnap} onSnapChange={onSheetSnap} title={sheetTitle}>
+      <LayerPanel
+        {...panelProps}
+        variant="sheet"
+        minimized={false}
+        onMinimizedChange={(v) => onSheetSnap(v ? SHEET_PEEK : SHEET_FULL)}
+      />
+    </MobilePanelSheet>
+  );
 }

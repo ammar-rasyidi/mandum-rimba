@@ -13,16 +13,46 @@ const EMBED_SRC = "https://www.threads.com/embed.js";
  * Not auto-fetched: the post URLs are curated in the page, so we control exactly
  * what shows (and the order). Strip any `?xmt=...` share token before passing in.
  */
+// Threads embeds share Instagram's runtime: once embed.js has loaded it exposes
+// window.instgrm.Embeds.process() to (re)scan blockquotes.
+type EmbedWindow = Window & {
+  instgrm?: { Embeds?: { process?: () => void } };
+};
+
 export default function ThreadsEmbed({ urls }: { urls: string[] }) {
   useEffect(() => {
-    // remove any previous instance so the script re-scans the blockquotes
-    document
-      .querySelectorAll(`script[src="${EMBED_SRC}"]`)
-      .forEach((s) => s.remove());
-    const s = document.createElement("script");
-    s.src = EMBED_SRC;
-    s.async = true;
-    document.body.appendChild(s);
+    const w = window as EmbedWindow;
+    const process = () => {
+      if (w.instgrm?.Embeds?.process) {
+        w.instgrm.Embeds.process();
+        return true;
+      }
+      return false;
+    };
+
+    // On client-side re-navigation the runtime is already loaded, so just ask it
+    // to re-scan the freshly-rendered blockquotes (re-adding the <script> is a
+    // no-op once loaded, which is why the posts vanished on return).
+    if (process()) return;
+
+    // First visit: inject embed.js (it auto-processes on load).
+    if (!document.querySelector(`script[src="${EMBED_SRC}"]`)) {
+      const s = document.createElement("script");
+      s.src = EMBED_SRC;
+      s.async = true;
+      document.body.appendChild(s);
+      return;
+    }
+
+    // Script tag present but runtime not ready yet: poll briefly, then process.
+    const timer = setInterval(() => {
+      if (process()) clearInterval(timer);
+    }, 300);
+    const stop = setTimeout(() => clearInterval(timer), 6000);
+    return () => {
+      clearInterval(timer);
+      clearTimeout(stop);
+    };
   }, [urls]);
 
   return (

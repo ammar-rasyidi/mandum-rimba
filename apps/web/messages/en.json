@@ -554,7 +554,8 @@
   },
   "gate": {
     "title": "Before you explore",
-    "body": "Mandum Rimba shows public, third-party data as-is, for education. We draw no conclusions and accuse no one; names and boundaries come from the source datasets, not from us, and an overlap between layers is context, not a verdict. We uphold the presumption of innocence.",
+    "body": "Mandum Rimba visualises public datasets from various organisations, for education and data exploration. We make no accusations, findings of fact, or legal conclusions about any individual, company, or institution.",
+    "body2": "Names, boundaries, and attributes come from their respective source datasets. An overlap between layers is visual context to aid analysis, not evidence or a conclusion. We uphold the presumption of innocence.",
     "readMore": "Disclaimer & Terms",
     "sources": "Data Sources",
     "methodology": "Methodology",

@@ -554,7 +554,8 @@
   },
   "gate": {
     "title": "Sebelum menjelajah",
-    "body": "Mandum Rimba menampilkan data publik pihak ketiga apa adanya, untuk edukasi. Kami tidak menarik kesimpulan dan tidak menuduh siapa pun; nama dan batas berasal dari dataset sumbernya, bukan dari kami, dan irisan antar-lapisan adalah konteks, bukan vonis. Kami menjunjung asas praduga tak bersalah.",
+    "body": "Mandum Rimba memvisualisasikan dataset publik dari berbagai organisasi untuk tujuan edukasi dan eksplorasi data. Kami tidak membuat tuduhan, penetapan fakta, maupun kesimpulan hukum terhadap individu, perusahaan, atau institusi mana pun.",
+    "body2": "Nama, batas wilayah, dan atribut berasal dari dataset sumber masing-masing. Tumpang tindih antar-layer merupakan konteks visual untuk membantu analisis, bukan bukti ataupun kesimpulan. Kami menjunjung tinggi asas praduga tak bersalah.",
     "readMore": "Ketentuan & Sanggahan",
     "sources": "Sumber Data",
     "methodology": "Metodologi",

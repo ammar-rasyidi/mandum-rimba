@@ -59,6 +59,7 @@ export default function DisclaimerGate() {
       <div className="glass relative z-[1] w-[min(520px,100%)] animate-[panel-in_0.22s_ease] rounded-[18px] p-6 text-[0.92rem]">
         <h2 className="m-0 mb-2 text-[1.15rem]">{t("title")}</h2>
         <p className="m-0 leading-relaxed text-muted">{t("body")}</p>
+        <p className="m-0 mt-2 leading-relaxed text-muted">{t("body2")}</p>
 
         <p className="m-0 mt-3 flex flex-wrap gap-x-1 gap-y-0.5 text-[0.85rem]">
           <Link href="/ketentuan" className="text-accent hover:no-underline">

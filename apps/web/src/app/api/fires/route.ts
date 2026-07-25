@@ -9,7 +9,7 @@ import { NextResponse } from "next/server";
  * cache for an hour — NRT data refreshes roughly every 3 hours. The map loads
  * the result like any other GeoJSON layer.
  *
- * Set FIRMS_MAP_KEY in the environment. Without it we return an empty
+ * Set NEXT_PUBLIC_FIRMS_MAP_KEY in the environment. Without it we return an empty
  * collection so the layer degrades gracefully instead of erroring.
  */
 
@@ -68,7 +68,7 @@ function csvToGeojson(csv: string): GeoJSON.FeatureCollection {
 }
 
 export async function GET() {
-  const key = process.env.FIRMS_MAP_KEY;
+  const key = process.env.NEXT_PUBLIC_FIRMS_MAP_KEY;
   if (!key)
     return NextResponse.json(EMPTY, { headers: { "x-fires": "no-map-key" } });
 

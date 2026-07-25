@@ -98,6 +98,79 @@ export default function DetailDrawer({
   const closeBtn =
     "float-right cursor-pointer rounded-full border border-[var(--glass-border)] bg-[var(--glass-highlight)] px-[0.7rem] py-[0.2rem] text-[0.78rem] text-muted transition-[color,border-color] hover:border-[var(--text-dim)] hover:text-foreground hover:no-underline";
 
+  // Titik api (NASA FIRMS): a single active-fire detection. Confidence, when it
+  // was seen (UTC), which satellite, and fire radiative power (intensity).
+  if (layer.id === "fires") {
+    const confKey = String(properties.conf ?? "nominal");
+    const confColor =
+      confKey === "high" ? "#e53935" : confKey === "low" ? "#ffb300" : "#ff7043";
+    const rawTime = String(properties.time ?? "");
+    const hhmm =
+      rawTime.length === 4 ? `${rawTime.slice(0, 2)}:${rawTime.slice(2)}` : rawTime;
+    const when = [String(properties.date ?? ""), hhmm && `${hhmm} UTC`]
+      .filter(Boolean)
+      .join(" · ");
+    const satRaw = String(properties.sat ?? "");
+    const sat =
+      satRaw === "N"
+        ? "Suomi-NPP (VIIRS)"
+        : satRaw === "1" || satRaw === "N20"
+          ? "NOAA-20 (VIIRS)"
+          : satRaw || "VIIRS";
+    const frp =
+      properties.frp != null && properties.frp !== ""
+        ? Number(properties.frp)
+        : null;
+    const dn = String(properties.daynight ?? "");
+    const stat = (label: string, val: string) => (
+      <div key={label}>
+        <dt className="text-[0.66rem] uppercase tracking-[0.04em] text-muted">
+          {label}
+        </dt>
+        <dd className="m-0 text-[0.9rem] font-semibold">{val}</dd>
+      </div>
+    );
+    return (
+      <aside
+        className="glass absolute left-3 top-[5.75rem] z-[5] max-h-[calc(100%-8rem)] w-[300px] animate-[panel-in_0.22s_ease] overflow-y-auto rounded-[18px] p-4 text-[0.88rem] max-[720px]:inset-x-2 max-[720px]:top-[5.25rem] max-[720px]:max-h-[55%] max-[720px]:w-auto"
+        aria-label={t("detail")}
+      >
+        <button className={closeBtn} onClick={onClose}>
+          {t("close")}
+        </button>
+        <h2 className="m-0 mb-1.5 flex items-center gap-2 text-base">
+          <span
+            className="inline-block h-2.5 w-2.5 rounded-full"
+            style={{ background: confColor }}
+          />
+          {t("fireTitle")}
+        </h2>
+        <p className="m-0 mb-2.5 text-[0.78rem]" style={{ color: confColor }}>
+          {t("fireConfidenceLabel")}: {t(`filterValues.${confKey}`)}
+        </p>
+        <dl className="m-0 grid grid-cols-2 gap-x-2 gap-y-2.5">
+          {when && stat(t("fireWhen"), when)}
+          {sat && stat(t("fireSatellite"), sat)}
+          {frp != null && stat(t("fireFrp"), `${frp} MW`)}
+          {dn && stat(t("fireDayNight"), t(dn === "D" ? "fireDay" : "fireNight"))}
+        </dl>
+        <p className="m-0 mt-3 border-t border-[var(--glass-border)] pt-2 text-[0.66rem] italic leading-snug text-muted">
+          {t("fireNote")}
+        </p>
+        <dl className="m-0 [&_dd]:m-0 [&_dt]:mt-[0.6rem] [&_dt]:text-[0.75rem] [&_dt]:uppercase [&_dt]:tracking-[0.04em] [&_dt]:text-muted">
+          <div>
+            <dt>{t("source")}</dt>
+            <dd>
+              <a href={layer.sourceUrl} target="_blank" rel="noreferrer">
+                {layer.sourceName}, {t("viewEvidence")}
+              </a>
+            </dd>
+          </div>
+        </dl>
+      </aside>
+    );
+  }
+
   // Peta Sebaran Satwa: the click handler aggregates every class-area under the
   // point into { byClass, date }. Render the recorded species grouped by class
   // ("what birds / mammals / reptiles / amphibians are here").

@@ -89,6 +89,7 @@ function readUrlState(): { filters: MapFilters } {
   filters.concessionTypes = list("con") ?? filters.concessionTypes;
   filters.protectedCategories = list("pro") ?? filters.protectedCategories;
   filters.speciesClasses = list("cls") ?? filters.speciesClasses;
+  filters.fireConfidence = list("fire") ?? filters.fireConfidence;
 
   return { filters };
 }
@@ -249,6 +250,7 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
     p.set("con", f.concessionTypes.join(","));
     p.set("pro", f.protectedCategories.join(","));
     p.set("cls", f.speciesClasses.join(","));
+    p.set("fire", f.fireConfidence.join(","));
     window.history.replaceState(null, "", `?${p.toString()}`);
   }, []);
 
@@ -423,7 +425,11 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
         if (def.geojson) {
           const sourceId = `src-${def.id}`;
           if (!added.has(sourceId)) {
-            map.addSource(sourceId, { type: "geojson", data: def.geojson });
+            map.addSource(sourceId, {
+              type: "geojson",
+              data: def.geojson,
+              attribution: `<a href="${def.sourceUrl}" target="_blank" rel="noreferrer">${def.sourceName}</a>`,
+            });
             added.add(sourceId);
           }
           map.addLayer(buildLayer(def, sourceId));
@@ -720,6 +726,13 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
         "in",
         ["get", "class"],
         ["literal", filters.speciesClasses],
+      ] as never);
+    }
+    if (map.getLayer("lyr-fires")) {
+      map.setFilter("lyr-fires", [
+        "in",
+        ["get", "conf"],
+        ["literal", filters.fireConfidence],
       ] as never);
     }
 

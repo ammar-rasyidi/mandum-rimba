@@ -17,6 +17,7 @@ export interface MapFilters {
   concessionTypes: string[]; // palm_hgu | pulp_hti | logging | mining
   protectedCategories: string[]; // TN | HL | CA | SM | other | moratorium
   speciesClasses: string[]; // aves | mammalia | reptilia | amphibia
+  fireConfidence: string[]; // high | nominal | low
 }
 
 export const ALERT_SYSTEMS = ["radd", "glad_l", "glad_s2"];
@@ -36,6 +37,8 @@ export const PROTECTED_CATEGORIES = [
 ];
 // animal classes shown on the Peta Sebaran Satwa layer
 export const SPECIES_CLASSES = ["aves", "mammalia", "reptilia", "amphibia"];
+// NASA FIRMS detection-confidence bands (VIIRS)
+export const FIRE_CONFIDENCE = ["high", "nominal", "low"];
 
 export const DEFAULT_FILTERS: MapFilters = {
   basemap: "dark",
@@ -47,4 +50,5 @@ export const DEFAULT_FILTERS: MapFilters = {
   concessionTypes: [...CONCESSION_TYPES],
   protectedCategories: [...PROTECTED_CATEGORIES],
   speciesClasses: [...SPECIES_CLASSES],
+  fireConfidence: [...FIRE_CONFIDENCE],
 };

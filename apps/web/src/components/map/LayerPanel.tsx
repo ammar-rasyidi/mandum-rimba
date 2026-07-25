@@ -12,6 +12,7 @@ import {
   ALERT_SYSTEMS,
   CONCESSION_TYPES,
   DISASTER_TYPES,
+  FIRE_CONFIDENCE,
   PROTECTED_CATEGORIES,
   SPECIES_CLASSES,
   VIEW_MODES,
@@ -75,7 +76,8 @@ const SUB_FILTERS: Record<
         | "disasterTypes"
         | "concessionTypes"
         | "protectedCategories"
-        | "speciesClasses";
+        | "speciesClasses"
+        | "fireConfidence";
       options: string[];
     }
   | undefined
@@ -85,6 +87,7 @@ const SUB_FILTERS: Record<
   concessions: { key: "concessionTypes", options: CONCESSION_TYPES },
   protected: { key: "protectedCategories", options: PROTECTED_CATEGORIES },
   "species-dist": { key: "speciesClasses", options: SPECIES_CLASSES },
+  fires: { key: "fireConfidence", options: FIRE_CONFIDENCE },
 };
 
 // TEMP (2026-06): hidden from the filter menu until their data is ready:

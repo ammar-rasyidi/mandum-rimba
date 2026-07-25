@@ -132,6 +132,22 @@ export const LAYERS: LayerDef[] = [
     sourceUrl:
       "https://www.desinventar.net/DesInventar/profiletab.jsp?countrycode=idn",
   },
+  {
+    // Titik api (karhutla): near-real-time active-fire detections from NASA
+    // FIRMS (VIIRS 375 m, NRT), served fresh from /api/fires and coloured by
+    // detection confidence. A live pulse of where it's burning — overlay peat
+    // and concessions to read the context.
+    id: "fires",
+    tile: "fires",
+    kind: "circle",
+    geojson: "/api/fires",
+    color: "#ff5722", // deep-orange 500 (fallback / nominal)
+    strokeColor: "#3e2723",
+    defaultOn: false,
+    sourceName: "NASA FIRMS — VIIRS active fire (NRT, ≤48 jam)",
+    sourceUrl: "https://firms.modaps.eosdis.nasa.gov/",
+    dataYear: "48 jam terakhir",
+  },
 
   // ================= biodiversity map (/biodiversitas) =================
   {
@@ -189,6 +205,14 @@ export const LAYER_SUBCOLORS: Record<
       mammalia: "#8e24aa", // purple, mamalia
       reptilia: "#00acc1", // cyan, reptil
       amphibia: "#fdd835", // yellow, amfibi
+    },
+  },
+  fires: {
+    prop: "conf",
+    colors: {
+      high: "#e53935", // red 600, high-confidence detection
+      nominal: "#ff7043", // deep-orange 400
+      low: "#ffb300", // amber 600, low confidence
     },
   },
   concessions: {

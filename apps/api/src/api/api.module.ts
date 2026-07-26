@@ -4,6 +4,8 @@ import { RegionsController } from "./regions.controller";
 import { AlertsController } from "./alerts.controller";
 import { ConcessionsController } from "./concessions.controller";
 import { DisastersController } from "./disasters.controller";
+import { FiresController } from "./fires.controller";
+import { AreaReportController } from "./area-report.controller";
 import { CompaniesController } from "./companies.controller";
 import { StoriesController } from "./stories.controller";
 import { ExportController } from "./export.controller";
@@ -16,6 +18,8 @@ import { AdminController } from "./admin.controller";
     AlertsController,
     ConcessionsController,
     DisastersController,
+    FiresController,
+    AreaReportController,
     CompaniesController,
     StoriesController,
     ExportController,

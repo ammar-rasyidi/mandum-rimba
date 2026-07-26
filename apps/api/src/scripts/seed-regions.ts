@@ -14,7 +14,13 @@ import axios from "axios";
 import AdmZip from "adm-zip";
 import mongoose from "mongoose";
 import * as turf from "@turf/turf";
-import type { Feature, FeatureCollection, MultiPolygon, Polygon } from "geojson";
+import type {
+  Feature,
+  FeatureCollection,
+  MultiPolygon,
+  Polygon,
+  Position,
+} from "geojson";
 
 const GADM_BASE = "https://geodata.ucdavis.edu/gadm/gadm4.1/json";
 
@@ -98,6 +104,57 @@ function simplify(geom: MultiPolygon, tolerance: number): MultiPolygon {
   }
 }
 
+/** |area| of a ring in deg² (shoelace) — used to drop zero-area slivers */
+function ringArea(ring: Position[]): number {
+  let a = 0;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++)
+    a += (ring[j][0] - ring[i][0]) * (ring[j][1] + ring[i][1]);
+  return Math.abs(a / 2);
+}
+
+// GADM rings sometimes carry duplicate/collinear vertices and micro-slivers that
+// Mongo's 2dsphere index rejects ("Can't extract geo keys", error 16755). Dedupe
+// consecutive points, re-close, and drop rings that are degenerate (<4 pts or
+// ~zero area, i.e. smaller than ~12 m²).
+const MIN_RING_AREA = 1e-9; // deg² ≈ 12 m²
+function cleanRing(ring: Position[]): Position[] | null {
+  const pts: Position[] = [];
+  for (const p of ring) {
+    const last = pts[pts.length - 1];
+    if (!last || last[0] !== p[0] || last[1] !== p[1]) pts.push([p[0], p[1]]);
+  }
+  const first = pts[0];
+  const end = pts[pts.length - 1];
+  if (first && end && (first[0] !== end[0] || first[1] !== end[1]))
+    pts.push([first[0], first[1]]);
+  if (pts.length < 4 || ringArea(pts) < MIN_RING_AREA) return null;
+  return pts;
+}
+
+function cleanMultiPolygon(geom: MultiPolygon): MultiPolygon {
+  const out: Position[][][] = [];
+  for (const poly of geom.coordinates) {
+    const outer = cleanRing(poly[0]);
+    if (!outer) continue; // drop degenerate polygon
+    const rings: Position[][] = [outer];
+    for (let i = 1; i < poly.length; i++) {
+      const hole = cleanRing(poly[i]);
+      if (hole) rings.push(hole);
+    }
+    out.push(rings);
+  }
+  // split any self-intersections that survive (2dsphere is strict about them)
+  try {
+    // unkinkPolygon returns a FeatureCollection of Polygons only
+    const fixed = turf.unkinkPolygon(turf.multiPolygon(out));
+    const polys = fixed.features.map((f) => f.geometry.coordinates);
+    if (polys.length) return { type: "MultiPolygon", coordinates: polys };
+  } catch {
+    /* fall back to the ring-cleaned version */
+  }
+  return { type: "MultiPolygon", coordinates: out };
+}
+
 async function main() {
   const all = process.argv.includes("--all");
   const uri = process.env.MONGODB_URI ?? "mongodb://localhost:27017/forestwatch";
@@ -119,7 +176,9 @@ async function main() {
   for (const f of wantedProvinces) {
     const props = f.properties as Record<string, string>;
     const name = props.NAME_1;
-    const geom = toMultiPolygon(f.geometry as Polygon | MultiPolygon);
+    const geom = cleanMultiPolygon(
+      toMultiPolygon(f.geometry as Polygon | MultiPolygon),
+    );
     const doc = {
       slug: slugify(name),
       name,
@@ -130,13 +189,17 @@ async function main() {
       geom,
       geomSimplified: simplify(geom, 0.01),
     };
-    const res = await regions.findOneAndUpdate(
-      { slug: doc.slug },
-      { $set: doc },
-      { upsert: true, returnDocument: "after" },
-    );
-    provinceIds.set(name, res!._id as mongoose.Types.ObjectId);
-    console.log(`province upserted: ${name}`);
+    try {
+      const res = await regions.findOneAndUpdate(
+        { slug: doc.slug },
+        { $set: doc },
+        { upsert: true, returnDocument: "after" },
+      );
+      provinceIds.set(name, res!._id as mongoose.Types.ObjectId);
+      console.log(`province upserted: ${name}`);
+    } catch (e) {
+      console.warn(`province SKIPPED (${name}): ${(e as Error).message?.slice(0, 90)}`);
+    }
   }
 
   // --- kabupaten (level 2) ---
@@ -147,24 +210,30 @@ async function main() {
     const parentId = provinceIds.get(props.NAME_1);
     if (!parentId) continue; // not a seeded province
     const name = props.NAME_2;
-    const geom = toMultiPolygon(f.geometry as Polygon | MultiPolygon);
-    await regions.updateOne(
-      { slug: slugify(`${props.NAME_1}-${name}`) },
-      {
-        $set: {
-          slug: slugify(`${props.NAME_1}-${name}`),
-          name,
-          nameEn: name,
-          level: "kabupaten",
-          parentId,
-          islandGroup: ISLAND_GROUPS[props.NAME_1] ?? "",
-          geom,
-          geomSimplified: simplify(geom, 0.005),
-        },
-      },
-      { upsert: true },
+    const geom = cleanMultiPolygon(
+      toMultiPolygon(f.geometry as Polygon | MultiPolygon),
     );
-    kabCount++;
+    try {
+      await regions.updateOne(
+        { slug: slugify(`${props.NAME_1}-${name}`) },
+        {
+          $set: {
+            slug: slugify(`${props.NAME_1}-${name}`),
+            name,
+            nameEn: name,
+            level: "kabupaten",
+            parentId,
+            islandGroup: ISLAND_GROUPS[props.NAME_1] ?? "",
+            geom,
+            geomSimplified: simplify(geom, 0.005),
+          },
+        },
+        { upsert: true },
+      );
+      kabCount++;
+    } catch (e) {
+      console.warn(`kabupaten SKIPPED (${props.NAME_1}/${name}): ${(e as Error).message?.slice(0, 80)}`);
+    }
   }
   console.log(
     `done: ${wantedProvinces.length} province(s), ${kabCount} kabupaten`,

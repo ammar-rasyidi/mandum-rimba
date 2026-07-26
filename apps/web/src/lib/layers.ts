@@ -10,6 +10,8 @@
  * are coloured per category (see LAYER_SUBCOLORS), so e.g. each protected-area
  * type or each IUCN status has its own swatch in both the map and the legend.
  */
+import { API_BASE } from "./api";
+
 export interface LayerDef {
   id: string;
   /** pmtiles file name under {TILES_BASE}/tiles/ and source-layer name */
@@ -133,18 +135,19 @@ export const LAYERS: LayerDef[] = [
       "https://www.desinventar.net/DesInventar/profiletab.jsp?countrycode=idn",
   },
   {
-    // Titik api (karhutla): near-real-time active-fire detections from NASA
-    // FIRMS (VIIRS 375 m, NRT), served fresh from /api/fires and coloured by
-    // detection confidence. A live pulse of where it's burning — overlay peat
-    // and concessions to read the context.
+    // Hotspot: near-real-time thermal-anomaly detections from NASA FIRMS
+    // (VIIRS 375 m, NRT), served from the backend and coloured by detection
+    // confidence. Observational only — a hotspot is not a confirmed fire.
     id: "fires",
     tile: "fires",
     kind: "circle",
-    geojson: "/api/fires",
+    // served by the NestJS backend (/v1/fires): the FIRMS key stays a backend
+    // secret, never shipped to the browser
+    geojson: `${API_BASE}/v1/fires`,
     color: "#ff5722", // deep-orange 500 (fallback / nominal)
     strokeColor: "#3e2723",
     defaultOn: false,
-    sourceName: "NASA FIRMS — VIIRS active fire (NRT, ≤48 jam)",
+    sourceName: "NASA FIRMS — VIIRS hotspot (NRT, ≤48 jam)",
     sourceUrl: "https://firms.modaps.eosdis.nasa.gov/",
     dataYear: "48 jam terakhir",
   },

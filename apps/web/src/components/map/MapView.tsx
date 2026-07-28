@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import maplibregl from "maplibre-gl";
 import { Protocol } from "pmtiles";
 import { LAYERS, colorExpression, type LayerDef } from "@/lib/layers";
@@ -17,6 +18,7 @@ import DetailDrawer, { type SelectedFeature } from "./DetailDrawer";
 import SpeciesInfo from "./SpeciesInfo";
 import RealmCaption from "./RealmCaption";
 import MapControls from "./MapControls";
+import ShareModal from "./ShareModal";
 import ForestLossTimeline from "./ForestLossTimeline";
 import { LOSS_ATTRIBUTION, LOSS_YEARS } from "@/lib/forest-loss";
 import {
@@ -134,6 +136,8 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
     () => readUrlState().filters,
   );
   const [selected, setSelected] = useState<SelectedFeature | null>(null);
+  const [shareOpen, setShareOpen] = useState(false);
+  const tMap = useTranslations("map");
   // biodiversity map: the currently-searched species and its loaded distribution
   const [speciesKey, setSpeciesKey] = useState<number | null>(null);
   const [speciesLabel, setSpeciesLabel] = useState<string>("");
@@ -355,6 +359,8 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
       // box center, that was exactly the "ocean on the left" bug
       minZoom: 3.5,
       attributionControl: { compact: true },
+      // needed so the Share feature can read the WebGL canvas into an image
+      canvasContextAttributes: { preserveDrawingBuffer: true },
     });
     mapRef.current = map;
     // initial view ALWAYS frames the archipelago in the visible area
@@ -1076,6 +1082,25 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
         panelOpen={isMobile ? sheetSnap === SHEET_FULL : !layerMinimized}
         detailOpen={!!(selected || speciesData)}
       />
+      {/* Share this view — quiet, bottom-right on desktop, top-left on mobile
+          (free corners; controls sit elsewhere). Opens the capture modal. */}
+      <button
+        onClick={() => setShareOpen(true)}
+        aria-label={tMap("shareView")}
+        title={tMap("shareView")}
+        className="glass pointer-events-auto absolute z-[6] top-6 left-[220px] rounded-[10px] flex items-center gap-1.5 px-3 py-2 text-[0.82rem] text-foreground transition-[transform,border-color] hover:-translate-y-px md:top-6 md:left-auto md:right-3 md:rounded-full"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
+          <path
+            d="M12 3v12M12 3 8 7M12 3l4 4M5 13v6a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-6"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+        <span className="max-[380px]:hidden">{tMap("shareView")}</span>
+      </button>
       <LayerPanelHost
         isMobile={isMobile}
         sheetSnap={sheetSnap}
@@ -1140,6 +1165,15 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
       )}
       {selected && (
         <DetailDrawer feature={selected} onClose={() => setSelected(null)} />
+      )}
+      {shareOpen && (
+        <ShareModal
+          mapRef={mapRef}
+          basemap={filters.basemap}
+          layers={filters.layers}
+          species={speciesLabel || undefined}
+          onClose={() => setShareOpen(false)}
+        />
       )}
       {/* gate on `ready` (false on the server and the first client render) so
           showLoss — which derives from URL-seeded filters — can't mismatch

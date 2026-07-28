@@ -21,6 +21,8 @@ const nextConfig = {
     return [
       { source: "/tiles/:path*", destination: `${r2}/tiles/:path*` },
       { source: "/species/:path*", destination: `${r2}/species/:path*` },
+      // user-generated "share this view" images (OG unfurl for social)
+      { source: "/share/:path*", destination: `${r2}/share/:path*` },
     ];
   },
 };

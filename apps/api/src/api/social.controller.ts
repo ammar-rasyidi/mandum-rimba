@@ -1,4 +1,4 @@
-import { Controller, Get, Param } from "@nestjs/common";
+import { Controller, Get, Param, Query } from "@nestjs/common";
 
 /**
  * Latest public videos for a place story's official account. The frontend plays
@@ -28,7 +28,10 @@ export class SocialController {
   private cache = new Map<string, { at: number; data: IgItem[] }>();
 
   @Get("ig/:handle")
-  async ig(@Param("handle") handle: string): Promise<{ items: IgItem[]; stale?: boolean }> {
+  async ig(
+    @Param("handle") handle: string,
+    @Query("debug") debug?: string,
+  ): Promise<{ items: IgItem[]; stale?: boolean; error?: string }> {
     const key = (handle || "").toLowerCase().replace(/[^a-z0-9._]/g, "").slice(0, 40);
     if (!key) return { items: [] };
 
@@ -52,8 +55,11 @@ export class SocialController {
           signal: AbortSignal.timeout(9000),
         },
       );
-      if (!res.ok) throw new Error(`ig ${res.status}`);
-      const json = (await res.json()) as Record<string, any>;
+      if (!res.ok) throw new Error(`upstream ${res.status}`);
+      const raw = await res.text();
+      if (!raw.trim().startsWith("{"))
+        throw new Error(`non-json (blocked?): ${raw.slice(0, 60)}`);
+      const json = JSON.parse(raw) as Record<string, any>;
       const edges: any[] =
         json?.data?.user?.edge_owner_to_timeline_media?.edges ?? [];
 
@@ -78,10 +84,14 @@ export class SocialController {
       const top = items.slice(0, 4);
       this.cache.set(key, { at: Date.now(), data: top });
       return { items: top };
-    } catch {
-      // source blocked/offline — serve the last good copy if we have one
+    } catch (e) {
+      // source blocked/offline — serve the last good copy if we have one.
+      // Add ?debug=1 to see the failure reason (helps diagnose prod IP blocks).
       if (cached) return { items: cached.data, stale: true };
-      return { items: [] };
+      return {
+        items: [],
+        ...(debug ? { error: (e as Error).message } : {}),
+      };
     }
   }
 }

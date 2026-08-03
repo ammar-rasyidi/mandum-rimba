@@ -1277,15 +1277,17 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
       )}
       {/* Kisah Kawasan: soft prompt when hovering over a place with a story */}
       {promptStory && !storyId && (
-        <div className="pointer-events-auto absolute inset-x-0 top-[5.25rem] z-[7] flex justify-center px-4 lg:top-[5.75rem]">
-          <div className="glass flex items-center gap-3 rounded-full py-2 pl-4 pr-2 shadow-lg animate-[panel-in_0.3s_ease]">
-            <span className="text-[0.85rem]">
-              {locale === "en" ? "Explore" : "Jelajahi"}{" "}
+        <div className="pointer-events-auto absolute inset-x-0 top-[5.25rem] z-[7] flex justify-center px-3 lg:top-[5.75rem]">
+          <div className="glass flex max-w-[calc(100vw-1.5rem)] items-center gap-2 rounded-full py-1.5 pl-4 pr-1.5 shadow-lg animate-[panel-in_0.3s_ease]">
+            <span className="min-w-0 flex-1 truncate text-[0.84rem]">
+              <span className="text-muted">
+                {locale === "en" ? "Explore" : "Jelajahi"}{" "}
+              </span>
               <b>{promptStory.name}</b>
             </span>
             <button
               onClick={() => startStory(promptStory)}
-              className="rounded-full bg-accent px-3.5 py-1.5 text-[0.82rem] font-medium text-[#07130d] transition-[filter] hover:brightness-110"
+              className="shrink-0 whitespace-nowrap rounded-full bg-accent px-3.5 py-1.5 text-[0.82rem] font-medium text-[#07130d] transition-[filter] hover:brightness-110"
             >
               {locale === "en" ? "Start →" : "Mulai →"}
             </button>
@@ -1295,7 +1297,7 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
                 setPromptStory(null);
               }}
               aria-label={locale === "en" ? "Dismiss" : "Tutup"}
-              className="flex h-7 w-7 items-center justify-center rounded-full text-muted transition-colors hover:text-foreground"
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-muted transition-colors hover:text-foreground"
             >
               ✕
             </button>

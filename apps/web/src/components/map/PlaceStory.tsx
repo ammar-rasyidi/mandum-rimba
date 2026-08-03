@@ -90,6 +90,7 @@ export default function PlaceStory({
   const [entered, setEntered] = useState(false);
   const [fs, setFs] = useState(false);
   const [needRotate, setNeedRotate] = useState(false); // mobile held in portrait
+  const [isCompact, setIsCompact] = useState(false); // small OR short viewport
   const [playing, setPlaying] = useState(true); // story autoplay — on by default
   const [soundOn, setSoundOn] = useState(!!(story.sound || story.music));
   const audioRef = useRef<HTMLAudioElement[]>([]);
@@ -352,15 +353,18 @@ export default function PlaceStory({
   };
 
   // this cinematic story is built for a wide canvas (like desktop). On a touch
-  // device held in portrait, prompt the viewer to rotate so it matches.
+  // device held in portrait, prompt the viewer to rotate so it matches. And on
+  // any small OR short viewport (incl. a landscape phone), use the compact
+  // layout — a wide-but-short desktop layout has the side panels overlap the card.
   useEffect(() => {
     const check = () => {
-      const portrait = window.innerHeight > window.innerWidth;
+      const w = window.innerWidth;
+      const h = window.innerHeight;
       const touch =
         window.matchMedia("(pointer: coarse)").matches ||
         (navigator.maxTouchPoints ?? 0) > 0;
-      const smallish = Math.min(window.innerWidth, window.innerHeight) <= 820;
-      setNeedRotate(portrait && touch && smallish);
+      setNeedRotate(h > w && touch && Math.min(w, h) <= 820);
+      setIsCompact(w < 768 || h < 640);
     };
     check();
     window.addEventListener("resize", check);
@@ -484,57 +488,79 @@ export default function PlaceStory({
   const photoAnns = (ch.annotations ?? []).filter((a) => a.photo);
   const rightPhotos = photoAnns.filter((_, i) => i % 2 === 0);
   const leftPhotos = photoAnns.filter((_, i) => i % 2 === 1);
-  const renderPhoto = (a: Annotation, i: number) => (
-    // entrance wrapper (fades/slides in once) holds an inner card that bobs
-    // continuously, so the two transforms never fight
-    <div
-      key={a.photo!.src}
-      className="pointer-events-auto shrink-0 animate-[panel-in_0.6s_ease] w-[164px] md:w-[232px]"
-      style={{ animationDelay: `${i * 0.12}s` }}
-    >
-      <div
-        className="story-float overflow-hidden rounded-2xl border border-white/14 bg-black/60 shadow-[0_14px_40px_-14px_rgba(0,0,0,0.65)] ring-1 ring-[#57b98a]/15 backdrop-blur-md"
-        style={{ animation: `story-float ${5.4 + i * 0.6}s ease-in-out ${i * 0.7}s infinite` }}
-      >
-        {/* full-width, proportional image bleeding to the card edges */}
-        <div className="relative">
+  // full card (desktop, floats in the side margins) or a small thumbnail (the
+  // compact strip on phones — image + name only, so it fits a short screen)
+  const renderPhoto = (a: Annotation, i: number, compact = false) => {
+    if (compact) {
+      return (
+        <div
+          key={a.photo!.src}
+          className="pointer-events-auto relative aspect-[3/4] w-[96px] shrink-0 overflow-hidden rounded-xl border border-white/14 bg-black/50"
+        >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={a.photo!.src}
             alt={t(a.title)}
             loading="lazy"
-            className="block aspect-[4/3] w-full object-cover"
+            className="absolute inset-0 h-full w-full object-cover"
           />
-          {/* soft gradient so the image melts into the card body */}
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-black/70 to-transparent" />
-        </div>
-        <div className="p-3.5">
-          {a.value && (
-            <div className="text-xl font-extrabold leading-none text-white tabular-nums">
-              {a.value}
+          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 to-transparent p-1.5 pt-4">
+            <div className="text-[0.58rem] font-semibold leading-tight text-white">
+              {t(a.title)}
             </div>
-          )}
-          <div
-            className={`text-[0.6rem] uppercase tracking-[0.16em] text-[#7fd6a8] ${a.value ? "mt-1.5" : ""}`}
-          >
-            {t(a.title)}
           </div>
-          {a.note && (
-            <div className="mt-1 text-[0.72rem] italic leading-snug text-white/70">
-              {t(a.note)}
+        </div>
+      );
+    }
+    return (
+      // entrance wrapper (fades in once) holds an inner card that bobs
+      <div
+        key={a.photo!.src}
+        className="pointer-events-auto w-[232px] shrink-0 animate-[panel-in_0.6s_ease]"
+        style={{ animationDelay: `${i * 0.12}s` }}
+      >
+        <div
+          className="story-float overflow-hidden rounded-2xl border border-white/14 bg-black/60 shadow-[0_14px_40px_-14px_rgba(0,0,0,0.65)] ring-1 ring-[#57b98a]/15 backdrop-blur-md"
+          style={{ animation: `story-float ${5.4 + i * 0.6}s ease-in-out ${i * 0.7}s infinite` }}
+        >
+          <div className="relative">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={a.photo!.src}
+              alt={t(a.title)}
+              loading="lazy"
+              className="block aspect-[4/3] w-full object-cover"
+            />
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-black/70 to-transparent" />
+          </div>
+          <div className="p-3.5">
+            {a.value && (
+              <div className="text-xl font-extrabold leading-none text-white tabular-nums">
+                {a.value}
+              </div>
+            )}
+            <div
+              className={`text-[0.6rem] uppercase tracking-[0.16em] text-[#7fd6a8] ${a.value ? "mt-1.5" : ""}`}
+            >
+              {t(a.title)}
             </div>
-          )}
-          {a.sub && (
-            <div className="mt-0.5 text-[0.7rem] leading-snug text-white/55">{t(a.sub)}</div>
-          )}
-          <div className="mt-2 text-[0.54rem] leading-tight text-white/40">
-            {locale === "en" ? "Photo" : "Foto"}: {a.photo!.credit} · {a.photo!.license} ·
-            Wikimedia Commons
+            {a.note && (
+              <div className="mt-1 text-[0.72rem] italic leading-snug text-white/70">
+                {t(a.note)}
+              </div>
+            )}
+            {a.sub && (
+              <div className="mt-0.5 text-[0.7rem] leading-snug text-white/55">{t(a.sub)}</div>
+            )}
+            <div className="mt-2 text-[0.54rem] leading-tight text-white/40">
+              {locale === "en" ? "Photo" : "Foto"}: {a.photo!.credit} · {a.photo!.license} ·
+              Wikimedia Commons
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="pointer-events-none fixed inset-0 z-[40]">
@@ -679,8 +705,8 @@ export default function PlaceStory({
       {/* top-left: horizontal legend chips, aligned under the story title. Wraps
           to more rows when many layers are on. Source shows on hover + click.
           (desktop only — on mobile it moves into the bottom stack) */}
-      {legend.length > 0 && (
-        <div className="pointer-events-auto absolute left-6 top-[4.75rem] hidden max-w-[min(64vw,760px)] animate-[panel-in_0.5s_ease] md:block">
+      {!isCompact && legend.length > 0 && (
+        <div className="pointer-events-auto absolute left-6 top-[4.75rem] max-w-[min(64vw,760px)] animate-[panel-in_0.5s_ease]">
           <div className="flex flex-wrap items-center gap-1.5">
             <span className="mr-0.5 text-[0.56rem] uppercase tracking-[0.18em] text-white/50">
               {locale === "en" ? "Legend" : "Legenda"}
@@ -709,25 +735,25 @@ export default function PlaceStory({
 
       {/* DESKTOP: floating photos spread into the empty side margins. No
           overflow clip here (it would cut the soft shadow + the bob). */}
-      {rightPhotos.length > 0 && (
-        <div className="absolute right-6 top-1/2 hidden -translate-y-1/2 flex-col gap-5 md:flex">
-          {rightPhotos.map(renderPhoto)}
+      {!isCompact && rightPhotos.length > 0 && (
+        <div className="absolute right-6 top-1/2 flex -translate-y-1/2 flex-col gap-5">
+          {rightPhotos.map((a, i) => renderPhoto(a, i))}
         </div>
       )}
-      {leftPhotos.length > 0 && (
-        <div className="absolute left-6 top-[calc(50%+2.5rem)] hidden -translate-y-1/2 flex-col gap-5 md:flex">
-          {leftPhotos.map(renderPhoto)}
+      {!isCompact && leftPhotos.length > 0 && (
+        <div className="absolute left-6 top-[calc(50%+2.5rem)] flex -translate-y-1/2 flex-col gap-5">
+          {leftPhotos.map((a, i) => renderPhoto(a, i))}
         </div>
       )}
 
       {/* DESKTOP tree-cover-loss timeline — pinned right, vertical. On mobile it
           moves into the bottom stack (compact, horizontal) so it never covers
           the fact card / info. */}
-      {showLoss && (() => {
+      {!isCompact && showLoss && (() => {
         const pct = lossPct;
         const en = locale === "en";
         return (
-          <div className="pointer-events-auto absolute right-6 top-1/2 hidden w-[196px] -translate-y-1/2 md:block">
+          <div className="pointer-events-auto absolute right-6 top-1/2 w-[196px] -translate-y-1/2">
             <div className="animate-[panel-in_0.5s_ease] rounded-2xl border border-white/12 bg-black/55 p-4 backdrop-blur-md">
               <div
                 className="text-[0.56rem] uppercase tracking-[0.2em]"
@@ -767,7 +793,9 @@ export default function PlaceStory({
       })()}
 
       {/* bottom: the fact card for this beat */}
-      <div className="pointer-events-auto absolute inset-x-0 bottom-0 p-4 md:p-8">
+      <div
+        className={`pointer-events-auto absolute inset-x-0 bottom-0 ${isCompact ? "p-3" : "p-4 md:p-8"}`}
+      >
         {/* closing beat: latest videos from the official account (auto-updating,
             muted autoplay) — falls back to a follow card if the feed is empty */}
         {isLast && story.instagram && (
@@ -776,11 +804,12 @@ export default function PlaceStory({
             url={story.instagram.url}
             name={t(story.instagram.name)}
             en={locale === "en"}
+            compact={isCompact}
           />
         )}
-        {/* MOBILE: compact tree-cover-loss timeline, stacked above the card */}
-        {showLoss && (
-          <div className="mx-auto mb-3 max-w-[640px] rounded-2xl border border-white/12 bg-black/60 px-4 py-3 backdrop-blur-md md:hidden">
+        {/* COMPACT: tree-cover-loss timeline, stacked above the card */}
+        {isCompact && showLoss && (
+          <div className="mx-auto mb-2 max-w-[640px] rounded-2xl border border-white/12 bg-black/60 px-4 py-2.5 backdrop-blur-md">
             <div className="flex items-center justify-between gap-3">
               <span
                 className="text-[0.56rem] uppercase tracking-[0.18em]"
@@ -811,9 +840,9 @@ export default function PlaceStory({
             </div>
           </div>
         )}
-        {/* MOBILE: compact legend chips, stacked above the card */}
-        {legend.length > 0 && (
-          <div className="mx-auto mb-3 flex max-w-[640px] flex-wrap items-center gap-x-3 gap-y-1.5 rounded-2xl border border-white/12 bg-black/55 px-4 py-2.5 backdrop-blur-md md:hidden">
+        {/* COMPACT: legend chips, stacked above the card */}
+        {isCompact && legend.length > 0 && (
+          <div className="mx-auto mb-2 flex max-w-[640px] flex-wrap items-center gap-x-3 gap-y-1 rounded-2xl border border-white/12 bg-black/55 px-4 py-2 backdrop-blur-md">
             {legend.map((l) => (
               <span
                 key={l.id}
@@ -828,20 +857,29 @@ export default function PlaceStory({
             ))}
           </div>
         )}
-        {/* MOBILE: photos as a horizontal scroll strip ABOVE the fact card, so
+        {/* COMPACT: photos as a horizontal scroll strip ABOVE the fact card, so
             all info stays visible and nothing overlaps or clips */}
-        {photoAnns.length > 0 && (
-          <div className="mx-auto mb-3 flex max-w-[640px] gap-3 overflow-x-auto px-1 py-3 md:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-            {photoAnns.map(renderPhoto)}
+        {isCompact && photoAnns.length > 0 && (
+          <div className="mx-auto mb-2 flex max-w-[640px] gap-2 overflow-x-auto px-1 py-2 [-ms-overflow-style:none] [scrollbar-width:none]">
+            {photoAnns.map((a, i) => renderPhoto(a, i, true))}
           </div>
         )}
         <div
           key={idx}
-          className="mx-auto max-w-[640px] rounded-2xl border border-white/12 bg-black/65 p-5 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.8)] backdrop-blur-md animate-[panel-in_0.6s_cubic-bezier(.2,.7,.2,1)] md:p-6"
+          className={`mx-auto flex max-w-[640px] flex-col rounded-2xl border border-white/12 bg-black/65 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.8)] backdrop-blur-md animate-[panel-in_0.6s_cubic-bezier(.2,.7,.2,1)] ${
+            isCompact ? "max-h-[60vh] p-4" : "p-5 md:p-6"
+          }`}
         >
+          <div
+            className={
+              isCompact ? "min-h-0 flex-1 overflow-y-auto pr-1 [scrollbar-width:thin]" : ""
+            }
+          >
           {isArrival ? (
             <h1 className="m-0 text-white [text-wrap:balance]">
-              <span className="block text-[2.2rem] font-bold leading-[1.02] tracking-[-0.02em] md:text-[3rem]">
+              <span
+                className={`block font-bold leading-[1.02] tracking-[-0.02em] ${isCompact ? "text-[1.7rem]" : "text-[2.2rem] md:text-[3rem]"}`}
+              >
                 {t(ch.title)}
               </span>
             </h1>
@@ -852,7 +890,9 @@ export default function PlaceStory({
               </div>
               {ch.stat && (
                 <div className="mb-1.5 flex items-baseline gap-3">
-                  <span className="text-[2.1rem] font-bold leading-none tracking-[-0.02em] text-white tabular-nums md:text-[2.6rem]">
+                  <span
+                    className={`font-bold leading-none tracking-[-0.02em] text-white tabular-nums ${isCompact ? "text-[1.7rem]" : "text-[2.1rem] md:text-[2.6rem]"}`}
+                  >
                     {ch.stat.value}
                   </span>
                   <span className="text-[0.8rem] text-white/70">
@@ -860,7 +900,9 @@ export default function PlaceStory({
                   </span>
                 </div>
               )}
-              <p className="m-0 max-w-[52ch] text-[0.98rem] leading-snug text-white/90 [text-wrap:pretty]">
+              <p
+                className={`m-0 max-w-[52ch] leading-snug text-white/90 [text-wrap:pretty] ${isCompact ? "text-[0.9rem]" : "text-[0.98rem]"}`}
+              >
                 {t(ch.body)}
               </p>
               {ch.points && ch.points.length > 0 && (
@@ -918,9 +960,10 @@ export default function PlaceStory({
               )}
             </>
           )}
+          </div>
 
           {/* progress + transport controls: back · play/pause · forward · stop */}
-          <div className="mt-4 flex items-center gap-3">
+          <div className="mt-3 flex shrink-0 items-center gap-3">
             <div className="flex gap-1.5">
               {story.chapters.map((_, i) => (
                 <button

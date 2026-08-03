@@ -21,11 +21,13 @@ export default function StorySocial({
   url,
   name,
   en,
+  compact = false,
 }: {
   handle: string;
   url: string;
   name: string;
   en: boolean;
+  compact?: boolean;
 }) {
   const [items, setItems] = useState<IgItem[] | null>(null);
 
@@ -84,13 +86,21 @@ export default function StorySocial({
   const hasVideos = items && items.length > 0;
 
   return (
-    <div className="mx-auto mb-3 w-full max-w-[640px] rounded-2xl border border-white/12 bg-black/55 p-3 backdrop-blur-md">
+    <div
+      className={`mx-auto w-full max-w-[640px] rounded-2xl border border-white/12 bg-black/55 backdrop-blur-md ${compact ? "mb-2 p-2.5" : "mb-3 p-3"}`}
+    >
       <div className="mb-2 flex items-center gap-2 text-[0.6rem] uppercase tracking-[0.16em] text-white/45">
         {en ? `Latest from ${name}` : `Kabar terbaru dari ${name}`}
       </div>
       {Header}
       {hasVideos && (
-        <div className="mt-3 grid grid-cols-4 gap-2">
+        <div
+          className={
+            compact
+              ? "mt-2 flex gap-1.5 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none]"
+              : "mt-3 grid grid-cols-4 gap-2"
+          }
+        >
           {items!.map((it, i) => (
             <a
               key={i}
@@ -98,7 +108,7 @@ export default function StorySocial({
               target="_blank"
               rel="noreferrer"
               title={it.caption || undefined}
-              className="group relative block aspect-[9/16] w-full overflow-hidden rounded-lg border border-white/10 bg-black/40"
+              className={`group relative block aspect-[9/16] overflow-hidden rounded-lg border border-white/10 bg-black/40 ${compact ? "h-[92px] shrink-0" : "w-full"}`}
             >
               {/* muted autoplay preview; poster shows if the CDN URL is gone */}
               <video

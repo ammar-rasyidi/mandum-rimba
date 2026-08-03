@@ -8,14 +8,22 @@ import { NextResponse } from "next/server";
 const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://mandumrimba.org";
 
 export function GET(
-  _req: Request,
+  req: Request,
   { params }: { params: { id: string } },
 ) {
   const id = (params.id || "").replace(/[^a-f0-9]/gi, "").slice(0, 32);
   const img = `${SITE}/share/${id}.png`;
-  const title = "Something worth a look on Mandum Rimba";
-  const desc =
-    "Exploring Indonesia's forests, wildlife and land — open the map and find your own.";
+  // a story link carries ?story=<slug>: humans land straight in that story
+  const story = (new URL(req.url).searchParams.get("story") || "")
+    .replace(/[^a-z0-9-]/gi, "")
+    .slice(0, 40);
+  const dest = story ? `${SITE}/peta?story=${story}` : `${SITE}/peta`;
+  const title = story
+    ? "Kisah Kawasan · Mandum Rimba"
+    : "Something worth a look on Mandum Rimba";
+  const desc = story
+    ? "Lihat ceritanya di peta 3D Mandum Rimba: apa yang tersisa, dan apa yang hilang."
+    : "Exploring Indonesia's forests, wildlife and land — open the map and find your own.";
   const html = `<!doctype html><html lang="id"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -33,12 +41,12 @@ export function GET(
 <meta name="twitter:title" content="${title}">
 <meta name="twitter:description" content="${desc}">
 <meta name="twitter:image" content="${img}">
-<meta http-equiv="refresh" content="0; url=${SITE}/peta">
+<meta http-equiv="refresh" content="0; url=${dest}">
 <style>body{margin:0;background:#0b120e;color:#eae6db;font-family:-apple-system,system-ui,sans-serif;display:flex;min-height:100vh;flex-direction:column;align-items:center;justify-content:center;gap:20px;padding:32px;text-align:center}img{max-width:min(420px,92vw);border-radius:14px;box-shadow:0 20px 60px -20px #000}a{color:#57b98a;text-decoration:none;font-weight:600}</style>
 </head><body>
 <img src="${img}" alt="">
-<a href="${SITE}/peta">Buka peta Mandum Rimba →</a>
-<script>location.replace(${JSON.stringify(SITE + "/peta")})</script>
+<a href="${dest}">${story ? "Buka ceritanya" : "Buka peta Mandum Rimba"} →</a>
+<script>location.replace(${JSON.stringify(dest)})</script>
 </body></html>`;
   return new NextResponse(html, {
     headers: { "content-type": "text/html; charset=utf-8" },

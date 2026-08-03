@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale } from "next-intl";
 import maplibregl from "maplibre-gl";
 import { Protocol } from "pmtiles";
 import { LAYERS, colorExpression, type LayerDef } from "@/lib/layers";
@@ -19,6 +19,8 @@ import SpeciesInfo from "./SpeciesInfo";
 import RealmCaption from "./RealmCaption";
 import MapControls from "./MapControls";
 import ShareModal from "./ShareModal";
+import PlaceStory from "./PlaceStory";
+import { PLACE_STORIES, type PlaceStory as PlaceStoryDef } from "./placeStories";
 import ForestLossTimeline from "./ForestLossTimeline";
 import { LOSS_ATTRIBUTION, LOSS_YEARS } from "@/lib/forest-loss";
 import {
@@ -137,7 +139,21 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
   );
   const [selected, setSelected] = useState<SelectedFeature | null>(null);
   const [shareOpen, setShareOpen] = useState(false);
-  const tMap = useTranslations("map");
+  // when sharing from a Place Story, the beat's facts to bake into the card
+  const [storyShare, setStoryShare] = useState<{
+    id: string;
+    name: string;
+    region: string;
+    eyebrow: string;
+    big: string;
+    label: string;
+    source?: string;
+  } | null>(null);
+  // cinematic place stories (Kisah Kawasan): the open story + a soft geofence
+  // prompt when the map is over a place that has one
+  const [storyId, setStoryId] = useState<string | null>(null);
+  const [promptStory, setPromptStory] = useState<PlaceStoryDef | null>(null);
+  const dismissedStories = useRef<Set<string>>(new Set());
   // biodiversity map: the currently-searched species and its loaded distribution
   const [speciesKey, setSpeciesKey] = useState<number | null>(null);
   const [speciesLabel, setSpeciesLabel] = useState<string>("");
@@ -167,6 +183,95 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
   const [lossPlaying, setLossPlaying] = useState(false);
   const showLoss = filters.layers.includes("forestloss");
   const theme = useSiteTheme();
+  const locale = useLocale();
+
+  // Kisah Kawasan: when the map settles over a place that has a story (and one
+  // isn't already playing), offer it with a soft prompt. Dismiss = don't nag.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready) return;
+    const check = () => {
+      if (storyId) {
+        setPromptStory(null);
+        return;
+      }
+      const c = map.getCenter();
+      const z = map.getZoom();
+      const hit = PLACE_STORIES.find(
+        (s) =>
+          !dismissedStories.current.has(s.id) &&
+          z >= s.minZoom &&
+          c.lng >= s.bounds[0] &&
+          c.lng <= s.bounds[2] &&
+          c.lat >= s.bounds[1] &&
+          c.lat <= s.bounds[3],
+      );
+      setPromptStory(hit ?? null);
+    };
+    map.on("moveend", check);
+    check();
+    return () => {
+      map.off("moveend", check);
+    };
+  }, [ready, storyId]);
+
+  // remember the map mode before a story takes over, so we can restore it on exit
+  const preStoryView = useRef<Pick<MapFilters, "viewMode" | "basemap"> | null>(null);
+  const startStory = (s: PlaceStoryDef) => {
+    setPromptStory(null);
+    setFilters((f) => {
+      preStoryView.current = { viewMode: f.viewMode, basemap: f.basemap };
+      // satellite imagery on 3D terrain for the cinematic look
+      return { ...f, viewMode: "terrain", basemap: "satellite" };
+    });
+    setStoryId(s.id);
+  };
+  const endStory = () => {
+    setLossPlaying(false);
+    setStoryId(null);
+    // drop ?story= so a refresh (or the URL sync) doesn't relaunch the story and
+    // the map is fully explorable again
+    const url = new URL(window.location.href);
+    if (url.searchParams.has("story")) {
+      url.searchParams.delete("story");
+      window.history.replaceState({}, "", url);
+    }
+    const prev = preStoryView.current;
+    preStoryView.current = null;
+    // restore the pre-story view, and bring ALL default layers back on
+    setFilters((f) => ({
+      ...f,
+      viewMode: prev?.viewMode ?? f.viewMode,
+      basemap: prev?.basemap ?? f.basemap,
+      layers: [...DEFAULT_FILTERS.layers],
+    }));
+  };
+
+  // deep link: /peta?story=<id> (e.g. from a shared card) auto-opens the story
+  const deepLinkDone = useRef(false);
+  useEffect(() => {
+    if (deepLinkDone.current || !ready) return;
+    deepLinkDone.current = true;
+    const sid = new URLSearchParams(window.location.search).get("story");
+    const s = sid ? PLACE_STORIES.find((x) => x.id === sid) : null;
+    if (s) startStory(s);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready]);
+  // each beat shows EXACTLY its layers — everything else is turned off, so the
+  // cinematic frame stays clean (empty list = no data layers on this beat)
+  const storyLayers = (ids: string[]) =>
+    setFilters((f) => {
+      const same =
+        f.layers.length === ids.length && ids.every((id) => f.layers.includes(id));
+      return same ? f : { ...f, layers: [...ids] };
+    });
+  // a beat can play the tree-cover-loss year animation (2001 → now)
+  const animateStoryLoss = (on: boolean) => {
+    if (on) {
+      setLossYearIdx(0);
+      setLossPlaying(true);
+    } else setLossPlaying(false);
+  };
 
   // pan/zoom to a searched place and drop a green marker at its center. bbox is
   // [west, south, east, north]; the padding mirrors fitIndonesia so the panel
@@ -281,7 +386,8 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
         }
         return i + 1;
       });
-    }, 700);
+      // 950ms/year: readable but not draggy (≈23s across 2001→2025)
+    }, 950);
     return () => clearInterval(timer);
   }, [lossPlaying]);
 
@@ -358,6 +464,9 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
       // box, MapLibre overrides fitBounds and re-clamps the camera to the
       // box center, that was exactly the "ocean on the left" bug
       minZoom: 3.5,
+      // allow steep cinematic angles so the raised story layer reads as lifted
+      // (default maxPitch is 60, which would clamp the place-story camera)
+      maxPitch: 80,
       attributionControl: { compact: true },
       // needed so the Share feature can read the WebGL canvas into an image
       canvasContextAttributes: { preserveDrawingBuffer: true },
@@ -1076,31 +1185,16 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
           light, night black in dark) shows there instead of the page bleeding
           through. Hidden under the opaque basemap in the flat view. */}
       <div ref={containerRef} className="relative flex-1 bg-[var(--map-sky)]" />
-      <MapControls
-        mapRef={mapRef}
-        ready={ready}
-        panelOpen={isMobile ? sheetSnap === SHEET_FULL : !layerMinimized}
-        detailOpen={!!(selected || speciesData)}
-      />
-      {/* Share this view — quiet, bottom-right on desktop, top-left on mobile
-          (free corners; controls sit elsewhere). Opens the capture modal. */}
-      <button
-        onClick={() => setShareOpen(true)}
-        aria-label={tMap("shareView")}
-        title={tMap("shareView")}
-        className="glass pointer-events-auto absolute z-[6] top-6 left-[220px] rounded-[10px] flex items-center gap-1.5 px-3 py-2 text-[0.82rem] text-foreground transition-[transform,border-color] hover:-translate-y-px md:top-6 md:left-auto md:right-3 md:rounded-full"
-      >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
-          <path
-            d="M12 3v12M12 3 8 7M12 3l4 4M5 13v6a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-6"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-        <span className="max-[380px]:hidden">{tMap("shareView")}</span>
-      </button>
+      {/* while a cinematic story plays, hide the map chrome for immersion */}
+      {!storyId && (
+        <MapControls
+          mapRef={mapRef}
+          ready={ready}
+          panelOpen={isMobile ? sheetSnap === SHEET_FULL : !layerMinimized}
+          detailOpen={!!(selected || speciesData)}
+        />
+      )}
+      {!storyId && (
       <LayerPanelHost
         isMobile={isMobile}
         sheetSnap={sheetSnap}
@@ -1110,6 +1204,7 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
         availableTiles={availableTiles}
         filters={filters}
         onChange={setFilters}
+        onShare={() => setShareOpen(true)}
         onReset={() => {
           setFilters({ ...DEFAULT_FILTERS });
           setSelectedFamilies([]);
@@ -1150,6 +1245,7 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
         minimized={layerMinimized}
         onMinimizedChange={setLayerMinimized}
       />
+      )}
       {/* guided-tour caption: realm name + one line on the wildlife it holds */}
       {tourRealm && (
         <RealmCaption realm={tourRealm} onClose={() => setTourRealm(null)} />
@@ -1172,13 +1268,62 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
           basemap={filters.basemap}
           layers={filters.layers}
           species={speciesLabel || undefined}
-          onClose={() => setShareOpen(false)}
+          story={storyShare ?? undefined}
+          onClose={() => {
+            setShareOpen(false);
+            setStoryShare(null);
+          }}
+        />
+      )}
+      {/* Kisah Kawasan: soft prompt when hovering over a place with a story */}
+      {promptStory && !storyId && (
+        <div className="pointer-events-auto absolute inset-x-0 top-[5.25rem] z-[7] flex justify-center px-4 lg:top-[5.75rem]">
+          <div className="glass flex items-center gap-3 rounded-full py-2 pl-4 pr-2 shadow-lg animate-[panel-in_0.3s_ease]">
+            <span className="text-[0.85rem]">
+              {locale === "en" ? "Explore" : "Jelajahi"}{" "}
+              <b>{promptStory.name}</b>
+            </span>
+            <button
+              onClick={() => startStory(promptStory)}
+              className="rounded-full bg-accent px-3.5 py-1.5 text-[0.82rem] font-medium text-[#07130d] transition-[filter] hover:brightness-110"
+            >
+              {locale === "en" ? "Start →" : "Mulai →"}
+            </button>
+            <button
+              onClick={() => {
+                dismissedStories.current.add(promptStory.id);
+                setPromptStory(null);
+              }}
+              aria-label={locale === "en" ? "Dismiss" : "Tutup"}
+              className="flex h-7 w-7 items-center justify-center rounded-full text-muted transition-colors hover:text-foreground"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+      {storyId && (
+        <PlaceStory
+          mapRef={mapRef}
+          story={PLACE_STORIES.find((s) => s.id === storyId)!}
+          activeLayers={filters.layers}
+          onClose={endStory}
+          onSetLayers={storyLayers}
+          onAnimateLoss={animateStoryLoss}
+          lossYear={LOSS_YEARS[lossYearIdx]}
+          lossYears={LOSS_YEARS}
+          lossPlaying={lossPlaying}
+          onToggleLossPlay={toggleLossPlay}
+          onShare={(ctx) => {
+            setStoryShare(ctx);
+            setShareOpen(true);
+          }}
         />
       )}
       {/* gate on `ready` (false on the server and the first client render) so
           showLoss — which derives from URL-seeded filters — can't mismatch
           during hydration when the URL has forestloss on */}
-      {ready && showLoss && !(isMobile && sheetSnap === SHEET_FULL) && (
+      {ready && showLoss && !storyId && !(isMobile && sheetSnap === SHEET_FULL) && (
         <ForestLossTimeline
           years={LOSS_YEARS}
           idx={lossYearIdx}

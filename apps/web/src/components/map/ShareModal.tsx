@@ -34,97 +34,18 @@ interface CapCtx {
 }
 
 function pickHook(c: CapCtx): string {
-  const has = (x: string) => c.layers.includes(x);
-  const sp = c.species?.trim();
-  const en = c.locale === "en";
-
-  if (en) {
-    if (has("species-dist") || has("endemic") || has("flora"))
-      return sp
-        ? pick([
-            `Didn't realise ${sp} still ranges across this area.`,
-            `Turns out ${sp} is still found around here.`,
-          ])
-        : `Didn't realise how much wildlife still lives in this area.`;
-    if (has("fires") && has("peatland"))
-      return `Looking at hotspots over peatland — more of them than I expected.`;
-    if (has("fires"))
-      return `Just looking at hotspots from satellite. More than I thought.`;
-    if (has("mangrove"))
-      return `Didn't realise Indonesia's mangroves stretched this far.`;
-    if (has("peatland"))
-      return `Didn't realise how vast Indonesia's peatlands are.`;
-    if (has("forestloss"))
-      return `Watching how the forest here changed over the years. Makes you think.`;
-    if (has("concessions"))
-      return `Looking at the concession areas across this region.`;
-    if (has("protected"))
-      return `Looking at the protected areas around here — bigger than I thought.`;
-    if (has("ecoregions") || has("biogeo"))
-      return `Reading up on Indonesia's ecoregions — wildly diverse.`;
-    return c.satellite
-      ? `Exploring Indonesia from above — turns out it's fascinating.`
-      : `Ended up exploring the map of Indonesia for way too long.`;
-  }
-
-  if (has("species-dist") || has("endemic") || has("flora"))
-    return sp
-      ? pick([
-          `Baru tahu habitat ${sp} masih tersebar di area ini.`,
-          `Ternyata ${sp} masih ada di sekitar sini. Nggak nyangka.`,
-          `Lagi lihat sebaran ${sp} — ternyata sampai sini juga.`,
-        ])
-      : pick([
-          `Baru sadar ternyata masih banyak satwa yang tinggal di area ini.`,
-          `Lagi lihat sebaran satwa di sini — ternyata rame juga.`,
-        ]);
-  if (has("fires") && has("peatland"))
-    return pick([
-      `Lagi lihat sebaran hotspot di atas lahan gambut. Ternyata banyak juga yang baru aku tahu.`,
-      `Iseng cek titik panas di area gambut — ternyata cukup padat.`,
-    ]);
-  if (has("fires") && has("mangrove"))
-    return `Lihat sebaran hotspot di sekitar mangrove. Menarik buat diperhatiin.`;
-  if (has("fires"))
-    return pick([
-      `Lagi lihat sebaran hotspot dari satelit. Ternyata cukup banyak.`,
-      `Iseng cek titik panas belakangan ini. Lumayan bikin melek.`,
-    ]);
-  if (has("mangrove"))
-    return pick([
-      `Baru sadar ternyata mangrove di Indonesia seluas ini.`,
-      `Lagi lihat sebaran mangrove — ternyata banyak yang belum aku tahu.`,
-    ]);
-  if (has("peatland"))
-    return pick([
-      `Baru sadar lahan gambut di Indonesia seluas ini.`,
-      `Lagi lihat sebaran gambut — ternyata luas banget.`,
-    ]);
-  if (has("forestloss"))
-    return pick([
-      `Lagi lihat perubahan tutupan hutan dari tahun ke tahun. Bikin mikir.`,
-      `Iseng lihat gimana tutupan pohon berubah di sini.`,
-    ]);
-  if (has("concessions"))
-    return `Lagi lihat sebaran area konsesi di wilayah ini. Menarik buat diperhatiin.`;
-  if (has("protected"))
-    return pick([
-      `Lagi lihat kawasan lindung di sekitar sini. Ternyata cukup luas juga.`,
-      `Baru tahu kawasan lindung di area ini seluas ini.`,
-    ]);
-  if (has("ecoregions") || has("biogeo"))
-    return pick([
-      `Lagi belajar soal ekoregion Indonesia — ternyata beragam banget.`,
-      `Lihat garis biogeografi Indonesia — ternyata sekeren ini.`,
-    ]);
-  return c.satellite
+  return c.locale === "en"
     ? pick([
-        `Lagi iseng eksplor Indonesia dari atas. Ternyata menarik juga.`,
-        `Iseng zoom-zoom citra satelit Indonesia. Banyak yang baru aku tahu.`,
+        "ended up spending way too long on this map lol",
+        "opened this for a second and kinda got lost in it 🌿",
+        "was just poking around and found some stuff worth a look",
+        "didn't think a map could keep me this long ha",
       ])
     : pick([
-        `Lagi iseng eksplor peta Indonesia. Ternyata menarik juga kalau diperhatiin.`,
-        `Iseng buka peta, malah keasyikan eksplor.`,
+        "iseng buka ini, eh malah keasyikan 🌿",
+        "nggak nyangka bisa selama ini cuma liatin peta lol",
+        "lagi liat-liat, nemu hal-hal yang menurutku menarik sih",
+        "keasyikan eksplor, jadi pengen bagi aja",
       ]);
 }
 
@@ -132,14 +53,75 @@ function withLink(hook: string, locale: string): string {
   const cta =
     locale === "en"
       ? pick([
-          `If you're curious about your own area, give it a try:`,
-          `Have a look at your own area:`,
+          `have a look at your own area:`,
+          `if you wanna waste some time too:`,
         ])
       : pick([
-          `Kalau penasaran sama daerahmu sendiri, coba aja:`,
-          `Cobain eksplor daerahmu sendiri di sini:`,
+          `kalau mau iseng juga, coba:`,
+          `coba liat daerahmu sendiri:`,
         ]);
   return `${hook}\n\n${cta}\nhttps://mandumrimba.org`;
+}
+
+// facts baked into a shared Place Story card
+interface StoryCard {
+  id: string;
+  name: string;
+  region: string;
+  eyebrow: string;
+  big: string;
+  label: string;
+  source?: string;
+}
+
+// a person sharing a place they just sat with, not an ad
+function storyHook(name: string, locale: string): string {
+  return locale === "en"
+    ? pick([
+        `${name} was one of Sumatra's richest lowland forests. this is what's left of it.`,
+        `spent a while inside ${name} on this map. the numbers stayed with me.`,
+        `didn't know this much of ${name} was already gone.`,
+      ])
+    : pick([
+        `${name} dulu salah satu hutan dataran rendah terkaya di Sumatra. ini yang tersisa.`,
+        `sempat lihat ${name} di peta ini, eh malah jadi diam sendiri.`,
+        `nggak nyangka sebanyak ini yang udah hilang dari ${name}.`,
+      ]);
+}
+function storyWithLink(hook: string, locale: string): string {
+  const cta = locale === "en" ? "see the whole story here:" : "lihat ceritanya di sini:";
+  return `${hook}\n\n${cta}\nhttps://mandumrimba.org`;
+}
+
+const FONT = `-apple-system, "Segoe UI", system-ui, sans-serif`;
+
+// Mandum Rimba logo (bottom-left) + site/imagery credit (bottom-right)
+function drawBrand(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  credit: string,
+  logo: HTMLImageElement | null,
+) {
+  const pad = Math.round(w * 0.045);
+  ctx.textBaseline = "alphabetic";
+  const lh = Math.round(w * 0.055);
+  if (logo && logo.naturalWidth) {
+    const lw = lh * (logo.naturalWidth / logo.naturalHeight);
+    ctx.drawImage(logo, pad, h - pad - lh, lw, lh);
+  } else {
+    ctx.fillStyle = "#ffffff";
+    ctx.font = `700 ${Math.round(w * 0.034)}px ${FONT}`;
+    ctx.fillText("Mandum Rimba", pad, h - pad - lh * 0.15);
+  }
+  ctx.textAlign = "right";
+  ctx.fillStyle = "rgba(236,234,224,.72)";
+  ctx.font = `600 ${Math.round(w * 0.018)}px ui-monospace, Menlo, monospace`;
+  ctx.fillText("mandumrimba.org", w - pad, h - pad - Math.round(w * 0.022));
+  ctx.fillStyle = "rgba(236,234,224,.5)";
+  ctx.font = `500 ${Math.round(w * 0.014)}px ui-monospace, Menlo, monospace`;
+  ctx.fillText(credit, w - pad, h - pad);
+  ctx.textAlign = "left";
 }
 
 function drawWatermark(
@@ -149,37 +131,87 @@ function drawWatermark(
   credit: string,
   logo: HTMLImageElement | null,
 ) {
-  const pad = Math.round(w * 0.045);
-  // bottom scrim for legibility
   const sh = Math.min(h * 0.24, 260);
   const g = ctx.createLinearGradient(0, h - sh, 0, h);
   g.addColorStop(0, "rgba(6,12,9,0)");
   g.addColorStop(1, "rgba(6,12,9,0.82)");
   ctx.fillStyle = g;
   ctx.fillRect(0, h - sh, w, sh);
+  drawBrand(ctx, w, h, credit, logo);
+}
 
-  ctx.textBaseline = "alphabetic";
-  // Mandum Rimba logo, bottom-left
-  const lh = Math.round(w * 0.055);
-  if (logo && logo.naturalWidth) {
-    const lw = lh * (logo.naturalWidth / logo.naturalHeight);
-    ctx.drawImage(logo, pad, h - pad - lh, lw, lh);
-  } else {
-    // fallback wordmark if the logo hasn't loaded
-    ctx.fillStyle = "#ffffff";
-    ctx.font = `700 ${Math.round(w * 0.034)}px -apple-system, "Segoe UI", system-ui, sans-serif`;
-    ctx.fillText("Mandum Rimba", pad, h - pad - lh * 0.15);
-  }
+// composed social card: the cinematic frame + the beat's headline fact + place
+// name, all baked in so the post reads on its own
+function drawStoryCard(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  s: StoryCard,
+  credit: string,
+  logo: HTMLImageElement | null,
+  locale: string,
+) {
+  const u = Math.min(w, h);
+  const pad = Math.round(u * 0.06);
+  const en = locale === "en";
 
-  // site + imagery credit, bottom-right, quiet
-  ctx.textAlign = "right";
-  ctx.fillStyle = "rgba(236,234,224,.72)";
-  ctx.font = `600 ${Math.round(w * 0.018)}px ui-monospace, Menlo, monospace`;
-  ctx.fillText("mandumrimba.org", w - pad, h - pad - Math.round(w * 0.022));
-  ctx.fillStyle = "rgba(236,234,224,.5)";
-  ctx.font = `500 ${Math.round(w * 0.014)}px ui-monospace, Menlo, monospace`;
-  ctx.fillText(credit, w - pad, h - pad);
+  // top scrim + place name
+  const ts = h * 0.22;
+  let g = ctx.createLinearGradient(0, 0, 0, ts);
+  g.addColorStop(0, "rgba(6,12,9,0.78)");
+  g.addColorStop(1, "rgba(6,12,9,0)");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, w, ts);
   ctx.textAlign = "left";
+  ctx.textBaseline = "top";
+  ctx.fillStyle = "#9dffcf";
+  ctx.font = `700 ${Math.round(u * 0.023)}px ${FONT}`;
+  ctx.fillText(en ? "MANDUM RIMBA · PLACE STORY" : "MANDUM RIMBA · Kisah Kawasan", pad, pad * 0.7);
+  ctx.fillStyle = "#ffffff";
+  ctx.font = `800 ${Math.round(u * 0.05)}px ${FONT}`;
+  ctx.fillText(s.name, pad, pad * 0.7 + Math.round(u * 0.042));
+  ctx.fillStyle = "rgba(236,234,224,.78)";
+  ctx.font = `500 ${Math.round(u * 0.026)}px ${FONT}`;
+  ctx.fillText(s.region, pad, pad * 0.7 + Math.round(u * 0.042) + Math.round(u * 0.062));
+
+  // bottom scrim
+  const bs = h * 0.54;
+  g = ctx.createLinearGradient(0, h - bs, 0, h);
+  g.addColorStop(0, "rgba(6,12,9,0)");
+  g.addColorStop(0.35, "rgba(6,12,9,0.5)");
+  g.addColorStop(0.6, "rgba(6,12,9,0.78)");
+  g.addColorStop(1, "rgba(6,12,9,0.96)");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, h - bs, w, bs);
+
+  // facts, stacked bottom-up above the brand line
+  const lh = Math.round(w * 0.055);
+  const gap = Math.round(u * 0.014);
+  ctx.textBaseline = "alphabetic";
+  ctx.textAlign = "left";
+  let by = h - Math.round(w * 0.045) - lh - Math.round(u * 0.03);
+  if (s.source) {
+    ctx.fillStyle = "rgba(157,255,207,.78)";
+    ctx.font = `500 ${Math.round(u * 0.022)}px ${FONT}`;
+    ctx.fillText(`${en ? "Source" : "Sumber"}: ${s.source}`, pad, by);
+    by -= Math.round(u * 0.022) + gap;
+  }
+  ctx.fillStyle = "rgba(255,255,255,.86)";
+  ctx.font = `500 ${Math.round(u * 0.034)}px ${FONT}`;
+  ctx.fillText(s.label, pad, by);
+  by -= Math.round(u * 0.034) + Math.round(gap * 1.4);
+  const bigF = Math.round(u * 0.13);
+  ctx.fillStyle = "#ffffff";
+  ctx.font = `800 ${bigF}px ${FONT}`;
+  ctx.fillText(s.big, pad, by);
+  // clear the full cap height of the big number plus a real gap, so the eyebrow
+  // never collides with it on the short (wide) card
+  by -= bigF + Math.round(gap * 2.4);
+  ctx.fillStyle = "#7fd6a8";
+  ctx.font = `700 ${Math.round(u * 0.028)}px ${FONT}`;
+  ctx.fillText(s.eyebrow.toUpperCase(), pad, by);
+
+  drawBrand(ctx, w, h, credit, logo);
 }
 
 /* ── official brand glyphs (share-button use) ── */
@@ -230,19 +262,25 @@ export default function ShareModal({
   basemap,
   layers,
   species,
+  story,
   onClose,
 }: {
   mapRef: React.MutableRefObject<MapLibreMap | null>;
   basemap: "dark" | "satellite";
   layers: string[];
   species?: string;
+  /** when sharing from a Place Story: bakes the facts + deep-links to the story */
+  story?: StoryCard;
   onClose: () => void;
 }) {
   const t = useTranslations("map");
   const locale = useLocale();
-  // pick a contextual hook once (per open) from what's on screen
+  // pick a hook once (per open): a story caption if we're in a story, else a
+  // contextual one from what's on screen
   const hook = useRef(
-    pickHook({ layers, satellite: basemap === "satellite", species, locale }),
+    story
+      ? storyHook(story.name, locale)
+      : pickHook({ layers, satellite: basemap === "satellite", species, locale }),
   ).current;
 
   const base = useRef<HTMLCanvasElement | null>(null); // frozen snapshot
@@ -307,10 +345,11 @@ export default function ShareModal({
     const dw = b.width * scale;
     const dh = b.height * scale;
     ctx.drawImage(b, (w - dw) / 2, (h - dh) / 2, dw, dh);
-    drawWatermark(ctx, w, h, credit, logo.current);
+    if (story) drawStoryCard(ctx, w, h, story, credit, logo.current, locale);
+    else drawWatermark(ctx, w, h, credit, logo.current);
     composed.current = out;
     setPreview(out.toDataURL("image/png"));
-  }, [size, credit]);
+  }, [size, credit, story, locale]);
 
   useEffect(() => {
     render();
@@ -324,8 +363,9 @@ export default function ShareModal({
       logo.current = img;
       render();
     };
-    // PNG (not SVG): guarantees intrinsic dimensions for a reliable canvas draw
-    img.src = "/images/mandum_rimba_dark.png";
+    // PNG (not SVG): guarantees intrinsic dimensions for a reliable canvas draw.
+    // Light wordmark reads well on the export's dark scrim.
+    img.src = "/images/mandum_rimba_light.png";
   }, [render]);
 
   // Escape to close
@@ -337,7 +377,13 @@ export default function ShareModal({
 
   const chooseMode = (m: "image" | "link") => {
     setMode(m);
-    setCaption(m === "link" ? withLink(hook, locale) : hook);
+    setCaption(
+      m === "link"
+        ? story
+          ? storyWithLink(hook, locale)
+          : withLink(hook, locale)
+        : hook,
+    );
   };
 
   const toBlob = () =>
@@ -351,12 +397,23 @@ export default function ShareModal({
     setTimeout(() => setFlash(null), 1600);
   };
 
+  const subLink = (cap: string, link: string) =>
+    cap.includes("mandumrimba.org")
+      ? cap.replace(/https?:\/\/\S*mandumrimba\.org\S*/g, link)
+      : `${cap}\n\n${link}`;
+
   const doShare = async () => {
     const blob = await toBlob();
     if (!blob) return;
     const file = new File([blob], "mandum-rimba.png", { type: "image/png" });
+    // in link mode, swap the placeholder for the real (unfurling) share URL
+    let text = caption;
+    if (mode === "link") {
+      const link = await getShareUrl();
+      if (link) text = subLink(caption, link);
+    }
     try {
-      await navigator.share({ files: [file], text: caption });
+      await navigator.share({ files: [file], text });
     } catch {
       /* user cancelled — no-op */
     }
@@ -422,7 +479,8 @@ export default function ShareModal({
       });
       if (!r.ok) return null;
       const { id } = (await r.json()) as { id: string };
-      const url = `${SITE}/s/${id}`;
+      // a story link deep-links the share page straight into the story
+      const url = story ? `${SITE}/s/${id}?story=${story.id}` : `${SITE}/s/${id}`;
       shareUrls.current[size] = url;
       return url;
     } catch {
@@ -455,9 +513,7 @@ export default function ShareModal({
     // X / Threads: put the (unfurling) link in the text; also copy the PNG as a
     // manual-paste backup
     void copyImageQuiet().then((ok) => ok && ping("img"));
-    const text = caption.includes("mandumrimba.org")
-      ? caption.replace(/https?:\/\/\S*mandumrimba\.org\S*/g, link)
-      : `${caption}\n\n${link}`;
+    const text = subLink(caption, link);
     const intent =
       p === "x"
         ? `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}`

@@ -28,6 +28,8 @@ interface Props {
   filters: MapFilters;
   onChange: (next: MapFilters) => void;
   onReset: () => void;
+  /** open the "share this view" capture modal */
+  onShare?: () => void;
   /** pan/zoom the map to a searched place + drop a marker at its center */
   onGoTo: (
     bbox: [number, number, number, number],
@@ -101,6 +103,7 @@ export default function LayerPanel({
   filters,
   onChange,
   onReset,
+  onShare,
   onGoTo,
   onSpeciesSelect,
   speciesLabel,
@@ -165,6 +168,25 @@ export default function LayerPanel({
       >
         <h2 className="m-0 text-[0.95rem] tracking-[0.02em]">{t("layers")}</h2>
         <div className="flex gap-[0.35rem]">
+          {onShare && (
+            <button
+              className={`${panelBtn} flex items-center gap-1`}
+              onClick={onShare}
+              aria-label={t("shareView")}
+              title={t("shareView")}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden>
+                <path
+                  d="M12 3v12M12 3 8 7M12 3l4 4M5 13v6a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-6"
+                  stroke="currentColor"
+                  strokeWidth="1.9"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              {t("shareView")}
+            </button>
+          )}
           <button className={panelBtn} onClick={onReset}>
             {t("reset")}
           </button>

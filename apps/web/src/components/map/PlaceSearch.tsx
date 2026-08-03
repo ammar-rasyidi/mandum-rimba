@@ -50,9 +50,16 @@ export default function PlaceSearch({
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
   const boxRef = useRef<HTMLDivElement>(null);
+  // set when we fill the input programmatically (after picking a result) so the
+  // debounced geocode below doesn't re-run and reopen the dropdown
+  const skipSearch = useRef(false);
 
   // debounced geocode (Indonesia only)
   useEffect(() => {
+    if (skipSearch.current) {
+      skipSearch.current = false;
+      return;
+    }
     const q = query.trim();
     // a pasted coordinate short-circuits the place geocode
     const c = parseCoordinates(q);
@@ -105,6 +112,7 @@ export default function PlaceSearch({
   const select = (r: NominatimResult) => {
     const [s, n, w, e] = r.boundingbox.map(Number);
     onGoTo([w, s, e, n], [Number(r.lon), Number(r.lat)], r.display_name);
+    skipSearch.current = true; // filling the input shouldn't reopen the dropdown
     setQuery(shortLabel(r));
     setResults([]);
     setOpen(false);
@@ -130,7 +138,7 @@ export default function PlaceSearch({
         onFocus={() => results.length > 0 && setOpen(true)}
         placeholder={t("searchPlace")}
         aria-label={t("searchPlace")}
-        className="w-full rounded-xl border border-[var(--glass-border)] bg-[var(--glass-highlight)] py-[0.42rem] pl-[2.1rem] pr-[1.9rem] text-[0.82rem] text-foreground outline-none transition-colors placeholder:text-muted focus:border-accent"
+        className="w-full rounded-xl border border-[var(--glass-border)] bg-[var(--glass-highlight)] py-[0.42rem] pl-[2.1rem] pr-[1.9rem] text-[0.82rem] text-foreground outline-none transition-shadow placeholder:text-muted focus:shadow-[0_0_0_3px_var(--focus-ring)]"
       />
       {query && (
         <button
@@ -140,19 +148,19 @@ export default function PlaceSearch({
             setOpen(false);
           }}
           aria-label="Clear"
-          className="absolute right-[0.5rem] top-1/2 flex h-5 w-5 -translate-y-1/2 cursor-pointer appearance-none items-center justify-center rounded-md border-0 bg-transparent text-[0.7rem] text-muted transition-colors hover:bg-[var(--accent-dim)] hover:text-foreground"
+          className="absolute right-[0.5rem] top-1/2 flex h-5 w-5 -translate-y-1/2 cursor-pointer appearance-none items-center justify-center rounded-md border-0 bg-transparent text-[0.7rem] text-muted outline-none transition-colors hover:bg-[var(--accent-dim)] hover:text-foreground focus-visible:bg-[var(--accent-dim)] focus-visible:text-foreground"
         >
           ✕
         </button>
       )}
 
       {open && (coord || loading || results.length > 0) && (
-        <ul className="glass absolute left-0 right-0 top-full z-10 mt-1 max-h-[230px] list-none overflow-y-auto rounded-xl p-1 [scrollbar-width:thin] bg-gray-900">
+        <ul className="glass absolute left-0 right-0 top-full z-10 mt-1 max-h-[230px] list-none overflow-y-auto rounded-xl bg-[var(--bg-raised)] p-1 [scrollbar-width:thin]">
           {coord ? (
             <li>
               <button
                 onClick={goToCoord}
-                className="block w-full cursor-pointer appearance-none rounded-lg border-0 bg-transparent px-2 py-1.5 text-left text-[0.8rem] text-foreground transition-colors hover:bg-[var(--accent-dim)] hover:text-accent"
+                className="block w-full cursor-pointer appearance-none rounded-lg border-0 bg-transparent px-2 py-1.5 text-left text-[0.8rem] text-foreground outline-none transition-colors hover:bg-[var(--accent-dim)] hover:text-accent focus-visible:bg-[var(--accent-dim)] focus-visible:text-accent"
               >
                 <span className="block font-medium">📍 {t("goToCoord")}</span>
                 <span className="block text-[0.72rem] text-muted">
@@ -169,7 +177,7 @@ export default function PlaceSearch({
               <li key={r.place_id}>
                 <button
                   onClick={() => select(r)}
-                  className="block w-full cursor-pointer appearance-none rounded-lg border-0 bg-transparent px-2 py-1.5 text-left text-[0.8rem] text-foreground transition-colors hover:bg-[var(--accent-dim)] hover:text-accent"
+                  className="block w-full cursor-pointer appearance-none rounded-lg border-0 bg-transparent px-2 py-1.5 text-left text-[0.8rem] text-foreground outline-none transition-colors hover:bg-[var(--accent-dim)] hover:text-accent focus-visible:bg-[var(--accent-dim)] focus-visible:text-accent"
                 >
                   <span className="block font-medium">{shortLabel(r)}</span>
                   <span className="block truncate text-[0.72rem] text-muted">

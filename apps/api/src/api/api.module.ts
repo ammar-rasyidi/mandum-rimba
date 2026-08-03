@@ -7,6 +7,8 @@ import { DisastersController } from "./disasters.controller";
 import { FiresController } from "./fires.controller";
 import { AreaReportController } from "./area-report.controller";
 import { ShareController } from "./share.controller";
+import { ProtectedController } from "./protected.controller";
+import { SocialController } from "./social.controller";
 import { CompaniesController } from "./companies.controller";
 import { StoriesController } from "./stories.controller";
 import { ExportController } from "./export.controller";
@@ -22,6 +24,8 @@ import { AdminController } from "./admin.controller";
     FiresController,
     AreaReportController,
     ShareController,
+    ProtectedController,
+    SocialController,
     CompaniesController,
     StoriesController,
     ExportController,

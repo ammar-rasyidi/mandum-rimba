@@ -194,7 +194,7 @@ export default function SiteNav() {
       {/* ── Desktop island ── */}
       {/* lg, not md: the full link row is ~1000px wide with Indonesian labels,
           so tablet widths get the mobile pills instead of an overflowing island */}
-      <div className="pointer-events-none fixed inset-x-0 top-0 z-50 hidden justify-center pt-4 lg:flex">
+      <div data-sitenav className="pointer-events-none fixed inset-x-0 top-0 z-50 hidden justify-center pt-4 lg:flex">
         <nav
           aria-label={tSite("name")}
           className="glass pointer-events-auto flex max-w-[calc(100vw-2rem)] items-center gap-1 rounded-2xl px-4 py-2.5"
@@ -224,7 +224,7 @@ export default function SiteNav() {
       </div>
 
       {/* ── Mobile: two pills ── */}
-      <div className="pointer-events-none fixed inset-x-0 top-0 z-50 flex items-center justify-between px-4 pt-4 lg:hidden">
+      <div data-sitenav className="pointer-events-none fixed inset-x-0 top-0 z-50 flex items-center justify-between px-4 pt-4 lg:hidden">
         <div className="glass pointer-events-auto flex items-center rounded-2xl px-4 py-2.5">
           <Logo h={26} />
         </div>

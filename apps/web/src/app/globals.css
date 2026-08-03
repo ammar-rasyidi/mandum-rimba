@@ -17,6 +17,7 @@
   --text-dim: #9e9e9e; /* gray 500 */
   --accent: #81c784; /* green 300 */
   --accent-dim: rgba(129, 199, 132, 0.14); /* green 300 @ low alpha */
+  --focus-ring: rgba(129, 199, 132, 0.3); /* soft accent glow for focus */
   --danger: #ff7043; /* deep-orange 400: color-blind-safe vs green */
   --link: #a5d6a7; /* green 200 */
   --overlay: rgba(33, 33, 33, 0.96);
@@ -39,6 +40,7 @@
   --text-dim: #616161; /* gray 700 */
   --accent: #388e3c; /* green 700 */
   --accent-dim: rgba(56, 142, 60, 0.1); /* green 700 @ low alpha */
+  --focus-ring: rgba(56, 142, 60, 0.28); /* soft accent glow for focus */
   --danger: #d84315; /* deep-orange 800 */
   --link: #2e7d32; /* green 800 */
   --overlay: rgba(255, 255, 255, 0.96);
@@ -106,6 +108,36 @@ a:hover {
   }
 }
 
+/* Phone rotating from portrait to landscape — the "rotate your device" hint. */
+@keyframes rotate-hint {
+  0%,
+  35% {
+    transform: rotate(0deg);
+  }
+  65%,
+  100% {
+    transform: rotate(-90deg);
+  }
+}
+
+/* Gentle continuous bob for the floating story photo cards. Kept transform-only
+   so it can run on an inner element without fighting an entrance animation. */
+@keyframes story-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-9px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .story-float {
+    animation: none !important;
+  }
+}
+
 /* Rise + fade for a horizontally-centred card: keeps translateX(-50%) through
    the whole animation so it doesn't slide in from the side. */
 @keyframes rise-in {
@@ -117,6 +149,18 @@ a:hover {
     opacity: 1;
     transform: translate(-50%, 0);
   }
+}
+
+/* immersive mode (cinematic place story): fade the site nav out of the way */
+body[data-immersive] [data-sitenav] {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+}
+/* the inner <nav> sets pointer-events:auto — override it too, or the hidden nav
+   (z-50, above the z-40 story chrome) still swallows clicks on Share/Close */
+body[data-immersive] [data-sitenav] * {
+  pointer-events: none;
 }
 
 /* ===== Reusable primitives (composed with utilities in the JSX) ===== */

@@ -139,6 +139,46 @@ export default function HomePage() {
           </div>
         </section>
 
+        {/* ---- Place Story: cinematic feature, deep-links into the story ---- */}
+        <section className="mt-14">
+          <Link
+            href={{ pathname: "/peta", query: { story: "tesso-nilo" } }}
+            className="group relative block overflow-hidden rounded-3xl border border-[var(--glass-border)] bg-[var(--bg-raised)] shadow-[var(--shadow)] transition-[transform,border-color] hover:-translate-y-0.5 hover:border-accent hover:no-underline"
+          >
+            {/* accent wash + faint topographic motion, purely decorative */}
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-0 opacity-90"
+              style={{
+                background:
+                  "radial-gradient(120% 140% at 85% 15%, var(--accent-dim), transparent 55%)",
+              }}
+            />
+            <div className="relative flex flex-col gap-6 p-8 md:flex-row md:items-center md:justify-between md:p-10">
+              <div className="max-w-[36rem]">
+                <span className="inline-flex items-center gap-2 text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-accent">
+                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-accent" />
+                  {t("storyKicker")}
+                </span>
+                <h2 className="mb-0 mt-2 text-[1.9rem] font-bold leading-[1.1] tracking-tight text-foreground">
+                  {t("storyTitle")}
+                </h2>
+                <p className="mt-3 text-[1.02rem] leading-relaxed text-muted">
+                  {t("storyBody")}
+                </p>
+              </div>
+              <span className="inline-flex shrink-0 items-center gap-2.5 self-start rounded-full bg-accent px-5 py-3 text-[0.95rem] font-semibold text-background transition-[filter] group-hover:brightness-110 md:self-center">
+                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-background/25">
+                  <svg width="13" height="13" viewBox="0 0 12 12" fill="currentColor" aria-hidden>
+                    <path d="M2 1.5 10 6l-8 4.5z" />
+                  </svg>
+                </span>
+                {t("storyCta")}
+              </span>
+            </div>
+          </Link>
+        </section>
+
         {/* ---- Hero ---- */}
         <section className="flex flex-col items-center pb-12 pt-16 text-center">
           {/* <span className="mb-5 inline-block max-w-full rounded-full border border-border bg-surface px-3.5 py-1.5 text-[0.8rem] text-muted">

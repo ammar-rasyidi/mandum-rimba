@@ -1,97 +1,114 @@
-import { Controller, Get, Param, Query } from "@nestjs/common";
+import {
+  Controller,
+  Get,
+  Param,
+  Query,
+  UnauthorizedException,
+} from "@nestjs/common";
+import { ArchiverService } from "../common/archiver.service";
+import { fetchIgVideos, type IgItem } from "../common/ig";
 
 /**
- * Latest public videos for a place story's official account. The frontend plays
- * them muted + autoplay on the closing beat. We fetch the account's public web
- * profile and keep a short cache so the feed auto-updates without hammering the
- * source; if the source blocks us (e.g. datacenter IPs in prod) we serve the
- * last good copy, else an empty list and the client falls back to a follow card.
+ * Latest public videos for a place story's official account, played muted +
+ * autoplay on the closing beat.
  *
- * NOTE: Instagram CDN video URLs are short-lived, so the cache TTL is kept low
- * and the client refetches periodically.
+ * Instagram rate-limits datacenter IPs (429), so in PROD we don't scrape it
+ * directly. A relay on a residential machine (see scripts/social-relay.ts) runs
+ * the fetch and publishes `social/<handle>.json` to R2; here we read that public
+ * copy. As a fallback (dev / residential IP) we fetch Instagram live. The client
+ * falls back to a plain follow card when the list is empty.
  */
-interface IgItem {
-  video: string;
-  poster?: string;
-  permalink?: string;
-  caption?: string;
-  ts: number;
-}
-
-const APP_ID = "936619743392459"; // public web app id used by instagram.com
-const UA =
-  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0 Safari/537.36";
-const TTL_MS = 30 * 60 * 1000; // 30 min
+const TTL_MS = 10 * 60 * 1000; // 10 min in-memory cache
+const R2_PUBLIC =
+  process.env.R2_PUBLIC_URL ??
+  "https://pub-e71bae449b864ca78974083cc5663453.r2.dev";
 
 @Controller("social")
 export class SocialController {
   private cache = new Map<string, { at: number; data: IgItem[] }>();
 
+  constructor(private readonly archiver: ArchiverService) {}
+
+  /**
+   * Manual relay trigger — fetches Instagram now and publishes to R2. ONLY works
+   * when served by an instance on a residential IP (your laptop / home API /
+   * dev), because Instagram 429s datacenter IPs. On prod this will just report
+   * the upstream error. Protect with SOCIAL_RELAY_KEY (?key=...).
+   *
+   *   GET /v1/social/relay?key=SECRET               (handles from SOCIAL_HANDLES)
+   *   GET /v1/social/relay?key=SECRET&handle=btn_tessonilo
+   */
+  @Get("relay")
+  async relay(
+    @Query("key") key?: string,
+    @Query("handle") handle?: string,
+  ): Promise<{ ok: boolean; results: { handle: string; count?: number; error?: string }[] }> {
+    const secret = process.env.SOCIAL_RELAY_KEY;
+    if (secret && key !== secret) throw new UnauthorizedException("bad key");
+    if (!this.archiver.enabled)
+      return { ok: false, results: [{ handle: "-", error: "R2 credentials missing" }] };
+
+    const handles = (
+      handle
+        ? [handle]
+        : (process.env.SOCIAL_HANDLES ?? "btn_tessonilo").split(",")
+    )
+      .map((h) => h.trim().toLowerCase().replace(/[^a-z0-9._]/g, "").slice(0, 40))
+      .filter(Boolean);
+
+    const results = [];
+    let ok = true;
+    for (const h of handles) {
+      try {
+        const items = await fetchIgVideos(h, 4);
+        await this.archiver.putJson(`social/${h}.json`, { items, at: Date.now() });
+        this.cache.set(h, { at: Date.now(), data: items });
+        results.push({ handle: h, count: items.length });
+      } catch (e) {
+        ok = false;
+        results.push({ handle: h, error: (e as Error).message });
+      }
+    }
+    return { ok, results };
+  }
+
   @Get("ig/:handle")
   async ig(
     @Param("handle") handle: string,
     @Query("debug") debug?: string,
-  ): Promise<{ items: IgItem[]; stale?: boolean; error?: string }> {
+  ): Promise<{ items: IgItem[]; stale?: boolean; source?: string; error?: string }> {
     const key = (handle || "").toLowerCase().replace(/[^a-z0-9._]/g, "").slice(0, 40);
     if (!key) return { items: [] };
 
     const cached = this.cache.get(key);
     if (cached && Date.now() - cached.at < TTL_MS) return { items: cached.data };
 
+    // 1. relay copy on R2 (written from a residential IP → not rate-limited).
+    //    Cache-bust per minute so the CDN edge doesn't serve a stale object.
     try {
-      const res = await fetch(
-        `https://i.instagram.com/api/v1/users/web_profile_info/?username=${encodeURIComponent(key)}`,
-        {
-          // the Sec-Fetch headers are required — Instagram's edge rejects the
-          // request with a "SecFetch Policy violation" (400) without them
-          headers: {
-            "x-ig-app-id": APP_ID,
-            "user-agent": UA,
-            accept: "*/*",
-            "sec-fetch-site": "same-origin",
-            "sec-fetch-mode": "cors",
-            "sec-fetch-dest": "empty",
-          },
-          signal: AbortSignal.timeout(9000),
-        },
-      );
-      if (!res.ok) throw new Error(`upstream ${res.status}`);
-      const raw = await res.text();
-      if (!raw.trim().startsWith("{"))
-        throw new Error(`non-json (blocked?): ${raw.slice(0, 60)}`);
-      const json = JSON.parse(raw) as Record<string, any>;
-      const edges: any[] =
-        json?.data?.user?.edge_owner_to_timeline_media?.edges ?? [];
-
-      const items: IgItem[] = [];
-      const collect = (n: any) => {
-        if (!n?.is_video || !n?.video_url) return;
-        items.push({
-          video: n.video_url,
-          poster: n.display_url,
-          permalink: n.shortcode
-            ? `https://www.instagram.com/reel/${n.shortcode}/`
-            : undefined,
-          caption: (n?.edge_media_to_caption?.edges?.[0]?.node?.text ?? "").slice(0, 160),
-          ts: n.taken_at_timestamp ?? 0,
-        });
-      };
-      for (const e of edges) {
-        collect(e?.node);
-        for (const k of e?.node?.edge_sidecar_to_children?.edges ?? []) collect(k?.node);
+      const bust = Math.floor(Date.now() / 60000);
+      const r = await fetch(`${R2_PUBLIC}/social/${key}.json?t=${bust}`, {
+        signal: AbortSignal.timeout(6000),
+      });
+      if (r.ok) {
+        const j = (await r.json()) as { items?: IgItem[] };
+        if (j?.items?.length) {
+          this.cache.set(key, { at: Date.now(), data: j.items });
+          return { items: j.items, ...(debug ? { source: "r2" } : {}) };
+        }
       }
-      items.sort((a, b) => b.ts - a.ts);
-      const top = items.slice(0, 4);
-      this.cache.set(key, { at: Date.now(), data: top });
-      return { items: top };
+    } catch {
+      /* no relay copy yet — fall through to a live fetch */
+    }
+
+    // 2. live fallback (works on dev / residential IPs; 429s on datacenter)
+    try {
+      const items = await fetchIgVideos(key, 4);
+      this.cache.set(key, { at: Date.now(), data: items });
+      return { items, ...(debug ? { source: "live" } : {}) };
     } catch (e) {
-      // source blocked/offline — serve the last good copy if we have one.
-      // Add ?debug=1 to see the failure reason (helps diagnose prod IP blocks).
       if (cached) return { items: cached.data, stale: true };
-      return {
-        items: [],
-        ...(debug ? { error: (e as Error).message } : {}),
-      };
+      return { items: [], ...(debug ? { error: (e as Error).message } : {}) };
     }
   }
 }

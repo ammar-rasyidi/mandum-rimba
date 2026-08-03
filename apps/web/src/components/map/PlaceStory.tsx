@@ -308,8 +308,11 @@ export default function PlaceStory({
     markers.current.forEach((m) => m.remove());
     markers.current = [];
     if (!map) return;
-    // only the small data callouts are geo-anchored; photo cards render fixed
-    const anns = (story.chapters[idx].annotations ?? []).filter((a) => !a.photo);
+    // only the small data callouts are geo-anchored; photo cards render fixed.
+    // On compact screens skip them entirely — they'd collide with the bottom stack.
+    const anns = isCompact
+      ? []
+      : (story.chapters[idx].annotations ?? []).filter((a) => !a.photo);
     const added = anns.map((a) => {
       const el = buildAnnotation(a, locale === "en");
       const mk = new maplibregl.Marker({ element: el, anchor: "bottom" })
@@ -323,7 +326,7 @@ export default function PlaceStory({
     markers.current = added;
     return () => added.forEach((m) => m.remove());
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [idx]);
+  }, [idx, isCompact]);
 
   // immersive: hide the site nav (via a body flag) for the duration
   useEffect(() => {
@@ -495,7 +498,7 @@ export default function PlaceStory({
       return (
         <div
           key={a.photo!.src}
-          className="pointer-events-auto relative aspect-[3/4] w-[96px] shrink-0 overflow-hidden rounded-xl border border-white/14 bg-black/50"
+          className="pointer-events-auto relative h-[84px] w-[64px] shrink-0 overflow-hidden rounded-lg border border-white/14 bg-black/50"
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -504,8 +507,8 @@ export default function PlaceStory({
             loading="lazy"
             className="absolute inset-0 h-full w-full object-cover"
           />
-          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 to-transparent p-1.5 pt-4">
-            <div className="text-[0.58rem] font-semibold leading-tight text-white">
+          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 to-transparent p-1 pt-3">
+            <div className="text-[0.5rem] font-semibold leading-tight text-white">
               {t(a.title)}
             </div>
           </div>
@@ -792,9 +795,15 @@ export default function PlaceStory({
         );
       })()}
 
-      {/* bottom: the fact card for this beat */}
+      {/* bottom: the fact card for this beat. On compact it's a bounded flex
+          column (dvh = the real visible height, minus the top bar) so nothing
+          overflows up into the chrome — the card fills what's left and scrolls. */}
       <div
-        className={`pointer-events-auto absolute inset-x-0 bottom-0 ${isCompact ? "p-3" : "p-4 md:p-8"}`}
+        className={`pointer-events-auto absolute inset-x-0 bottom-0 ${
+          isCompact
+            ? "flex max-h-[calc(100dvh-3.25rem)] flex-col p-2.5"
+            : "p-4 md:p-8"
+        }`}
       >
         {/* closing beat: latest videos from the official account (auto-updating,
             muted autoplay) — falls back to a follow card if the feed is empty */}
@@ -809,7 +818,7 @@ export default function PlaceStory({
         )}
         {/* COMPACT: tree-cover-loss timeline, stacked above the card */}
         {isCompact && showLoss && (
-          <div className="mx-auto mb-2 max-w-[640px] rounded-2xl border border-white/12 bg-black/60 px-4 py-2.5 backdrop-blur-md">
+          <div className="mx-auto mb-2 w-full max-w-[640px] shrink-0 rounded-2xl border border-white/12 bg-black/60 px-4 py-2 backdrop-blur-md">
             <div className="flex items-center justify-between gap-3">
               <span
                 className="text-[0.56rem] uppercase tracking-[0.18em]"
@@ -842,7 +851,7 @@ export default function PlaceStory({
         )}
         {/* COMPACT: legend chips, stacked above the card */}
         {isCompact && legend.length > 0 && (
-          <div className="mx-auto mb-2 flex max-w-[640px] flex-wrap items-center gap-x-3 gap-y-1 rounded-2xl border border-white/12 bg-black/55 px-4 py-2 backdrop-blur-md">
+          <div className="mx-auto mb-2 flex w-full max-w-[640px] shrink-0 flex-wrap items-center gap-x-3 gap-y-1 rounded-2xl border border-white/12 bg-black/55 px-4 py-1.5 backdrop-blur-md">
             {legend.map((l) => (
               <span
                 key={l.id}
@@ -860,14 +869,14 @@ export default function PlaceStory({
         {/* COMPACT: photos as a horizontal scroll strip ABOVE the fact card, so
             all info stays visible and nothing overlaps or clips */}
         {isCompact && photoAnns.length > 0 && (
-          <div className="mx-auto mb-2 flex max-w-[640px] gap-2 overflow-x-auto px-1 py-2 [-ms-overflow-style:none] [scrollbar-width:none]">
+          <div className="mx-auto mb-2 flex w-full max-w-[640px] shrink-0 gap-2 overflow-x-auto px-1 py-1 [-ms-overflow-style:none] [scrollbar-width:none]">
             {photoAnns.map((a, i) => renderPhoto(a, i, true))}
           </div>
         )}
         <div
           key={idx}
-          className={`mx-auto flex max-w-[640px] flex-col rounded-2xl border border-white/12 bg-black/65 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.8)] backdrop-blur-md animate-[panel-in_0.6s_cubic-bezier(.2,.7,.2,1)] ${
-            isCompact ? "max-h-[60vh] p-4" : "p-5 md:p-6"
+          className={`mx-auto flex w-full max-w-[640px] flex-col rounded-2xl border border-white/12 bg-black/65 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.8)] backdrop-blur-md animate-[panel-in_0.6s_cubic-bezier(.2,.7,.2,1)] ${
+            isCompact ? "min-h-0 flex-1 p-3.5" : "p-5 md:p-6"
           }`}
         >
           <div

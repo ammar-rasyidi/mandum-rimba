@@ -20,7 +20,7 @@ async function main() {
   const handles = (
     process.argv.slice(2).length
       ? process.argv.slice(2)
-      : (process.env.SOCIAL_HANDLES ?? "btn_tessonilo").split(",")
+      : (process.env.SOCIAL_HANDLES ?? "btn_tessonilo,bbtn_gunungleuser").split(",")
   )
     .map((s) => s.trim().toLowerCase())
     .filter(Boolean);

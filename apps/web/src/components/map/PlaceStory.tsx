@@ -9,23 +9,28 @@ import { LOSS_ATTRIBUTION, LOSS_COLOR } from "@/lib/forest-loss";
 import StorySocial from "./StorySocial";
 import type { Annotation, Bi, PlaceStory } from "./placeStories";
 
-/** a terrain-anchored callout: glowing dot on the map + leader line + info card.
- *  Built as a plain element so MapLibre keeps it pinned (and elevated) as the
- *  camera flies. */
-/** small geo-anchored data callout (numbers/labels), sits above its point.
- *  Photo callouts are NOT built here — they render as fixed side cards. */
+/** a terrain-anchored callout: glowing dot on the map + leader line + info card,
+ *  pinned (and elevated) as the camera flies. Data callouts show numbers/labels;
+ *  a callout with a `photo` (used by `float` photo annotations) also shows the
+ *  image, so species can hover over the terrain instead of sitting in a column. */
 function buildAnnotation(a: Annotation, en: boolean): HTMLDivElement {
   const tx = (b?: Bi) => (b ? (en ? b.en : b.id) : "");
   const el = document.createElement("div");
   el.style.cssText =
     "opacity:0;transition:opacity .7s ease;pointer-events:none;display:flex;flex-direction:column;align-items:flex-start;font-family:-apple-system,system-ui,sans-serif;";
+  // photo cards get a fixed width so the image can go edge-to-edge (full-bleed);
+  // data-only callouts stay auto-width and single-line.
+  const cardW = a.photo ? "width:212px;" : "max-width:280px;";
   el.innerHTML = `
-    <div style="background:rgba(11,18,14,.84);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.16);border-radius:12px;padding:9px 13px;box-shadow:0 16px 36px -14px #000;white-space:nowrap;max-width:280px;">
-      ${a.value ? `<div style="font:800 1.15rem/1 -apple-system,system-ui,sans-serif;color:#fff;letter-spacing:-.01em;font-variant-numeric:tabular-nums;">${a.value}</div>` : ""}
-      <div style="font:600 .6rem/1.3 -apple-system,system-ui,sans-serif;text-transform:uppercase;letter-spacing:.14em;color:#7fd6a8;${a.value ? "margin-top:3px;" : ""}">${tx(a.title)}</div>
-      ${a.note ? `<div style="font-size:.68rem;color:rgba(255,255,255,.72);margin-top:2px;white-space:normal;font-style:italic;">${tx(a.note)}</div>` : ""}
-      ${a.sub ? `<div style="font-size:.66rem;color:rgba(255,255,255,.58);margin-top:2px;white-space:normal;">${tx(a.sub)}</div>` : ""}
-      ${a.source ? `<div style="font:500 .56rem/1.3 -apple-system,system-ui,sans-serif;color:rgba(255,255,255,.4);margin-top:5px;">${en ? "Source" : "Sumber"}: ${a.source.name}</div>` : ""}
+    <div style="background:rgba(11,18,14,.84);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.16);border-radius:12px;overflow:hidden;box-shadow:0 16px 36px -14px #000;${cardW}">
+      ${a.photo ? `<img src="${a.photo.src}" alt="${tx(a.title)}" loading="lazy" style="display:block;width:100%;aspect-ratio:4/3;object-fit:cover;" />` : ""}
+      <div style="padding:9px 13px;white-space:nowrap;">
+        ${a.value ? `<div style="font:800 1.15rem/1 -apple-system,system-ui,sans-serif;color:#fff;letter-spacing:-.01em;font-variant-numeric:tabular-nums;">${a.value}</div>` : ""}
+        <div style="font:600 .6rem/1.3 -apple-system,system-ui,sans-serif;text-transform:uppercase;letter-spacing:.14em;color:#7fd6a8;${a.value ? "margin-top:3px;" : ""}">${tx(a.title)}</div>
+        ${a.note ? `<div style="font-size:.68rem;color:rgba(255,255,255,.72);margin-top:2px;white-space:normal;font-style:italic;">${tx(a.note)}</div>` : ""}
+        ${a.sub ? `<div style="font-size:.66rem;color:rgba(255,255,255,.58);margin-top:2px;white-space:normal;">${tx(a.sub)}</div>` : ""}
+        ${a.source ? `<div style="font:500 .56rem/1.3 -apple-system,system-ui,sans-serif;color:rgba(255,255,255,.4);margin-top:5px;white-space:normal;">${en ? "Source" : "Sumber"}: ${a.source.name}</div>` : ""}
+      </div>
     </div>
     <svg width="20" height="30" viewBox="0 0 20 30" style="margin-left:16px;display:block;"><line x1="10" y1="0" x2="10" y2="30" stroke="#57b98a" stroke-width="1.5" stroke-dasharray="3 4"/></svg>
     <div style="width:13px;height:13px;border-radius:50%;background:#57b98a;margin-left:9.5px;margin-top:-4px;box-shadow:0 0 0 4px rgba(87,185,138,.22),0 0 16px 2px rgba(87,185,138,.85);"></div>`;
@@ -178,11 +183,58 @@ export default function PlaceStory({
     const cur = story.chapters[idx];
     if (cur.animateLoss) return; // advanced on loss completion, not a fixed timer
     const flight = cur.cam.duration ?? 5000;
-    const read = idx === 0 ? 2600 : 3800 + (cur.points?.length ?? 0) * 1500;
+    // orbit beats linger longer so the camera circles a good arc before moving on
+    const read =
+      idx === 0
+        ? 2600
+        : (cur.cam.orbit ? 7000 : 3800) + (cur.points?.length ?? 0) * 1500;
     const timer = setTimeout(() => fly(idx + 1), flight + read);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [idx, playing, entered, last]);
+
+  // ORBIT: on flagged beats, once the fly-in settles, slowly circle the camera
+  // around the centered subject (setBearing rotates around the map center, which
+  // is the animal) so you view the "giant" from every side. Keeps going even when
+  // paused, so people can linger on it; stops on beat change or a manual drag.
+  useEffect(() => {
+    const map = mapRef.current;
+    const cam = story.chapters[idx].cam;
+    if (!map || !entered || !cam.orbit) return;
+    const DEG_PER_MS = 9 / 1000; // ~9 deg/sec, a slow cinematic circle
+    let raf = 0;
+    let base = 0;
+    let t0 = 0;
+    let stopped = false;
+    const spin = (now: number) => {
+      if (stopped) return;
+      if (!t0) {
+        t0 = now;
+        base = map.getBearing();
+      }
+      map.setBearing(base + (now - t0) * DEG_PER_MS);
+      raf = requestAnimationFrame(spin);
+    };
+    const stop = () => {
+      stopped = true;
+      if (raf) cancelAnimationFrame(raf);
+      map.off("dragstart", stop);
+    };
+    // begin after the easeTo into this beat has arrived
+    const startTimer = setTimeout(
+      () => {
+        if (stopped) return;
+        map.on("dragstart", stop); // hand control back the moment they grab the map
+        raf = requestAnimationFrame(spin);
+      },
+      (cam.duration ?? 5000) + 250,
+    );
+    return () => {
+      clearTimeout(startTimer);
+      stop();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [idx, entered]);
 
   // reset the "has the loss actually played this beat" flag on every beat change
   useEffect(() => {
@@ -249,8 +301,10 @@ export default function PlaceStory({
       faded = true;
       const t0 = performance.now();
       const step = (now: number) => {
-        const p = Math.min(1, (now - t0) / 3000);
-        els.forEach((a, i) => (a.volume = tracks[i].vol * p));
+        // clamp: the first rAF timestamp can precede t0 → a tiny negative p,
+        // and setting a negative volume throws IndexSizeError.
+        const p = Math.max(0, Math.min(1, (now - t0) / 3000));
+        els.forEach((a, i) => (a.volume = Math.max(0, Math.min(1, tracks[i].vol * p))));
         if (p < 1) raf = requestAnimationFrame(step);
       };
       raf = requestAnimationFrame(step);
@@ -308,11 +362,12 @@ export default function PlaceStory({
     markers.current.forEach((m) => m.remove());
     markers.current = [];
     if (!map) return;
-    // only the small data callouts are geo-anchored; photo cards render fixed.
-    // On compact screens skip them entirely — they'd collide with the bottom stack.
+    // data callouts + `float` photo cards are geo-anchored on the terrain;
+    // plain photo cards render fixed in the side columns. On compact screens skip
+    // all geo markers entirely — they'd collide with the bottom stack.
     const anns = isCompact
       ? []
-      : (story.chapters[idx].annotations ?? []).filter((a) => !a.photo);
+      : (story.chapters[idx].annotations ?? []).filter((a) => !a.photo || a.float);
     const added = anns.map((a) => {
       const el = buildAnnotation(a, locale === "en");
       const mk = new maplibregl.Marker({ element: el, anchor: "bottom" })
@@ -487,10 +542,14 @@ export default function PlaceStory({
     });
   };
 
-  // split across right + left columns so several never stack or clip
+  // photos: `float` ones hover on the terrain (geo-anchored, handled by the
+  // markers effect); the rest fill the side columns. On compact all photos fall
+  // back to the bottom strip. Split side photos across right + left so they never
+  // stack or clip.
   const photoAnns = (ch.annotations ?? []).filter((a) => a.photo);
-  const rightPhotos = photoAnns.filter((_, i) => i % 2 === 0);
-  const leftPhotos = photoAnns.filter((_, i) => i % 2 === 1);
+  const sidePhotos = photoAnns.filter((a) => !a.float);
+  const rightPhotos = sidePhotos.filter((_, i) => i % 2 === 0);
+  const leftPhotos = sidePhotos.filter((_, i) => i % 2 === 1);
   // full card (desktop, floats in the side margins) or a small thumbnail (the
   // compact strip on phones — image + name only, so it fits a short screen)
   const renderPhoto = (a: Annotation, i: number, compact = false) => {

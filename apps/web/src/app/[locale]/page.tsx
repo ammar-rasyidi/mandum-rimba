@@ -139,44 +139,50 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* ---- Place Story: cinematic feature, deep-links into the story ---- */}
-        <section className="mt-14">
-          <Link
-            href={{ pathname: "/peta", query: { story: "tesso-nilo" } }}
-            className="group relative block overflow-hidden rounded-3xl border border-[var(--glass-border)] bg-[var(--bg-raised)] shadow-[var(--shadow)] transition-[transform,border-color] hover:-translate-y-0.5 hover:border-accent hover:no-underline"
-          >
-            {/* accent wash + faint topographic motion, purely decorative */}
-            <div
-              aria-hidden
-              className="pointer-events-none absolute inset-0 opacity-90"
-              style={{
-                background:
-                  "radial-gradient(120% 140% at 85% 15%, var(--accent-dim), transparent 55%)",
-              }}
-            />
-            <div className="relative flex flex-col gap-6 p-8 md:flex-row md:items-center md:justify-between md:p-10">
-              <div className="max-w-[36rem]">
-                <span className="inline-flex items-center gap-2 text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-accent">
-                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-accent" />
-                  {t("storyKicker")}
+        {/* ---- Place Stories: cinematic features, deep-link into each story ---- */}
+        <section className="mt-14 flex flex-col gap-5">
+          {[
+            { id: "gunung-leuser", title: t("storyLeuserTitle"), body: t("storyLeuserBody") },
+            { id: "tesso-nilo", title: t("storyTitle"), body: t("storyBody") },
+          ].map((s) => (
+            <Link
+              key={s.id}
+              href={{ pathname: "/peta", query: { story: s.id } }}
+              className="group relative block overflow-hidden rounded-3xl border border-[var(--glass-border)] bg-[var(--bg-raised)] shadow-[var(--shadow)] transition-[transform,border-color] hover:-translate-y-0.5 hover:border-accent hover:no-underline"
+            >
+              {/* accent wash, purely decorative */}
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-0 opacity-90"
+                style={{
+                  background:
+                    "radial-gradient(120% 140% at 85% 15%, var(--accent-dim), transparent 55%)",
+                }}
+              />
+              <div className="relative flex flex-col gap-6 p-8 md:flex-row md:items-center md:justify-between md:p-10">
+                <div className="max-w-[36rem]">
+                  <span className="inline-flex items-center gap-2 text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-accent">
+                    <span className="inline-block h-1.5 w-1.5 rounded-full bg-accent" />
+                    {t("storyKicker")}
+                  </span>
+                  <h2 className="mb-0 mt-2 text-[1.9rem] font-bold leading-[1.1] tracking-tight text-foreground">
+                    {s.title}
+                  </h2>
+                  <p className="mt-3 text-[1.02rem] leading-relaxed text-muted">
+                    {s.body}
+                  </p>
+                </div>
+                <span className="inline-flex shrink-0 items-center gap-2.5 self-start rounded-full bg-accent px-5 py-3 text-[0.95rem] font-semibold text-background transition-[filter] group-hover:brightness-110 md:self-center">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-background/25">
+                    <svg width="13" height="13" viewBox="0 0 12 12" fill="currentColor" aria-hidden>
+                      <path d="M2 1.5 10 6l-8 4.5z" />
+                    </svg>
+                  </span>
+                  {t("storyCta")}
                 </span>
-                <h2 className="mb-0 mt-2 text-[1.9rem] font-bold leading-[1.1] tracking-tight text-foreground">
-                  {t("storyTitle")}
-                </h2>
-                <p className="mt-3 text-[1.02rem] leading-relaxed text-muted">
-                  {t("storyBody")}
-                </p>
               </div>
-              <span className="inline-flex shrink-0 items-center gap-2.5 self-start rounded-full bg-accent px-5 py-3 text-[0.95rem] font-semibold text-background transition-[filter] group-hover:brightness-110 md:self-center">
-                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-background/25">
-                  <svg width="13" height="13" viewBox="0 0 12 12" fill="currentColor" aria-hidden>
-                    <path d="M2 1.5 10 6l-8 4.5z" />
-                  </svg>
-                </span>
-                {t("storyCta")}
-              </span>
-            </div>
-          </Link>
+            </Link>
+          ))}
         </section>
 
         {/* ---- Hero ---- */}

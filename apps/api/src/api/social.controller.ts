@@ -51,7 +51,7 @@ export class SocialController {
     const handles = (
       handle
         ? [handle]
-        : (process.env.SOCIAL_HANDLES ?? "btn_tessonilo").split(",")
+        : (process.env.SOCIAL_HANDLES ?? "btn_tessonilo,bbtn_gunungleuser").split(",")
     )
       .map((h) => h.trim().toLowerCase().replace(/[^a-z0-9._]/g, "").slice(0, 40))
       .filter(Boolean);

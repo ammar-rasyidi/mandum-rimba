@@ -27,8 +27,14 @@
   --glass-highlight: rgba(250, 250, 250, 0.06);
   --glass-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
   /* sky behind the globe/terrain views (canvas is transparent above the
-     horizon there) — night sky in dark mode */
+     horizon there), night sky in dark mode */
   --map-sky: #080b13;
+  /* --bg as raw channels, so gradients can fade the page colour in from nothing
+     at any opacity. Fading a transparent version of the PAGE colour in is what
+     keeps the hero clean: interpolating a dark scrim directly to an opaque
+     white passes through solid grey on the way, which is the haze that made
+     this look dirty. */
+  --bg-rgb: 33 33 33;
   color-scheme: dark;
 }
 
@@ -51,6 +57,7 @@
   --glass-shadow: 0 12px 40px rgba(33, 33, 33, 0.12);
   /* sky blue behind the globe/terrain views in light mode */
   --map-sky: #a9d5f0;
+  --bg-rgb: 255 255 255;
   color-scheme: light;
 }
 
@@ -70,7 +77,7 @@ body {
   line-height: 1.6;
 }
 
-/* Preflight is off, so reset native <button> chrome ourselves — otherwise the
+/* Preflight is off, so reset native <button> chrome ourselves, otherwise the
    UA border, background, focus ring and the mobile tap-highlight show through
    (the "native border when pressed" look). Every button is styled via classes,
    and utilities (`border`, `bg-*`, `text-*`) still win by specificity, so a
@@ -108,7 +115,7 @@ a:hover {
   }
 }
 
-/* Phone rotating from portrait to landscape — the "rotate your device" hint. */
+/* Phone rotating from portrait to landscape: the "rotate your device" hint. */
 @keyframes rotate-hint {
   0%,
   35% {
@@ -138,6 +145,308 @@ a:hover {
   }
 }
 
+/* Closing biodiversity montage: each image flies in (fade + rise + scale) with a
+   staggered delay, then drifts via .story-float. */
+@keyframes gallery-in {
+  from {
+    opacity: 0;
+    transform: translateY(46px) scale(0.84);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.gallery-in {
+  opacity: 0;
+  animation: gallery-in 1s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: var(--d, 0ms);
+}
+@media (prefers-reduced-motion: reduce) {
+  .gallery-in {
+    animation: none !important;
+    opacity: 1 !important;
+  }
+}
+
+/* ===========================================================================
+   Homepage: cinematic hero + scroll choreography.
+   =========================================================================== */
+
+/* Hero content rises + fades on load, staggered via --d on children. */
+@keyframes hero-rise {
+  from {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.hero-in > * {
+  opacity: 0;
+  animation: hero-rise 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: var(--d, 0ms);
+}
+
+/* Slow Ken Burns drift on the hero photo, so the still image breathes. */
+@keyframes hero-pan {
+  from {
+    transform: scale(1.08) translate3d(0, 0, 0);
+  }
+  to {
+    transform: scale(1.16) translate3d(-1.5%, -1.5%, 0);
+  }
+}
+.hero-photo {
+  animation: hero-pan 26s ease-in-out infinite alternate;
+}
+
+/* The earth never sits perfectly still. A long, slow drift on its own element,
+   so it composes with the scroll parallax the hero applies to the layer above
+   instead of fighting it. */
+@keyframes hero-drift {
+  from {
+    transform: scale(1.02) translate3d(0, 0, 0);
+  }
+  to {
+    transform: scale(1.09) translate3d(-1.2%, -1%, 0);
+  }
+}
+.hero-earth {
+  animation: hero-drift 44s ease-in-out infinite alternate;
+}
+
+/* The horizon breathes: the accent glow above the earth swells and settles. */
+@keyframes horizon-glow {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+.horizon-glow {
+  animation: horizon-glow 11s ease-in-out infinite;
+}
+
+/* ===========================================================================
+   Hero atmosphere. Everything here is transform/opacity/filter only, so it all
+   runs on the compositor, and every piece is switched off under
+   prefers-reduced-motion further down.
+   =========================================================================== */
+
+/* Aurora: two wide bands of colour that drift and breathe along the horizon,
+   just above where the earth's limb sits. Heavily blurred, so it reads as light
+   in the atmosphere rather than as a shape. */
+@keyframes aurora-drift {
+  0% {
+    transform: translate3d(-8%, 0, 0) scaleY(1);
+    opacity: 0.35;
+  }
+  50% {
+    transform: translate3d(6%, -12%, 0) scaleY(1.35);
+    opacity: 0.75;
+  }
+  100% {
+    transform: translate3d(-8%, 0, 0) scaleY(1);
+    opacity: 0.35;
+  }
+}
+.aurora {
+  position: absolute;
+  left: -20%;
+  right: -20%;
+  height: 46%;
+  top: 2%;
+  filter: blur(58px);
+  mix-blend-mode: screen;
+  will-change: transform, opacity;
+  animation: aurora-drift 26s ease-in-out infinite;
+}
+.aurora-2 {
+  animation-duration: 37s;
+  animation-direction: reverse;
+  filter: blur(76px);
+  opacity: 0.6;
+}
+
+/* A meteor every so often: a short streak that falls across the sky and is gone.
+   Long delays and a tiny active fraction, so it stays a surprise. */
+@keyframes meteor-fall {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(28deg);
+    opacity: 0;
+  }
+  2% {
+    opacity: 1;
+  }
+  12% {
+    opacity: 0;
+  }
+  100% {
+    transform: translate3d(-52vw, 42vh, 0) rotate(28deg);
+    opacity: 0;
+  }
+}
+.meteor {
+  position: absolute;
+  width: 130px;
+  height: 1.5px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.9), transparent);
+  box-shadow: 0 0 12px 1px rgba(190, 230, 255, 0.65);
+  opacity: 0;
+  will-change: transform, opacity;
+  animation: meteor-fall 14s linear infinite;
+}
+
+/* A band of light that travels across a heading once, as it scrolls into view. */
+@keyframes title-sweep {
+  from {
+    background-position: -150% 0;
+  }
+  to {
+    background-position: 250% 0;
+  }
+}
+.sweep {
+  /* Explicit colours, NOT currentColor: the element's own colour is transparent
+     so the text can be painted by this gradient, and currentColor would resolve
+     against that and paint nothing. With the gradient parked at its start the
+     heading is simply --text, so it reads normally wherever the scroll-driven
+     animation below isn't supported. */
+  background-image: linear-gradient(
+    100deg,
+    var(--text) 0%,
+    var(--text) 38%,
+    var(--accent) 50%,
+    var(--text) 62%,
+    var(--text) 100%
+  );
+  background-size: 250% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+}
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .sweep {
+      animation: title-sweep 1.6s ease-out both;
+      animation-timeline: view();
+      animation-range: entry 15% cover 38%;
+    }
+  }
+}
+
+/* The four giants share one spotlight that follows the pointer across them. */
+.spotlight::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  background: radial-gradient(
+    260px circle at var(--mx, 50%) var(--my, 50%),
+    rgba(255, 255, 255, 0.16),
+    transparent 62%
+  );
+}
+.spotlight-on .spotlight::after {
+  opacity: 1;
+}
+
+/* Twinkling starfield for the hero's slice of space (masked to the top so it
+   only dusts the sky above the horizon, never the earth). */
+.hero-stars {
+  background-image:
+    radial-gradient(1px 1px at 12% 18%, rgba(255, 255, 255, 0.8), transparent),
+    radial-gradient(1px 1px at 28% 32%, rgba(255, 255, 255, 0.5), transparent),
+    radial-gradient(1.4px 1.4px at 44% 12%, rgba(255, 255, 255, 0.7), transparent),
+    radial-gradient(1px 1px at 61% 26%, rgba(255, 255, 255, 0.5), transparent),
+    radial-gradient(1.2px 1.2px at 74% 16%, rgba(255, 255, 255, 0.75), transparent),
+    radial-gradient(1px 1px at 88% 30%, rgba(255, 255, 255, 0.45), transparent),
+    radial-gradient(1px 1px at 52% 6%, rgba(255, 255, 255, 0.6), transparent);
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 18%, transparent 42%);
+  mask-image: linear-gradient(to bottom, #000 0%, #000 18%, transparent 42%);
+  opacity: 0.65;
+  animation: star-twinkle 5s ease-in-out infinite alternate;
+}
+@keyframes star-twinkle {
+  from {
+    opacity: 0.4;
+  }
+  to {
+    opacity: 0.7;
+  }
+}
+
+/* Bouncing scroll cue. */
+@keyframes scroll-cue {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.55;
+  }
+  50% {
+    transform: translateY(7px);
+    opacity: 1;
+  }
+}
+.scroll-cue {
+  animation: scroll-cue 1.9s ease-in-out infinite;
+}
+
+/* JS-free scroll reveal, only engages where scroll-driven timelines are
+   supported, so everywhere else the content is simply visible (no FOUC risk). */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    @keyframes reveal-in {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: none;
+      }
+    }
+    .reveal {
+      animation: reveal-in linear both;
+      animation-timeline: view();
+      animation-range: entry 2% cover 22%;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-in > *,
+  .hero-photo,
+  .hero-earth,
+  .horizon-glow,
+  .aurora,
+  .meteor,
+  .sweep,
+  .hero-stars,
+  .scroll-cue {
+    animation: none !important;
+    opacity: 1 !important;
+  }
+  .meteor {
+    opacity: 0 !important;
+  }
+  .sweep {
+    color: inherit;
+    -webkit-text-fill-color: currentColor;
+    background: none;
+  }
+}
+
 /* Rise + fade for a horizontally-centred card: keeps translateX(-50%) through
    the whole animation so it doesn't slide in from the side. */
 @keyframes rise-in {
@@ -157,7 +466,7 @@ body[data-immersive] [data-sitenav] {
   pointer-events: none;
   transition: opacity 0.4s ease;
 }
-/* the inner <nav> sets pointer-events:auto — override it too, or the hidden nav
+/* the inner <nav> sets pointer-events:auto, so override it too or the hidden nav
    (z-50, above the z-40 story chrome) still swallows clicks on Share/Close */
 body[data-immersive] [data-sitenav] * {
   pointer-events: none;
@@ -175,6 +484,13 @@ body[data-immersive] [data-sitenav] * {
     box-shadow:
       inset 0 1px 0 var(--glass-highlight),
       var(--glass-shadow);
+  }
+
+  /* The top navbar reads as a solid white bar in light mode (per request); dark
+     mode keeps the frosted-glass look. */
+  :root[data-theme="light"] [data-sitenav] .glass,
+  :root[data-theme="light"] [data-sitenav] nav {
+    background: #ffffff;
   }
 
   /* Range slider, Preflight is off, so we reset the native track/thumb chrome

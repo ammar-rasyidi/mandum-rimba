@@ -80,8 +80,24 @@
     "storyTitle": "Tesso Nilo National Park",
     "storyBody": "A cinematic flight over Tesso Nilo: what remains, what's been lost, and who still lives there. Data and sources, woven into one story.",
     "storyLeuserTitle": "Gunung Leuser National Park",
-    "storyLeuserBody": "Climb the spine of the Barisan Range, where four of Sumatra's giants, orangutan, rhino, elephant, and tiger, still share one forest. Mountains, mist, and the wildlife that remains, in a single journey.",
+    "storyLeuserBody": "Climb the spine of the Barisan Range, where four of Sumatra’s giants still share one forest. Mountains, mist, and the wildlife that remains, in a single journey.",
     "storyCta": "Start the story",
+    "heroScroll": "Scroll to explore",
+    "giantsKicker": "Four Giants",
+    "giantsTitle": "Their last stronghold",
+    "giantsBody": "In the same forest, Sumatra's great animals still hold on. Every hectare lost narrows the space they have left.",
+    "statusCR": "Critical (CR)",
+    "giantOrangutan": "Sumatran orangutan",
+    "giantTiger": "Sumatran tiger",
+    "giantElephant": "Sumatran elephant",
+    "giantRhino": "Sumatran rhino",
+    "showcaseKicker": "One Map",
+    "showcaseTitle": "Every layer, on a single map",
+    "showcaseBody": "Deforestation, concessions, protected areas, and wildlife sightings, woven into one map you can rotate, tilt, and explore down to the village.",
+    "showcase3dTitle": "3D Terrain",
+    "showcase3dBody": "See forests and mountains in real relief. Tilt the earth, fly over the landscape, and feel the scale.",
+    "showcaseFlatTitle": "Flat Map",
+    "showcaseFlatBody": "Compare concessions and protected areas side by side across the archipelago, from Sumatra to Papua.",
     "campaignCta": "Who lives near you",
     "campaignCtaSub": "Find threatened wildlife near you",
     "ktpCta": "Make a Forest Resident Card",
@@ -172,7 +188,7 @@
     "viewHints": {
       "flat": "Flat map (default analytical view)",
       "globe": "See Indonesia on a 3D globe",
-      "terrain": "3D globe with real elevation — tilt to see mountains and valleys"
+      "terrain": "3D globe with real elevation, tilt to see mountains and valleys"
     },
     "realmTour": "Explore realms",
     "realmTourPlay": "Tour",
@@ -181,17 +197,17 @@
       "sundaland": {
         "short": "Sundaland",
         "name": "Sundaland",
-        "desc": "Sumatra, Borneo and Java — home to tigers, orangutans and elephants."
+        "desc": "Sumatra, Borneo and Java, home to tigers, orangutans and elephants."
       },
       "wallacea": {
         "short": "Wallacea",
         "name": "Wallacea",
-        "desc": "Sulawesi, Maluku and the Lesser Sundas — a singular transition zone: anoa, babirusa, Komodo dragon."
+        "desc": "Sulawesi, Maluku and the Lesser Sundas, a singular transition zone: anoa, babirusa, Komodo dragon."
       },
       "papua": {
         "short": "Papua",
         "name": "Papua",
-        "desc": "New Guinea and its islands — birds-of-paradise, tree kangaroos and echidnas."
+        "desc": "New Guinea and its islands: birds-of-paradise, tree kangaroos and echidnas."
       }
     },
     "zoomIn": "Zoom in",
@@ -244,7 +260,7 @@
     "shareCaption": "Caption",
     "shareAction": "Share",
     "shareNative": "Share to app",
-    "shareHint": "X, Threads & Facebook open a text composer — the image is copied for you to paste. Instagram: use Share (mobile) or download then upload.",
+    "shareHint": "X, Threads & Facebook open a text composer, the image is copied for you to paste. Instagram: use Share (mobile) or download then upload.",
     "shareCopyImage": "Copy image",
     "shareDownload": "Download",
     "shareCopyText": "Copy text",
@@ -258,7 +274,7 @@
     "fireDayNight": "Day / night",
     "fireDay": "Day",
     "fireNight": "Night",
-    "fireNote": "A hotspot is a satellite thermal-anomaly detection (near-real-time) and is unverified. Sources vary — it may come from land activity, industry, or a gas flare — and it does not imply causation. Ground verification is required.",
+    "fireNote": "A hotspot is a satellite thermal-anomaly detection (near-real-time) and is unverified. Sources vary, it may come from land activity, industry, or a gas flare, and it does not imply causation. Ground verification is required.",
     "reportTitle": "Area Report",
     "reportIntro": "Pick a region for sourced, citable environmental statistics (downloadable as PDF/CSV/JSON).",
     "reportSearch": "Search a regency / province…",

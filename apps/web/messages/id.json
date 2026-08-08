@@ -80,8 +80,24 @@
     "storyTitle": "Taman Nasional Tesso Nilo",
     "storyBody": "Terbang sinematik di atas Tesso Nilo: apa yang tersisa, apa yang hilang, dan siapa yang masih tinggal di dalamnya. Data dan sumber, dirangkai jadi satu cerita.",
     "storyLeuserTitle": "Taman Nasional Gunung Leuser",
-    "storyLeuserBody": "Naik ke punggung Pegunungan Barisan, tempat empat raksasa Sumatra, Orangutan, Badak, Gajah, dan Harimau, masih berbagi satu hutan. Gunung, kabut, dan satwa yang tersisa, dalam satu perjalanan.",
+    "storyLeuserBody": "Naik ke punggung pegunungan yang masih hijau, tempat empat raksasa Sumatra masih berbagi satu hutan. Di bawah kabut dan gunung, satwa yang tersisa menahan jejak mereka dalam satu perjalanan yang semakin rapat.",
     "storyCta": "Mulai cerita",
+    "heroScroll": "Gulir untuk menjelajah",
+    "giantsKicker": "Empat Raksasa",
+    "giantsTitle": "Rumah terakhir mereka",
+    "giantsBody": "Di hutan yang sama, satwa-satwa besar Sumatra masih bertahan. Setiap hektare yang hilang mempersempit ruang hidup yang tersisa.",
+    "statusCR": "Kritis (CR)",
+    "giantOrangutan": "Orangutan Sumatra",
+    "giantTiger": "Harimau Sumatra",
+    "giantElephant": "Gajah Sumatra",
+    "giantRhino": "Badak Sumatra",
+    "showcaseKicker": "Satu Peta",
+    "showcaseTitle": "Semua data, dalam satu peta",
+    "showcaseBody": "Deforestasi, konsesi, kawasan lindung, dan perjumpaan satwa, dirangkai jadi satu peta yang bisa kamu putar, miringkan, dan telusuri sampai ke tingkat desa.",
+    "showcase3dTitle": "Terrain 3D",
+    "showcase3dBody": "Lihat hutan dan pegunungan dalam relief nyata. Miringkan bumi, terbang di atas bentang alam, dan rasakan skalanya.",
+    "showcaseFlatTitle": "Peta Datar",
+    "showcaseFlatBody": "Bandingkan konsesi dan kawasan lindung berdampingan di seluruh Nusantara, dari Sumatra sampai Papua.",
     "campaignCta": "Yang tinggal di dekatmu",
     "campaignCtaSub": "Temukan satwa terancam di dekatmu",
     "ktpCta": "Bikin Kartu Penduduk Rimba",
@@ -172,7 +188,7 @@
     "viewHints": {
       "flat": "Peta datar (tampilan analitik bawaan)",
       "globe": "Lihat Indonesia dalam globe 3D",
-      "terrain": "Globe 3D dengan elevasi nyata — miringkan untuk melihat gunung dan lembah"
+      "terrain": "Globe 3D dengan elevasi nyata, miringkan untuk melihat gunung dan lembah"
     },
     "realmTour": "Jelajah realm",
     "realmTourPlay": "Tur",
@@ -181,17 +197,17 @@
       "sundaland": {
         "short": "Sundaland",
         "name": "Paparan Sunda (Sundaland)",
-        "desc": "Sumatra, Kalimantan, dan Jawa — rumah harimau, orangutan, dan gajah."
+        "desc": "Sumatra, Kalimantan, dan Jawa, rumah harimau, orangutan, dan gajah."
       },
       "wallacea": {
         "short": "Wallacea",
         "name": "Wallacea",
-        "desc": "Sulawesi, Maluku, dan Nusa Tenggara — zona transisi unik: anoa, babirusa, komodo."
+        "desc": "Sulawesi, Maluku, dan Nusa Tenggara, zona transisi unik: anoa, babirusa, komodo."
       },
       "papua": {
         "short": "Papua",
         "name": "Papua",
-        "desc": "Tanah Papua dan pulau-pulaunya — cenderawasih, kanguru pohon, dan ekidna."
+        "desc": "Tanah Papua dan pulau-pulaunya: cenderawasih, kanguru pohon, dan ekidna."
       }
     },
     "zoomIn": "Perbesar",
@@ -244,7 +260,7 @@
     "shareCaption": "Keterangan",
     "shareAction": "Bagikan",
     "shareNative": "Bagikan ke aplikasi",
-    "shareHint": "X, Threads & Facebook membuka komposer teks — gambar otomatis tersalin, tinggal tempel. Instagram: pakai Bagikan (di HP) atau unduh gambarnya lalu unggah.",
+    "shareHint": "X, Threads & Facebook membuka komposer teks, gambar otomatis tersalin, tinggal tempel. Instagram: pakai Bagikan (di HP) atau unduh gambarnya lalu unggah.",
     "shareCopyImage": "Salin gambar",
     "shareDownload": "Unduh",
     "shareCopyText": "Salin teks",
@@ -258,7 +274,7 @@
     "fireDayNight": "Siang / malam",
     "fireDay": "Siang",
     "fireNight": "Malam",
-    "fireNote": "Hotspot adalah deteksi anomali panas dari satelit (near-real-time) dan belum diverifikasi. Sumbernya beragam — dapat berasal dari aktivitas lahan, industri, atau flare gas — dan tidak menunjukkan hubungan sebab-akibat. Verifikasi lapangan diperlukan.",
+    "fireNote": "Hotspot adalah deteksi anomali panas dari satelit (near-real-time) dan belum diverifikasi. Sumbernya beragam, dapat berasal dari aktivitas lahan, industri, atau flare gas, dan tidak menunjukkan hubungan sebab-akibat. Verifikasi lapangan diperlukan.",
     "reportTitle": "Laporan Area",
     "reportIntro": "Pilih wilayah untuk statistik lingkungan yang bersumber & bisa dikutip (bisa diunduh PDF/CSV/JSON).",
     "reportSearch": "Cari kabupaten / provinsi…",

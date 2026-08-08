@@ -465,8 +465,12 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
       // box center, that was exactly the "ocean on the left" bug
       minZoom: 3.5,
       // allow steep cinematic angles so the raised story layer reads as lifted
-      // (default maxPitch is 60, which would clamp the place-story camera)
-      maxPitch: 80,
+      // (default maxPitch is 60, which would clamp the place-story camera).
+      // Must stay above AIR.PITCH_MAX in PlaceStory: the flown opening asks for
+      // up to 84 deg to hold a distant callout near the horizon, and anything
+      // lower here silently clamps it, so the camera ends up at a different
+      // tilt from the one the flight computed.
+      maxPitch: 85,
       attributionControl: { compact: true },
       // needed so the Share feature can read the WebGL canvas into an image
       canvasContextAttributes: { preserveDrawingBuffer: true },

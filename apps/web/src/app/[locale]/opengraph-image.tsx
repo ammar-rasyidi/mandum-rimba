@@ -3,10 +3,14 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { getTranslations } from "next-intl/server";
 
-// 1200×630 social/SEO card rendered to a real PNG (satori → resvg). The brand
-// wordmark (hero_light.svg) is embedded and the tagline is localized, so /id
-// and /en each get their own card. Next wires this into og:image AND
-// twitter:image automatically for every page under [locale].
+// 1200×630 social/SEO card rendered to a real PNG (satori → resvg). The terrain
+// render sits behind it, with the brand wordmark and a localized tagline over
+// the top, so /id and /en each get their own card. Next wires this into
+// og:image AND twitter:image automatically for every page under [locale].
+//
+// og_background.jpg is the 1200x630 cut of mandum_rimba_full_3d.png. The full
+// render is 2926x1530 and several megabytes, far too heavy to inline as a data
+// URI on every build.
 export const runtime = "nodejs";
 export const alt = "Mandum Rimba";
 export const size = { width: 1200, height: 630 };
@@ -42,10 +46,15 @@ export default async function OpengraphImage({
   params: { locale: string };
 }) {
   const heroB64 = await readFile(
-    join(process.cwd(), "public/images/hero_light.svg"),
+    join(process.cwd(), "public/images/hero_dark.svg"),
     "base64",
   );
   const hero = `data:image/svg+xml;base64,${heroB64}`;
+  const bgB64 = await readFile(
+    join(process.cwd(), "public/images/og_background.jpg"),
+    "base64",
+  );
+  const bg = `data:image/jpeg;base64,${bgB64}`;
 
   // Best effort: the rich, text-bearing card. If the web font can't be fetched
   // at build time, fall back to a clean logo-only card, never fail the build
@@ -70,27 +79,55 @@ export default async function OpengraphImage({
             height: "100%",
             width: "100%",
             display: "flex",
-            flexDirection: "column",
-            justifyContent: "space-between",
-            padding: "72px 80px",
-            background: "linear-gradient(135deg, #ffffff 0%, #e8f3e9 100%)",
+            position: "relative",
             fontFamily: "Inter",
+            backgroundColor: "#0a0f0c",
           }}
         >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={bg}
+            width={1200}
+            height={630}
+            alt=""
+            style={{ position: "absolute", top: 0, left: 0 }}
+          />
+          {/* scrim, so the wordmark and tagline stay legible over the relief */}
+          <div
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: 1200,
+              height: 630,
+              background:
+                "linear-gradient(105deg, rgba(6,12,9,0.92) 0%, rgba(6,12,9,0.78) 42%, rgba(6,12,9,0.24) 78%, rgba(6,12,9,0.12) 100%)",
+            }}
+          />
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "space-between",
+              width: 1200,
+              height: 630,
+              padding: "72px 80px",
+            }}
+          >
           <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
             <div
               style={{
                 width: 18,
                 height: 18,
                 borderRadius: 9,
-                background: "#388e3c",
+                background: "#8fd8a4",
               }}
             />
             <div
               style={{
                 fontSize: 26,
                 fontWeight: 700,
-                color: "#388e3c",
+                color: "#8fd8a4",
                 letterSpacing: 3,
               }}
             >
@@ -106,9 +143,9 @@ export default async function OpengraphImage({
                 marginTop: 36,
                 fontSize: 42,
                 fontWeight: 700,
-                color: "#1b1b1b",
+                color: "#ffffff",
                 lineHeight: 1.25,
-                maxWidth: 1010,
+                maxWidth: 900,
               }}
             >
               {tagline}
@@ -122,7 +159,7 @@ export default async function OpengraphImage({
               justifyContent: "space-between",
             }}
           >
-            <div style={{ fontSize: 30, fontWeight: 700, color: "#388e3c" }}>
+            <div style={{ fontSize: 30, fontWeight: 700, color: "#8fd8a4" }}>
               {domain}
             </div>
             <div
@@ -133,6 +170,7 @@ export default async function OpengraphImage({
                 background: "#4caf50",
               }}
             />
+          </div>
           </div>
         </div>
       ),
@@ -154,11 +192,30 @@ export default async function OpengraphImage({
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            background: "linear-gradient(135deg, #ffffff 0%, #e8f3e9 100%)",
+            position: "relative",
+            backgroundColor: "#0a0f0c",
           }}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={hero} width={HERO_W} height={HERO_H} alt="" />
+          <img
+            src={bg}
+            width={1200}
+            height={630}
+            alt=""
+            style={{ position: "absolute", top: 0, left: 0 }}
+          />
+          <div
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: 1200,
+              height: 630,
+              background: "rgba(6,12,9,0.72)",
+            }}
+          />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={hero} width={HERO_W} height={HERO_H} alt="" style={{ position: "relative" }} />
         </div>
       ),
       size,

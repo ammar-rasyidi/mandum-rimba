@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import maplibregl, { type Map as MapLibreMap } from "maplibre-gl";
+import { type Map as MapLibreMap } from "maplibre-gl";
 import { useLocale, useTranslations } from "next-intl";
 import { LAYERS } from "@/lib/layers";
 import { API_BASE } from "@/lib/api";
@@ -9,33 +9,221 @@ import { LOSS_ATTRIBUTION, LOSS_COLOR } from "@/lib/forest-loss";
 import StorySocial from "./StorySocial";
 import type { Annotation, Bi, PlaceStory } from "./placeStories";
 
-/** a terrain-anchored callout: glowing dot on the map + leader line + info card,
- *  pinned (and elevated) as the camera flies. Data callouts show numbers/labels;
- *  a callout with a `photo` (used by `float` photo annotations) also shows the
- *  image, so species can hover over the terrain instead of sitting in a column. */
+/**
+ * A terrain-anchored callout: a glowing dot pinned to the point, and a card that
+ * floats free of it on a leader line.
+ *
+ * The card is deliberately NOT laid out by the document: it is positioned every
+ * frame by the solver in the markers effect, which knows each card's real
+ * measured size and can push them apart until none overlap and all of them are
+ * inside the frame. Predicting any of that ahead of time does not work, because
+ * where a card lands depends on terrain elevation, exaggeration and the live
+ * camera, so the browser is the only place that knows the truth.
+ */
 function buildAnnotation(a: Annotation, en: boolean): HTMLDivElement {
   const tx = (b?: Bi) => (b ? (en ? b.en : b.id) : "");
   const el = document.createElement("div");
   el.style.cssText =
-    "opacity:0;transition:opacity .7s ease;pointer-events:none;display:flex;flex-direction:column;align-items:flex-start;font-family:-apple-system,system-ui,sans-serif;";
-  // photo cards get a fixed width so the image can go edge-to-edge (full-bleed);
-  // data-only callouts stay auto-width and single-line.
-  const cardW = a.photo ? "width:212px;" : "max-width:280px;";
+    "position:absolute;left:0;top:0;opacity:0;pointer-events:none;font-family:-apple-system,system-ui,sans-serif;will-change:transform,opacity;";
+  // An EXPLICIT width, never max-width. The card is absolutely positioned inside
+  // a container that has no size of its own, so a max-width has nothing to
+  // resolve against: the shrink-to-fit width collapses to the longest word and
+  // every card ends up a tall thin ribbon of broken text.
+  const cardW = a.photo ? "width:200px;" : "width:270px;";
   el.innerHTML = `
-    <div style="background:rgba(11,18,14,.84);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.16);border-radius:12px;overflow:hidden;box-shadow:0 16px 36px -14px #000;${cardW}">
+    <div data-lead style="position:absolute;left:0;top:0;height:0;width:0;border-top:1.5px dashed rgba(87,185,138,.85);transform-origin:0 0;pointer-events:none;"></div>
+    <div data-dot style="position:absolute;left:0;top:0;width:13px;height:13px;border-radius:50%;background:#57b98a;transform:translate(-50%,-50%);box-shadow:0 0 0 4px rgba(87,185,138,.22),0 0 16px 2px rgba(87,185,138,.85);"></div>
+    <div data-card style="position:absolute;left:0;top:0;background:rgba(11,18,14,.88);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.16);border-radius:12px;overflow:hidden;box-shadow:0 16px 36px -14px #000;will-change:transform;${cardW}">
       ${a.photo ? `<img src="${a.photo.src}" alt="${tx(a.title)}" loading="lazy" style="display:block;width:100%;aspect-ratio:4/3;object-fit:cover;" />` : ""}
-      <div style="padding:9px 13px;white-space:nowrap;">
+      <div style="padding:9px 13px;">
         ${a.value ? `<div style="font:800 1.15rem/1 -apple-system,system-ui,sans-serif;color:#fff;letter-spacing:-.01em;font-variant-numeric:tabular-nums;">${a.value}</div>` : ""}
         <div style="font:600 .6rem/1.3 -apple-system,system-ui,sans-serif;text-transform:uppercase;letter-spacing:.14em;color:#7fd6a8;${a.value ? "margin-top:3px;" : ""}">${tx(a.title)}</div>
-        ${a.note ? `<div style="font-size:.68rem;color:rgba(255,255,255,.72);margin-top:2px;white-space:normal;font-style:italic;">${tx(a.note)}</div>` : ""}
-        ${a.sub ? `<div style="font-size:.66rem;color:rgba(255,255,255,.58);margin-top:2px;white-space:normal;">${tx(a.sub)}</div>` : ""}
-        ${a.source ? `<div style="font:500 .56rem/1.3 -apple-system,system-ui,sans-serif;color:rgba(255,255,255,.4);margin-top:5px;white-space:normal;">${en ? "Source" : "Sumber"}: ${a.source.name}</div>` : ""}
+        ${a.note ? `<div style="font-size:.68rem;color:rgba(255,255,255,.72);margin-top:2px;font-style:italic;">${tx(a.note)}</div>` : ""}
+        ${a.sub ? `<div style="font-size:.66rem;color:rgba(255,255,255,.58);margin-top:2px;">${tx(a.sub)}</div>` : ""}
+        ${a.source ? `<div style="font:500 .56rem/1.3 -apple-system,system-ui,sans-serif;color:rgba(255,255,255,.4);margin-top:5px;">${en ? "Source" : "Sumber"}: ${a.source.name}</div>` : ""}
       </div>
-    </div>
-    <svg width="20" height="30" viewBox="0 0 20 30" style="margin-left:16px;display:block;"><line x1="10" y1="0" x2="10" y2="30" stroke="#57b98a" stroke-width="1.5" stroke-dasharray="3 4"/></svg>
-    <div style="width:13px;height:13px;border-radius:50%;background:#57b98a;margin-left:9.5px;margin-top:-4px;box-shadow:0 0 0 4px rgba(87,185,138,.22),0 0 16px 2px rgba(87,185,138,.85);"></div>`;
+    </div>`;
   return el;
 }
+
+/* ════════════════════════════════════════════════════════════════════════════
+ * THE AEROPLANE
+ *
+ * We fly the CAMERA, not the map's look-at point. That distinction is the whole
+ * design: `center` is where the camera is *aimed* (about 40 km ahead of us at
+ * this tilt), so steering it means the world swings around rather than the
+ * aircraft turning through it — no amount of banking reads as flight. MapLibre's
+ * calculateCameraOptionsFromCameraLngLatAltRotation lets us give a real camera
+ * position + attitude and get the centre/zoom back, so here the aircraft flies
+ * and the view follows from where its nose is pointing.
+ *
+ * The route is a spine with a slow left-right weave laid over it, and the bank
+ * comes off the actual turn rate — so it leans into each turn the way a plane
+ * does, and rolls level on the straights.
+ * ════════════════════════════════════════════════════════════════════════════ */
+const D2R = Math.PI / 180;
+const M_PER_DEG_LAT = 110540;
+const mPerDegLng = (lat: number) => 111320 * Math.cos(lat * D2R);
+
+const smoothstep = (t: number) => t * t * (3 - 2 * t);
+const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
+
+/** uniform Catmull-Rom through p1→p2 (p0/p3 are the neighbouring waypoints) */
+const catmull = (p0: number, p1: number, p2: number, p3: number, t: number) => {
+  const t2 = t * t;
+  const t3 = t2 * t;
+  return (
+    0.5 *
+    (2 * p1 +
+      (-p0 + p2) * t +
+      (2 * p0 - 5 * p1 + 4 * p2 - p3) * t2 +
+      (-p0 + 3 * p1 - 3 * p2 + p3) * t3)
+  );
+};
+
+/** compass heading (deg) from one point to the next */
+const headingTo = (
+  a: { lng: number; lat: number },
+  b: { lng: number; lat: number },
+) =>
+  Math.atan2(
+    (b.lng - a.lng) * mPerDegLng(b.lat),
+    (b.lat - a.lat) * M_PER_DEG_LAT,
+  ) / D2R;
+
+/** a Catmull-Rom curve through the points, resampled to constant ground speed */
+function makePath(pts: [number, number][]) {
+  const n = pts.length;
+  const P = (i: number) => pts[Math.max(0, Math.min(n - 1, i))];
+  const SEG = 260; // dense: a coarse table makes the speed visibly step
+  const xs: number[] = [];
+  const ys: number[] = [];
+  for (let i = 0; i < n - 1; i++) {
+    const a = P(i - 1);
+    const b = P(i);
+    const c = P(i + 1);
+    const d = P(i + 2);
+    for (let s = 0; s < SEG; s++) {
+      const t = s / SEG;
+      xs.push(catmull(a[0], b[0], c[0], d[0], t));
+      ys.push(catmull(a[1], b[1], c[1], d[1], t));
+    }
+  }
+  xs.push(P(n - 1)[0]);
+  ys.push(P(n - 1)[1]);
+  const cum = [0];
+  for (let i = 1; i < xs.length; i++) {
+    const dx = (xs[i] - xs[i - 1]) * mPerDegLng(ys[i]);
+    const dy = (ys[i] - ys[i - 1]) * M_PER_DEG_LAT;
+    cum.push(cum[i - 1] + Math.hypot(dx, dy));
+  }
+  const total = cum[cum.length - 1] || 1;
+  const at = (f: number) => {
+    const target = clamp01(f) * total;
+    let lo = 0;
+    let hi = cum.length - 1;
+    while (lo < hi - 1) {
+      const mid = (lo + hi) >> 1;
+      if (cum[mid] <= target) lo = mid;
+      else hi = mid;
+    }
+    const k = (target - cum[lo]) / (cum[hi] - cum[lo] || 1);
+    return {
+      lng: xs[lo] + (xs[hi] - xs[lo]) * k,
+      lat: ys[lo] + (ys[hi] - ys[lo]) * k,
+    };
+  };
+  return { at, total };
+}
+
+/** the lng/lat box a fetched park outline occupies */
+function geometryBounds(
+  g: GeoJSON.Polygon | GeoJSON.MultiPolygon,
+): [[number, number], [number, number]] {
+  let w = 180;
+  let s = 90;
+  let e = -180;
+  let n = -90;
+  const scan = (ring: GeoJSON.Position[]) => {
+    for (const [x, y] of ring) {
+      if (x < w) w = x;
+      if (x > e) e = x;
+      if (y < s) s = y;
+      if (y > n) n = y;
+    }
+  };
+  if (g.type === "Polygon") g.coordinates.forEach(scan);
+  else g.coordinates.forEach((poly) => poly.forEach(scan));
+  return [
+    [w, s],
+    [e, n],
+  ];
+}
+
+const AIR = {
+  PITCH_MIN: 58,
+  PITCH_MAX: 84,
+  /** put the callout's anchor dot this far below the middle of the frame, so the
+   *  card body — which hangs above the dot — sits centred and readable */
+  DOT_BELOW_CENTRE: 0.14,
+  ALT: 4600, // cruise altitude (m) over the lowlands...
+  ALT_END: 8200, // ...climbing for the summit, which stands 3.404 m up
+  /** start easing the aim across to the next callout this far before arriving at
+   *  the current one, so the aeroplane begins its turn before it gets there */
+  HANDOVER: 0.6,
+  K_BANK: 1.4, // degrees of bank per degree-per-second of turn
+  MAX_BANK: 12, // an airliner's lazy lean, not a fighter break
+  /** Time constants, in seconds, for the three attitude filters. Nothing about
+   *  the aeroplane's attitude may change abruptly, so every one of them is slow:
+   *  the heading lag is what makes a turn read as a turn, and the tilt filter is
+   *  what stops the nose snatching as a callout comes up. */
+  HDG_TAU: 1.3,
+  ROLL_TAU: 1.8,
+  PITCH_TAU: 2.2,
+  /** The speed profile: starts from rest, opens up, settles back to rest. It
+   *  MUST reach zero at both ends. A floor above zero looks gentler on paper,
+   *  but the flight then halts while it is still moving, which is an infinitely
+   *  hard stop and the worst jolt in the whole sequence. The long ease is what
+   *  keeps the acceleration itself mild. Zero here means the flight genuinely
+   *  comes to rest on the summit. */
+  SLOW_MIN: 0,
+  EASE: 0.36,
+  /** How far short of the final aim the aeroplane stops, in metres. Flying all
+   *  the way ONTO the summit ends the story looking straight down at it; holding
+   *  off leaves it standing in the middle of the frame. */
+  ARRIVE_BACK: 21000,
+  /** roll out over the last of the flight, so the wings are already level when
+   *  the story hands over to the next beat */
+  OUTRO: 0.14,
+  /** In flight, a callout is revealed once its point comes within this range of
+   *  what the camera is looking at. It is not about decluttering: it is about
+   *  the DOT. Reveal a card too early and its point is still a speck on the
+   *  horizon, so the card sits there tethered to nothing. At this range each
+   *  card appears just as its dot lands on terrain you can actually see, and
+   *  every card still gets 17 to 31 seconds on screen. */
+  FAR: 55000,
+  FAR_FADE: 20000,
+};
+
+/** Screen-space layout for the closing biodiversity montage: scattered tiles
+ *  (top/left %, width px, rotation deg, entrance delay ms). Kept clear of the
+ *  bottom-centre where the fact card sits. */
+const GALLERY_TILES = [
+  { t: 15, l: 5, w: 196, r: -6, d: 0 },
+  { t: 17, l: 27, w: 156, r: 4, d: 140 },
+  { t: 13, l: 48, w: 176, r: -3, d: 280 },
+  { t: 16, l: 68, w: 156, r: 6, d: 420 },
+  { t: 14, l: 85, w: 182, r: -7, d: 560 },
+  { t: 37, l: 4, w: 166, r: 5, d: 220 },
+  { t: 40, l: 22, w: 148, r: -5, d: 360 },
+  { t: 36, l: 85, w: 170, r: 4, d: 300 },
+  { t: 39, l: 64, w: 150, r: -4, d: 500 },
+  { t: 55, l: 7, w: 168, r: -5, d: 340 },
+  { t: 57, l: 86, w: 160, r: 6, d: 460 },
+  { t: 36, l: 44, w: 150, r: -3, d: 640 },
+  { t: 56, l: 27, w: 144, r: 5, d: 620 },
+  { t: 55, l: 67, w: 150, r: -6, d: 700 },
+];
 
 /**
  * Cinematic player for a place story on the 3D terrain. Runs a scripted camera
@@ -103,11 +291,59 @@ export default function PlaceStory({
   const [boundaryGeom, setBoundaryGeom] = useState<
     GeoJSON.Polygon | GeoJSON.MultiPolygon | null
   >(story.boundaryQuery ? null : story.boundary ?? null);
-  const markers = useRef<maplibregl.Marker[]>([]);
+  /** our own screen-space layer for the terrain callouts (see the markers effect
+   *  for why these aren't maplibregl.Markers) */
+  const overlay = useRef<HTMLDivElement | null>(null);
+  /** latest fetched park outline, so fly() never reads a stale one */
+  const boundaryRef = useRef<GeoJSON.Polygon | GeoJSON.MultiPolygon | null>(null);
+  const glideRaf = useRef<number | null>(null);
   // true once the loss timeline has genuinely advanced past the first year this
   // beat (so a stale end-year value can't auto-skip the animation)
   const lossRan = useRef(false);
   const last = story.chapters.length - 1;
+
+  /**
+   * Frame a beat on the park outline instead of on center/zoom. Padding keeps
+   * the outline clear of the fact card along the bottom and of the chrome
+   * elsewhere, so it lands as large as it will go in the space that is actually
+   * free, at any window size. Returns false if there is nothing to fit yet.
+   */
+  const fitBoundary = (ch: PlaceStory["chapters"][number], duration: number) => {
+    const map = mapRef.current;
+    if (!map || !ch.cam.fitBoundary) return false;
+    // The fetched outline is the real thing; the story's own bounds stand in
+    // until it lands, and for good if the request fails. Either way the beat is
+    // FITTED rather than falling back to a hand-set zoom, which is what kept
+    // getting this wrong.
+    const box: [[number, number], [number, number]] = boundaryRef.current
+      ? geometryBounds(boundaryRef.current)
+      : [
+          [story.bounds[0], story.bounds[1]],
+          [story.bounds[2], story.bounds[3]],
+        ];
+    const h = map.getContainer().clientHeight || 800;
+    const w = map.getContainer().clientWidth || 1200;
+    const fitted = map.cameraForBounds(box, {
+      padding: {
+        top: Math.min(90, h * 0.12),
+        bottom: h * 0.36, // the fact card
+        left: Math.min(56, w * 0.06),
+        right: Math.min(56, w * 0.06),
+      },
+      bearing: ch.cam.bearing,
+      pitch: ch.cam.pitch,
+    });
+    if (!fitted) return false;
+    map.easeTo({
+      ...fitted,
+      pitch: ch.cam.pitch,
+      roll: 0,
+      duration,
+      easing: (x: number) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2),
+      essential: true,
+    });
+    return true;
+  };
 
   const fly = (i: number) => {
     setIdx(i);
@@ -118,16 +354,265 @@ export default function PlaceStory({
     onAnimateLoss?.(!!ch.animateLoss);
     const map = mapRef.current;
     if (!map) return;
+    // Leaving the flown opening means moving from an aeroplane's attitude (high
+    // up, tilted right over toward the horizon) to a map vantage, which is a big
+    // change and reads as a lurch on the default curve. This easing is flat at
+    // both ends, so the camera creeps away from the summit, does the work in the
+    // middle, and settles rather than arriving still moving. Kept brisk: the
+    // curve is what makes it smooth, dragging it out just makes it feel stuck.
+    const glide = (x: number) =>
+      x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+    const fromFlight = i === 1 && !!story.chapters[0].cam.air;
     const cam = {
       center: ch.cam.center,
       zoom: ch.cam.zoom,
       pitch: ch.cam.pitch,
       bearing: ch.cam.bearing,
-      duration: ch.cam.duration ?? 5000,
+      roll: 0, // level the wings, only the opening fly-through banks
+      duration: (ch.cam.duration ?? 5000) * (fromFlight ? 0.8 : 1),
+      easing: glide,
       essential: true,
     };
-    if (i === 0) map.flyTo({ ...cam, curve: 1.35 });
-    else map.easeTo(cam);
+    if (glideRaf.current) {
+      cancelAnimationFrame(glideRaf.current);
+      glideRaf.current = null;
+    }
+    // FIT THE PARK, if this beat asks for it.
+    if (fitBoundary(ch, cam.duration)) return;
+    if (i === 0 && ch.cam.air) {
+      // FLY THE AEROPLANE, CALLOUT TO CALLOUT. The camera IS the aircraft (see
+      // makePath / the AIR block); it heads straight at the next callout with it
+      // centred in the frame the whole way in, then banks over toward the one
+      // after. One jumpTo per frame — no easeTo underneath, no terrain queries.
+      const air = ch.cam.air;
+      const cards = (ch.annotations ?? []).map((a) => a.lngLat);
+      // the aeroplane flies at each callout in turn and then on to `end`, so the
+      // run finishes looking at the summit rather than stopping dead at a card
+      const aims: [number, number][] = air.end ? [...cards, air.end] : cards;
+      // The flown line stops short of the final aim (see ARRIVE_BACK), so the
+      // run finishes with the summit standing in the middle of the frame rather
+      // than directly underneath the camera.
+      const flown: [number, number][] = [...cards];
+      if (air.end) {
+        const prev = cards[cards.length - 1] ?? air.start;
+        const b =
+          headingTo(
+            { lng: prev[0], lat: prev[1] },
+            { lng: air.end[0], lat: air.end[1] },
+          ) * D2R;
+        flown.push([
+          air.end[0] - (Math.sin(b) * AIR.ARRIVE_BACK) / mPerDegLng(air.end[1]),
+          air.end[1] - (Math.cos(b) * AIR.ARRIVE_BACK) / M_PER_DEG_LAT,
+        ]);
+      }
+      const fp = makePath([air.start, ...flown]);
+      // where along the route each aim point sits, so we know what we're flying at
+      const stations = aims.map((c) => {
+        let bf = 0;
+        let bd = Infinity;
+        for (let k = 0; k <= 1200; k++) {
+          const f = k / 1200;
+          const p = fp.at(f);
+          const d = Math.hypot(
+            (c[0] - p.lng) * mPerDegLng(p.lat),
+            (c[1] - p.lat) * M_PER_DEG_LAT,
+          );
+          if (d < bd) {
+            bd = d;
+            bf = f;
+          }
+        }
+        return bf;
+      });
+      const dur = ch.cam.duration ?? 20000;
+      const t0 = performance.now();
+      // Speed is constant apart from one long ease off the ground and into the
+      // arrival. Both use smoothstep, whose slope is zero at each end, so there
+      // is no point where the speed changes abruptly.
+      const speed = (t: number) =>
+        AIR.SLOW_MIN +
+        (1 - AIR.SLOW_MIN) *
+          Math.min(smoothstep(clamp01(t / AIR.EASE)), smoothstep(clamp01((1 - t) / AIR.EASE)));
+      // Distance flown by time t is simply the speed curve integrated up to t.
+      // READ the table at t; do NOT search it for where the distance equals t.
+      // Searching inverts the curve, and the inverse of an ease-in-ease-out is
+      // fast-slow-fast: it made the aeroplane accelerate hardest at exactly the
+      // two moments it should have been gentlest, the take-off and the arrival.
+      const M = 4000;
+      const S = [0];
+      for (let k = 1; k <= M; k++) S.push(S[k - 1] + (speed(k / M) + speed((k - 1) / M)) / 2);
+      const tot = S[M] || 1;
+      const distanceAt = (t: number) => {
+        const x = clamp01(t) * M;
+        const i = Math.min(M - 1, Math.floor(x));
+        return (S[i] + (S[i + 1] - S[i]) * (x - i)) / tot;
+      };
+
+      // The descent from orbit runs on the front of the same loop, so the hand
+      // over into the flight is just the next frame: same camera, same heading,
+      // same position, no cut and nothing to line up.
+      const openMs = air.openMs ?? 0;
+      const openAlt = air.openAlt ?? 0;
+      const openPitch = air.openPitch ?? 60;
+
+      let hdg = NaN; // low-passed heading: the lag between where the nose points
+      let roll = 0; //  and where we're aiming IS the turn, and drives the bank
+      let pit = NaN;
+      let aimHdg = NaN; // last heading taken from a usefully distant aim point
+      let last = t0;
+      const step = (now: number) => {
+        const elapsed = now - t0;
+        if (openMs && elapsed < openMs) {
+          // COMING DOWN. Height falls geometrically, which is what a descent
+          // through three orders of magnitude has to do to feel even, and the
+          // ease flattens at the bottom so it settles into the cruise instead of
+          // arriving still dropping.
+          const k = smoothstep(clamp01(elapsed / openMs));
+          const p0 = fp.at(0);
+          const b0 = headingTo(p0, fp.at(0.005));
+          const alt = openAlt * Math.pow(air.alt / openAlt, k);
+          const pitch = openPitch + (AIR.PITCH_MAX - openPitch) * k;
+          // open with north up, the way a globe is read, and swing round onto
+          // the flight's heading on the way down
+          const bearing = b0 * k;
+          map.jumpTo({
+            ...map.calculateCameraOptionsFromCameraLngLatAltRotation(
+              [p0.lng, p0.lat],
+              alt,
+              bearing,
+              pitch,
+              0,
+            ),
+            bearing,
+            pitch,
+            roll: 0,
+          });
+          glideRaf.current = requestAnimationFrame(step);
+          return;
+        }
+        const t = Math.min(1, (elapsed - openMs) / dur);
+        // Clamped, so a stutter or a backgrounded tab cannot produce one huge
+        // step, and every filter below is in SECONDS rather than frames: the
+        // motion is then identical at 60Hz and 120Hz instead of twice as quick.
+        const dt = Math.min(1 / 30, Math.max(1 / 240, (now - last) / 1000));
+        last = now;
+        if (Number.isNaN(pit)) pit = AIR.PITCH_MAX; // carried over from the descent
+        const lag = (tau: number) => 1 - Math.exp(-dt / tau);
+        const f = distanceAt(t);
+        const p = fp.at(f);
+
+        // AIM: the next callout ahead. Over the last stretch of each leg, ease
+        // the aim across to the following one — that anticipation is what turns
+        // the aeroplane, so it banks BEFORE it arrives instead of pivoting.
+        let k = stations.findIndex((s) => s > f + 1e-6);
+        if (k < 0) k = aims.length - 1;
+        const legA = k === 0 ? 0 : stations[k - 1];
+        const u = clamp01((f - legA) / (stations[k] - legA || 1));
+        let aim = aims[k];
+        if (u > 1 - AIR.HANDOVER && k < aims.length - 1) {
+          const w = smoothstep((u - (1 - AIR.HANDOVER)) / AIR.HANDOVER);
+          aim = [
+            aims[k][0] + (aims[k + 1][0] - aims[k][0]) * w,
+            aims[k][1] + (aims[k + 1][1] - aims[k][1]) * w,
+          ];
+        }
+
+        const alt = air.alt + (air.altEnd - air.alt) * smoothstep(clamp01((f - 0.45) / 0.5));
+        const range = Math.hypot(
+          (aim[0] - p.lng) * mPerDegLng(p.lat),
+          (aim[1] - p.lat) * M_PER_DEG_LAT,
+        );
+        // Arriving ON the thing we're aiming at makes the bearing to it
+        // undefined (atan2(0,0) is 0, i.e. due north), which threw the nose
+        // right round on the last frame of the flight. Inside this radius the
+        // aim tells us nothing new, so hold the heading we already had.
+        if (range > 800) aimHdg = headingTo(p, { lng: aim[0], lat: aim[1] });
+        let want = Number.isNaN(aimHdg) ? headingTo(p, { lng: aim[0], lat: aim[1] }) : aimHdg;
+        if (Number.isNaN(hdg)) hdg = want;
+        while (want - hdg > 180) want -= 360;
+        while (want - hdg < -180) want += 360;
+        const prev = hdg;
+        hdg += (want - hdg) * lag(AIR.HDG_TAU);
+        // BANK: lean into the turn by how fast we're actually turning, so the
+        // wings come level again on the straights of their own accord. The turn
+        // rate is capped before it becomes a bank angle, so one short frame can
+        // never throw the aeroplane onto its side.
+        const omega = Math.max(-16, Math.min(16, (hdg - prev) / dt));
+        // wings level themselves out before the hand-over to the next beat
+        const outro = 1 - smoothstep(clamp01((t - (1 - AIR.OUTRO)) / AIR.OUTRO));
+        const bank =
+          Math.max(-AIR.MAX_BANK, Math.min(AIR.MAX_BANK, omega * AIR.K_BANK)) * outro;
+        roll += (bank - roll) * lag(AIR.ROLL_TAU);
+
+        // TILT so the callout we're flying at sits in the middle of the frame,
+        // dropped a little below centre because the card hangs above its dot.
+        // The range is floored for the same reason the heading is held: right on
+        // top of a point the geometry sends the tilt diving into its own limit.
+        const tiltRange = Math.max(range, 2500);
+        const H = map.getContainer().clientHeight || 800;
+        const focal = H / 2 / Math.tan((36.87 * D2R) / 2);
+        const drop = Math.atan2(H * AIR.DOT_BELOW_CENTRE, focal) / D2R;
+        const wantPitch = Math.max(
+          AIR.PITCH_MIN,
+          Math.min(AIR.PITCH_MAX, 90 - Math.atan2(alt, tiltRange) / D2R + drop),
+        );
+        // Smoothed hard, and this one matters most: the raw value dives as we
+        // close on a callout and then stops dead against its limit, which is
+        // felt as the nose being yanked down and caught. Filtered, the tilt only
+        // ever eases. It also decides the map centre, so anything sudden here
+        // shows up as the whole view lurching.
+        if (Number.isNaN(pit)) pit = wantPitch;
+        else pit += (wantPitch - pit) * lag(AIR.PITCH_TAU);
+        const pitch = pit;
+
+        map.jumpTo({
+          ...map.calculateCameraOptionsFromCameraLngLatAltRotation(
+            [p.lng, p.lat],
+            alt,
+            hdg,
+            pitch,
+            roll,
+          ),
+          bearing: hdg,
+          pitch,
+          roll,
+        });
+        if (t < 1) glideRaf.current = requestAnimationFrame(step);
+        else {
+          glideRaf.current = null;
+          if (Math.abs(roll) > 0.02) map.setRoll(0); // absorb the last fraction
+        }
+      };
+      glideRaf.current = requestAnimationFrame(step);
+    } else if (i === 0 && ch.cam.intro) {
+      // SMOOTH CLIMB glide: a single eased interpolation from the low intro
+      // vantage to `center`, with zoom easing from close (low, over the lowlands)
+      // to higher (clearing the ridges and arriving at the summit). No per-frame
+      // terrain sampling, so the motion is buttery, not jittery.
+      const s = ch.cam.intro;
+      const e = ch.cam;
+      const dur = ch.cam.duration ?? 12000;
+      const t0 = performance.now();
+      // easeInOutCubic — gentle acceleration + settle, no stutter
+      const ease = (t: number) =>
+        t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+      const L = (a: number, b: number, f: number) => a + (b - a) * f;
+      const step = (now: number) => {
+        const f = Math.min(1, (now - t0) / dur);
+        const k = ease(f);
+        map.jumpTo({
+          center: [L(s.center[0], e.center[0], k), L(s.center[1], e.center[1], k)],
+          zoom: L(s.zoom, e.zoom, k),
+          pitch: L(s.pitch, e.pitch, k),
+          bearing: L(s.bearing, e.bearing, k),
+        });
+        if (f < 1) glideRaf.current = requestAnimationFrame(step);
+        else glideRaf.current = null;
+      };
+      glideRaf.current = requestAnimationFrame(step);
+    } else if (i === 0) {
+      map.flyTo({ ...cam, curve: 1.35 });
+    } else map.easeTo(cam);
   };
 
   // opening: bump relief, snap high & far, then descend + tilt into beat 0
@@ -135,26 +620,111 @@ export default function PlaceStory({
     const map = mapRef.current;
     if (!map) return;
     const c0 = story.chapters[0].cam;
-    map.jumpTo({
-      center: c0.center,
-      zoom: Math.max(4.8, c0.zoom - 4.6),
-      pitch: 0,
-      bearing: 0,
-    });
-    // set the drama exaggeration AFTER MapView's own terrain effect has settled
-    // (parent effects run after child effects, so a synchronous set here loses)
+    // STOP THE ARRIVAL SNAP. By default MapLibre keeps the camera centre clamped
+    // to the ground: when a camera animation finishes it re-reads the terrain
+    // height under the centre and rewrites the zoom to keep the same altitude.
+    // Land on a 3.404 m summit at 1.5x exaggeration and that correction is a
+    // multi-kilometre lurch, fired the instant the move ends — the shake at the
+    // end of the flight, and a smaller version of it at every other beat. For a
+    // scripted camera we want the vantage we asked for, so hold the elevation
+    // fixed for the duration of the story.
+    try {
+      map.setCenterClampedToGround(false);
+      map.setCenterElevation(0); // deterministic: don't inherit the map's last one
+    } catch {
+      /* older maplibre — the story still plays, just with the settle */
+    }
+    // an airplane opening starts parked at the first waypoint, already pointed
+    // down the route, so the first frame of the flight isn't a snap
+    if (c0.air) {
+      // park the aircraft at the head of its run-in, already aimed at the first
+      // callout, so the first frame of the flight isn't a snap
+      const first = (story.chapters[0].annotations ?? [])[0]?.lngLat ?? c0.center;
+      const p = { lng: c0.air.start[0], lat: c0.air.start[1] };
+      const b = headingTo(p, { lng: first[0], lat: first[1] });
+      // Park at exactly the attitude the opening's own first frame will ask for,
+      // worked out the same way, so starting it doesn't snap the view. With a
+      // descent configured that is the view from orbit; otherwise it is the
+      // aeroplane already on the line.
+      const range = Math.hypot(
+        (first[0] - p.lng) * mPerDegLng(p.lat),
+        (first[1] - p.lat) * M_PER_DEG_LAT,
+      );
+      const hh = map.getContainer().clientHeight || 800;
+      const drop =
+        Math.atan2(hh * AIR.DOT_BELOW_CENTRE, hh / 2 / Math.tan((36.87 * D2R) / 2)) / D2R;
+      const pitch = c0.air.openMs
+        ? (c0.air.openPitch ?? 0)
+        : Math.max(
+            AIR.PITCH_MIN,
+            Math.min(AIR.PITCH_MAX, 90 - Math.atan2(c0.air.alt, range) / D2R + drop),
+          );
+      const alt = c0.air.openMs ? (c0.air.openAlt ?? c0.air.alt) : c0.air.alt;
+      // with a descent configured the opening frame is north-up, matching the
+      // first frame the descent itself will draw
+      const bearing = c0.air.openMs ? 0 : b;
+      map.jumpTo({
+        ...map.calculateCameraOptionsFromCameraLngLatAltRotation(
+          [p.lng, p.lat],
+          alt,
+          bearing,
+          pitch,
+          0,
+        ),
+        bearing,
+        pitch,
+        roll: 0,
+      });
+    } else if (c0.intro) {
+      // a glide-in opening starts low at the intro vantage
+      map.jumpTo({
+        center: c0.intro.center,
+        zoom: c0.intro.zoom,
+        pitch: c0.intro.pitch,
+        bearing: c0.intro.bearing,
+      });
+    } else {
+      map.jumpTo({
+        center: c0.center,
+        zoom: Math.max(4.8, c0.zoom - 4.6),
+        pitch: 0,
+        bearing: 0,
+      });
+    }
+    // Set the drama exaggeration AFTER MapView's own terrain effect has settled
+    // (parent effects run after child effects, so a synchronous set here loses).
+    // RAMPED, not switched: going straight from 1.0 to 1.5 makes the whole
+    // landscape inflate in a single frame, which is a jolt right as the story
+    // opens.
+    let exagRaf = 0;
     const t0 = setTimeout(() => {
-      try {
-        map.setTerrain({ source: "terrain-dem", exaggeration: 1.5 });
-      } catch {
-        /* terrain source not ready — the flight still reads fine */
-      }
+      const from = 1.0;
+      const to = 1.5;
+      const start = performance.now();
+      const DURATION = 900;
+      const ramp = (now: number) => {
+        const k = smoothstep(clamp01((now - start) / DURATION));
+        try {
+          map.setTerrain({
+            source: "terrain-dem",
+            exaggeration: from + (to - from) * k,
+          });
+        } catch {
+          /* terrain source not ready — the flight still reads fine */
+        }
+        if (k < 1) exagRaf = requestAnimationFrame(ramp);
+      };
+      exagRaf = requestAnimationFrame(ramp);
       setEntered(true);
       fly(0);
     }, 300);
     return () => {
       clearTimeout(t0);
+      if (exagRaf) cancelAnimationFrame(exagRaf);
+      if (glideRaf.current) cancelAnimationFrame(glideRaf.current);
       try {
+        mapRef.current?.setRoll(0); // never leave the map banked behind us
+        mapRef.current?.setCenterClampedToGround(true); // back to normal panning
         mapRef.current?.setTerrain({ source: "terrain-dem", exaggeration: 1.0 });
       } catch {
         /* ignore */
@@ -182,11 +752,17 @@ export default function PlaceStory({
     if (!playing || !entered || idx >= last) return;
     const cur = story.chapters[idx];
     if (cur.animateLoss) return; // advanced on loss completion, not a fixed timer
-    const flight = cur.cam.duration ?? 5000;
-    // orbit beats linger longer so the camera circles a good arc before moving on
+    const flight = (cur.cam.duration ?? 5000) + (cur.cam.air?.openMs ?? 0);
+    // Orbit beats linger longer so the camera circles a good arc before moving
+    // on. The flown opening holds longest of all: it comes to rest with Gunung
+    // Leuser's summit standing in the middle of the frame, and that view is the
+    // end of the first chapter, so it is given time to land before the story
+    // moves on.
     const read =
       idx === 0
-        ? 2600
+        ? cur.cam.air
+          ? 2400
+          : 2600
         : (cur.cam.orbit ? 7000 : 3800) + (cur.points?.length ?? 0) * 1500;
     const timer = setTimeout(() => fly(idx + 1), flight + read);
     return () => clearTimeout(timer);
@@ -253,8 +829,30 @@ export default function PlaceStory({
       return;
     }
     if (!lossRan.current) return; // stale end value before the animation started
-    const timer = setTimeout(() => fly(idx + 1), 2200);
-    return () => clearTimeout(timer);
+    // Reaching 2025 is not the same as SHOWING 2025: the final year's tiles are
+    // still coming in. Hold on the finished picture until the map has actually
+    // drawn it, then pause so it can be taken in, and only then move on. The cap
+    // is there so a slow or failed tile can't strand the story on this beat.
+    let done = false;
+    let pause: ReturnType<typeof setTimeout>;
+    const advance = () => {
+      if (done) return;
+      done = true;
+      map?.off("idle", onIdle);
+      clearTimeout(cap);
+      pause = setTimeout(() => fly(idx + 1), 2400);
+    };
+    const map = mapRef.current;
+    const onIdle = () => advance();
+    const cap = setTimeout(advance, 9000);
+    if (!map || map.areTilesLoaded()) advance();
+    else map.on("idle", onIdle);
+    return () => {
+      done = true;
+      clearTimeout(cap);
+      clearTimeout(pause);
+      map?.off("idle", onIdle);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playing, idx, last, lossYear, lossYears]);
 
@@ -356,11 +954,18 @@ export default function PlaceStory({
     });
   };
 
-  // floating terrain markers for the current beat
+  // Terrain callouts for the current beat.
+  //
+  // The rule here is simple and absolute: every callout on a beat is SHOWN, and
+  // no two of them overlap. Neither can be arranged ahead of time, because where
+  // a card lands on screen depends on the terrain height under its point, the
+  // 1.5x exaggeration, and the live camera. So the dot is pinned to the terrain
+  // and the CARD is laid out at runtime by a solver that measures the real DOM
+  // boxes, pushes any overlapping pair apart, and clamps every card inside the
+  // frame. A leader line joins each card back to its own dot.
   useEffect(() => {
     const map = mapRef.current;
-    markers.current.forEach((m) => m.remove());
-    markers.current = [];
+    overlay.current = null; // the previous host is fading itself out, leave it be
     if (!map) return;
     // data callouts + `float` photo cards are geo-anchored on the terrain;
     // plain photo cards render fixed in the side columns. On compact screens skip
@@ -368,20 +973,264 @@ export default function PlaceStory({
     const anns = isCompact
       ? []
       : (story.chapters[idx].annotations ?? []).filter((a) => !a.photo || a.float);
-    const added = anns.map((a) => {
+    if (!anns.length) return;
+
+    const host = document.createElement("div");
+    host.style.cssText =
+      "position:absolute;inset:0;overflow:visible;pointer-events:none;";
+    map.getCanvasContainer().appendChild(host);
+    overlay.current = host;
+
+    const built = anns.map((a, i) => {
       const el = buildAnnotation(a, locale === "en");
-      const mk = new maplibregl.Marker({ element: el, anchor: "bottom" })
-        .setLngLat(a.lngLat)
-        .addTo(map);
-      requestAnimationFrame(() => {
-        el.style.opacity = "1";
-      });
-      return mk;
+      host.appendChild(el);
+      const p = map.project(a.lngLat);
+      return {
+        a,
+        el,
+        card: el.querySelector("[data-card]") as HTMLElement,
+        lead: el.querySelector("[data-lead]") as HTMLElement,
+        x: p.x, // anchor: the dot, on the terrain point
+        y: p.y,
+        ox: 0, // card offset from the anchor, solved every frame
+        oy: -78,
+        px: NaN, // where the card is actually DRAWN, eased toward anchor+offset
+        py: NaN,
+        op: 0,
+        w: 160,
+        h: 90,
+        phase: i * 1.7,
+        rate: 0.00105 + i * 0.00013,
+      };
     });
-    markers.current = added;
-    return () => added.forEach((m) => m.remove());
+
+    const stillness = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const air = !!story.chapters[idx].cam.air;
+    let lastCam = "";
+    let measured = 0;
+
+    let lastFrame = 0;
+    let raf = requestAnimationFrame(function track(now: number) {
+      // Everything below eases in SECONDS, not per frame. Per-frame easing runs
+      // twice as fast on a 120Hz screen as on a 60Hz one, which is what made the
+      // callouts feel like they were snapping about at different speeds.
+      const dt = lastFrame ? Math.min(0.1, (now - lastFrame) / 1000) : 1 / 60;
+      lastFrame = now;
+      const ease = (tau: number) => 1 - Math.exp(-dt / tau);
+      const W = map.getContainer().clientWidth || 1;
+      const H = map.getContainer().clientHeight || 1;
+      const cen = map.getCenter();
+      const camNow = `${cen.lng},${cen.lat},${map.getZoom()},${map.getBearing()},${map.getPitch()}`;
+      const moving = camNow !== lastCam;
+      lastCam = camNow;
+      const cosLat = Math.cos((cen.lat * Math.PI) / 180);
+      // How far BEHIND the look-at point the camera itself sits. `center` is
+      // what the camera aims at, not where it is, and at these tilts the camera
+      // is tens of kilometres back from it. Needed to tell whether a point is
+      // genuinely in front of us.
+      const mPerPx = (156543.03 * cosLat) / Math.pow(2, map.getZoom());
+      const camToCentre = (H / 2 / Math.tan((36.87 * Math.PI) / 180 / 2)) * mPerPx;
+      const camBack = camToCentre * Math.sin((map.getPitch() * Math.PI) / 180);
+      const brg = (map.getBearing() * Math.PI) / 180;
+
+      // re-measure occasionally: photo cards change height when the image lands
+      if (now - measured > 400) {
+        measured = now;
+        for (const c of built) {
+          c.w = c.card.offsetWidth || c.w;
+          c.h = c.card.offsetHeight || c.h;
+        }
+      }
+
+      // 1. anchors follow the terrain point
+      for (const c of built) {
+        const p = map.project(c.a.lngLat);
+        if (moving) {
+          c.x = p.x;
+          c.y = p.y;
+        } else {
+          const d = Math.hypot(p.x - c.x, p.y - c.y);
+          if (d > 0.9) {
+            const k = ease(d > 8 ? 0.18 : 0.6);
+            c.x += (p.x - c.x) * k;
+            c.y += (p.y - c.y) * k;
+          }
+        }
+      }
+
+      // 2. VISIBILITY. A callout is hidden only when its point is genuinely
+      //    behind us or a long way outside the frame. Nothing is ever hidden for
+      //    being central, or close, or near another one.
+      for (const c of built) {
+        // Is the point in front of the camera at all? map.project() has no
+        // notion of behind: for a point past the camera the perspective divide
+        // flips sign and it comes back as a perfectly plausible on-screen
+        // position, usually up in the sky. That is what left a callout hanging
+        // over the horizon, tethered to a dot floating above the terrain, once
+        // the aeroplane had flown past it.
+        const dE = (c.a.lngLat[0] - cen.lng) * 111320 * cosLat;
+        const dN = (c.a.lngLat[1] - cen.lat) * 110540;
+        const ahead = dE * Math.sin(brg) + dN * Math.cos(brg) + camBack;
+        // ...and does its dot land on the GROUND? Anything projecting up into
+        // the top of the frame is either past the horizon or a point behind us
+        // that the projection has flipped, and either way the callout ends up
+        // hanging in the sky tethered to nothing. Cheap, and it holds whatever
+        // the projection does, which matters because this map draws on a globe
+        // with exaggerated terrain and the geometry is not worth predicting.
+        const dotOnGround = c.y > H * 0.26;
+        const onFrame =
+          ahead > 2000 &&
+          dotOnGround &&
+          c.x > -W * 0.6 &&
+          c.x < W * 1.6 &&
+          c.y < H * 1.9;
+        let vis = onFrame ? 1 : 0;
+        if (air && vis > 0) {
+          const dm = Math.hypot(
+            (c.a.lngLat[0] - cen.lng) * 111320 * Math.cos((cen.lat * Math.PI) / 180),
+            (c.a.lngLat[1] - cen.lat) * 110540,
+          );
+          vis *= smoothstep(clamp01((AIR.FAR - dm) / AIR.FAR_FADE));
+        }
+        c.op += (vis - c.op) * ease(0.45); // half a second to fade up or away
+      }
+
+      // 3. LAYOUT. Cards are laid out left to right in the same order as their
+      //    dots, and given DISJOINT horizontal spans by a two-pass sweep. Spans
+      //    that don't overlap mean two cards cannot overlap whatever their
+      //    heights are, so this is correct by construction. (A relaxation that
+      //    pushes overlapping pairs apart was tried first and cycles instead of
+      //    converging once cards are crowded or share a position exactly.)
+      const PAD = 14;
+      const TOP = 76; // below the story's top bar
+      const BOT = H - (air ? 150 : 190); // above the fact card
+      const GAP = 10;
+      // every card is laid out, visible or not, so one that is fading in is
+      // already in its final place rather than sliding into it in view
+      const live = built;
+      if (live.length) {
+        const order = live
+          .map((_, i) => i)
+          .sort((i, j) => live[i].x - live[j].x || i - j);
+        const width = (row: number[]) =>
+          row.reduce((sum, i) => sum + live[i].w, 0) + GAP * (row.length - 1);
+        let rows: number[][];
+        if (width(order) <= W - 2 * PAD) rows = [order];
+        else {
+          // too many to fit across: split into two bands, the nearer dots (lower
+          // on screen) taking the bottom one
+          const byY = [...order].sort((i, j) => live[i].y - live[j].y);
+          const half = Math.ceil(order.length / 2);
+          rows = [
+            byY.slice(0, half).sort((i, j) => live[i].x - live[j].x),
+            byY.slice(half).sort((i, j) => live[i].x - live[j].x),
+          ];
+        }
+        rows.forEach((row, ri) => {
+          let cursor = PAD;
+          const lx: number[] = [];
+          for (const i of row) {
+            const c = live[i];
+            const want = Math.max(
+              cursor + c.w / 2,
+              Math.min(c.x, W - PAD - c.w / 2),
+            );
+            lx[i] = want;
+            cursor = want + c.w / 2 + GAP;
+          }
+          let edge = W - PAD;
+          for (let k = row.length - 1; k >= 0; k--) {
+            const c = live[row[k]];
+            lx[row[k]] = Math.min(lx[row[k]], edge - c.w / 2);
+            edge = lx[row[k]] - c.w / 2 - GAP;
+          }
+          for (const i of row) {
+            const c = live[i];
+            const bottom =
+              rows.length === 1
+                ? Math.min(Math.max(c.y - 78, TOP + c.h), BOT)
+                : ri === 0
+                  ? TOP + c.h
+                  : BOT;
+            // ease onto the solved spot so nothing snaps as the layout shifts
+            c.ox += (lx[i] - c.x - c.ox) * ease(0.3);
+            c.oy += (bottom - c.y - c.oy) * ease(0.3);
+          }
+        });
+      }
+
+      // 4. draw. The DOT is pinned exactly to its terrain point, but the card
+      //    glides to where the layout wants it instead of tracking the ground
+      //    one for one: anchored to terrain and flown past at speed, a card
+      //    otherwise tears across the frame. The leader line takes up the slack.
+      for (const c of built) {
+        c.el.style.opacity = c.op.toFixed(3);
+        if (c.op < 0.005) {
+          c.px = NaN; // next time it appears, start settled rather than flying in
+          continue;
+        }
+        c.el.style.transform = `translate(${Math.round(c.x * 4) / 4}px,${Math.round(c.y * 4) / 4}px)`;
+        const bob = stillness ? 0 : 3 * Math.sin(now * c.rate + c.phase);
+        const tx = c.x + c.ox;
+        const ty = c.y + c.oy;
+        if (Number.isNaN(c.px)) {
+          c.px = tx;
+          c.py = ty;
+        } else {
+          const g = ease(0.22);
+          c.px += (tx - c.px) * g;
+          c.py += (ty - c.py) * g;
+        }
+        const cx = c.px - c.x;
+        const cy = c.py - c.y + bob;
+        c.card.style.transform = `translate(${cx.toFixed(1)}px,${cy.toFixed(1)}px) translate(-50%,-100%)`;
+        // Leader line from the dot to the bottom of the card, drawn as one
+        // rotated dashed edge. (An SVG was tried and drew nothing: a 0x0 svg has
+        // no rendering area, so the cards floated with no visible tether.)
+        const len = Math.hypot(cx, cy);
+        c.lead.style.width = `${len.toFixed(1)}px`;
+        c.lead.style.transform = `rotate(${Math.atan2(cy, cx).toFixed(4)}rad)`;
+      }
+      raf = requestAnimationFrame(track);
+    });
+
+    return () => {
+      cancelAnimationFrame(raf);
+      // fade the beat's callouts out rather than cutting them, so moving between
+      // beats is a dissolve at both ends instead of a pop
+      host.style.transition = "opacity .45s ease";
+      host.style.opacity = "0";
+      setTimeout(() => host.remove(), 500);
+      if (overlay.current === host) overlay.current = null;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [idx, isCompact]);
+
+  // On the tree-cover-loss beat, dim the protected-area fill so the magenta loss
+  // layer underneath reads clearly (its default 0.45 opacity buries it). Restore
+  // on every other beat, and on close.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const dim = !!story.chapters[idx].animateLoss;
+    const set = () => {
+      if (map.getLayer("lyr-protected"))
+        map.setPaintProperty("lyr-protected", "fill-opacity", dim ? 0.12 : 0.45);
+    };
+    set();
+    const t = setTimeout(set, 800); // re-apply once the layer toggle settles
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [idx]);
+  useEffect(
+    () => () => {
+      const map = mapRef.current;
+      if (map?.getLayer("lyr-protected"))
+        map.setPaintProperty("lyr-protected", "fill-opacity", 0.45);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
 
   // immersive: hide the site nav (via a body flag) for the duration
   useEffect(() => {
@@ -450,6 +1299,17 @@ export default function PlaceStory({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Keep the outline reachable from fly(), and re-frame if it lands after the
+  // beat has already begun (it is fetched, so on a slow connection the fit would
+  // otherwise fall back to the hand-set center/zoom and stay there).
+  useEffect(() => {
+    boundaryRef.current = boundaryGeom;
+    if (!boundaryGeom) return;
+    // camera only: re-running the beat would restart the loss animation at 2001
+    fitBoundary(story.chapters[idx], 1200);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [boundaryGeom]);
 
   // draw the park outline as a flat, terrain-draped highlight. Added as soon as
   // the geometry is fetched — NOT gated on isStyleLoaded()/idle, which stay
@@ -677,6 +1537,51 @@ export default function PlaceStory({
           boxShadow: "inset 0 0 220px 40px rgba(0,0,0,0.55)",
         }}
       />
+
+      {/* closing biodiversity montage: images fly in + drift across the screen.
+          Keyed on idx so it replays each time this beat is entered. Sits behind
+          the fact card. Skipped on mobile-portrait (rotate gate). */}
+      {ch.gallery && ch.gallery.length > 0 && !needRotate && (
+        <div key={`gallery-${idx}`} className="pointer-events-none absolute inset-0 overflow-hidden">
+          {GALLERY_TILES.slice(0, isCompact ? 8 : GALLERY_TILES.length).map((tile, i) => {
+            const item = ch.gallery![i % ch.gallery!.length];
+            const w = isCompact ? Math.round(tile.w * 0.62) : tile.w;
+            const h = Math.round(w * 0.72);
+            return (
+              <div
+                key={i}
+                className="absolute"
+                style={{ top: `${tile.t}%`, left: `${tile.l}%`, transform: `rotate(${tile.r}deg)` }}
+              >
+                <div className="gallery-in" style={{ ["--d" as string]: `${tile.d}ms` }}>
+                  <div
+                    className="story-float group pointer-events-auto relative overflow-hidden rounded-xl shadow-[0_22px_55px_-20px_rgba(0,0,0,0.75)] ring-1 ring-white/15"
+                    style={{
+                      width: `${w}px`,
+                      height: `${h}px`,
+                      animationDuration: `${6 + (i % 5)}s`,
+                      animationDelay: `${tile.d + 500}ms`,
+                    }}
+                  >
+                    <img src={item.src} alt={t(item.title)} className="block h-full w-full object-cover" />
+                    {/* hover: reveal the species / plant name */}
+                    <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-black/92 via-black/30 to-transparent p-2.5 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                      <div className="text-[0.74rem] font-semibold leading-tight text-white">
+                        {t(item.title)}
+                      </div>
+                      {item.sub && (
+                        <div className="mt-0.5 text-[0.62rem] italic leading-tight text-white/70">
+                          {t(item.sub)}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* top: place name + close */}
       <div className="pointer-events-auto absolute inset-x-0 top-0 flex items-start justify-between p-4 md:p-6">

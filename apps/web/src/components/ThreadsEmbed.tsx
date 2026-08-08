@@ -59,11 +59,14 @@ export default function ThreadsEmbed({ urls }: { urls: string[] }) {
     // embed.js swaps each blockquote for its own iframe (heights vary), so we
     // give each post its own column and top-align the row. flex-wrap keeps it a
     // neat 3-up on wide screens and reflows to fewer columns when it gets tight.
-    <div className="mt-6 flex flex-wrap items-start justify-center gap-4">
+    // Masonry via CSS columns: two wide columns, each post keeps its NATURAL
+    // height (never cropped) and stays whole (break-inside-avoid). The iframes
+    // load async and the columns reflow automatically.
+    <div className="mx-auto mt-9 max-w-[1000px] columns-1 gap-6 sm:columns-2 [column-fill:balance]">
       {urls.map((url) => (
         <div
           key={url}
-          className="w-full min-w-0 max-w-[360px] flex-1 basis-[300px]"
+          className="mb-6 break-inside-avoid rounded-2xl border border-[var(--glass-border)] bg-[var(--bg-raised)] p-3.5 shadow-[0_20px_50px_-30px_rgba(0,0,0,0.6)]"
         >
           <blockquote
             className="text-post-media"
@@ -75,7 +78,7 @@ export default function ThreadsEmbed({ urls }: { urls: string[] }) {
               href={url}
               target="_blank"
               rel="noreferrer"
-              className="text-muted"
+              className="block px-3 py-10 text-center text-[0.9rem] text-muted"
             >
               {url.replace(/^https?:\/\/(www\.)?/, "")}
             </a>

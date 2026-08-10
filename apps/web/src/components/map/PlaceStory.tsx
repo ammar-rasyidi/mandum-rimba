@@ -312,6 +312,12 @@ export default function PlaceStory({
    *  screen cannot take three of the wider ones across, and stacking more rows
    *  instead runs out of sky. */
   const [isTight, setIsTight] = useState(false);
+  /** phone held upright. Landscape genuinely suits this story better, so we say
+   *  so, but as a hint that can be waved away rather than the full-screen gate
+   *  that used to sit here: that blocked the story outright on a phone held the
+   *  way phones are held. */
+  const [portraitPhone, setPortraitPhone] = useState(false);
+  const [hintGone, setHintGone] = useState(false);
   const [playing, setPlaying] = useState(true); // story autoplay — on by default
   const [soundOn, setSoundOn] = useState(!!(story.sound || story.music));
   const audioRef = useRef<HTMLAudioElement[]>([]);
@@ -1377,10 +1383,10 @@ export default function PlaceStory({
     else document.exitFullscreen?.().catch(() => {});
   };
 
-  // this cinematic story is built for a wide canvas (like desktop). On a touch
-  // device held in portrait, prompt the viewer to rotate so it matches. And on
-  // any small OR short viewport (incl. a landscape phone), use the compact
-  // layout — a wide-but-short desktop layout has the side panels overlap the card.
+  // Breakpoints for the whole story. Portrait, landscape and desktop are all
+  // supported layouts; a phone held upright gets a hint that landscape suits it
+  // better, not a wall. A wide-but-short viewport also takes the compact layout,
+  // since the desktop side panels would overlap the card there.
   useEffect(() => {
     const check = () => {
       const w = window.innerWidth;
@@ -1389,6 +1395,10 @@ export default function PlaceStory({
       setIsShort(h < 500);
       setSideBySide(w < 768 && w >= 600);
       setIsTight(w < 400 || h < 500);
+      const touch =
+        window.matchMedia("(pointer: coarse)").matches ||
+        (navigator.maxTouchPoints ?? 0) > 0;
+      setPortraitPhone(h > w && touch && Math.min(w, h) <= 820);
     };
     check();
     window.addEventListener("resize", check);
@@ -1398,6 +1408,13 @@ export default function PlaceStory({
       window.removeEventListener("orientationchange", check);
     };
   }, []);
+
+  // the rotate hint shows its piece and then gets out of the way
+  useEffect(() => {
+    if (!portraitPhone || hintGone) return;
+    const t = setTimeout(() => setHintGone(true), 7000);
+    return () => clearTimeout(t);
+  }, [portraitPhone, hintGone]);
 
   // fetch the real WDPA park outline once; fall back to the offline polygon
   useEffect(() => {
@@ -1636,6 +1653,34 @@ export default function PlaceStory({
 
   return (
     <div className="pointer-events-none fixed inset-0 z-[40]">
+      {/* Turn-your-phone hint. Sits above the sheet, says its piece for seven
+          seconds, and can be tapped away. The story plays perfectly well in
+          portrait, so this is a suggestion and never a blocker. */}
+      {portraitPhone && !hintGone && (
+        <button
+          onClick={() => setHintGone(true)}
+          className="pointer-events-auto absolute left-1/2 top-[4.75rem] z-[60] flex -translate-x-1/2 items-center gap-2 rounded-full border border-white/20 bg-black/75 py-2 pl-3 pr-3.5 text-left backdrop-blur-md animate-[panel-in_0.5s_ease]"
+        >
+          <svg
+            className="shrink-0 motion-safe:animate-[rotate-hint_2.6s_ease-in-out_infinite]"
+            width="17"
+            height="17"
+            viewBox="0 0 24 24"
+            fill="none"
+            aria-hidden
+          >
+            <rect x="7" y="2.5" width="10" height="19" rx="2.2" stroke="#57b98a" strokeWidth="1.7" />
+            <path d="M10.5 19h3" stroke="#57b98a" strokeWidth="1.7" strokeLinecap="round" />
+          </svg>
+          <span className="text-[0.68rem] leading-tight text-white/85">
+            {locale === "en"
+              ? "Turn your phone sideways for the full view"
+              : "Putar perangkat untuk tampilan penuh"}
+          </span>
+          <span className="ml-1 shrink-0 text-[0.8rem] leading-none text-white/40">✕</span>
+        </button>
+      )}
+
       {/* letterbox bars + vignette — the cinematic frame */}
       <div
         className="absolute inset-x-0 top-0 bg-gradient-to-b from-black/85 to-transparent transition-[height] duration-700"

@@ -40,10 +40,12 @@ function buildAnnotation(
   const cardW = compact
     ? withPhoto
       ? tight
-        ? "width:92px;"
+        ? // three of these have to sit across a 320px screen, which leaves 292px
+          // once the frame padding is off: 88 x 3 plus two 10px gaps is 284
+          "width:88px;"
         : "width:124px;"
       : tight
-        ? "width:104px;"
+        ? "width:100px;"
         : "width:132px;"
     : a.photo
       ? "width:200px;"
@@ -1070,8 +1072,13 @@ export default function PlaceStory({
     // data callouts + `float` photo cards are geo-anchored on the terrain;
     // plain photo cards render fixed in the side columns. On compact screens skip
     // all geo markers entirely — they'd collide with the bottom stack.
+    // On a phone every callout goes on the terrain. Desktop routes the photo
+    // ones that are not `float` into its side columns instead, and a phone has
+    // no side columns: they were being pushed into a strip above the fact card,
+    // which is 92px of a 195px sheet on a phone held sideways and left nothing
+    // for the story itself.
     const anns = (story.chapters[idx].annotations ?? []).filter(
-      (a) => !a.photo || a.float,
+      (a) => isCompact || !a.photo || a.float,
     );
     if (!anns.length) return;
 
@@ -2022,13 +2029,6 @@ export default function PlaceStory({
                 {tr.has(`layerNames.${l.id}`) ? tr(`layerNames.${l.id}`) : l.id}
               </span>
             ))}
-          </div>
-        )}
-        {/* COMPACT: photos as a horizontal scroll strip ABOVE the fact card, so
-            all info stays visible and nothing overlaps or clips */}
-        {isCompact && sidePhotos.length > 0 && (
-          <div className="mx-auto mb-2 flex w-full max-w-[640px] shrink-0 gap-2 overflow-x-auto px-1 py-1 [-ms-overflow-style:none] [scrollbar-width:none]">
-            {sidePhotos.map((a, i) => renderPhoto(a, i, true))}
           </div>
         )}
         <div

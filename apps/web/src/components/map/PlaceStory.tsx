@@ -20,7 +20,14 @@ import type { Annotation, Bi, PlaceStory } from "./placeStories";
  * where a card lands depends on terrain elevation, exaggeration and the live
  * camera, so the browser is the only place that knows the truth.
  */
-function buildAnnotation(a: Annotation, en: boolean): HTMLDivElement {
+function buildAnnotation(
+  a: Annotation,
+  en: boolean,
+  compact = false,
+  /** a phone on its side: one row of callouts is all the sky allows, so they
+   *  have to be narrow enough that a beat with six of them still fits across */
+  tight = false,
+): HTMLDivElement {
   const tx = (b?: Bi) => (b ? (en ? b.en : b.id) : "");
   const el = document.createElement("div");
   el.style.cssText =
@@ -29,18 +36,29 @@ function buildAnnotation(a: Annotation, en: boolean): HTMLDivElement {
   // a container that has no size of its own, so a max-width has nothing to
   // resolve against: the shrink-to-fit width collapses to the longest word and
   // every card ends up a tall thin ribbon of broken text.
-  const cardW = a.photo ? "width:200px;" : "width:270px;";
+  const withPhoto = !!a.photo;
+  const cardW = compact
+    ? withPhoto
+      ? tight
+        ? "width:92px;"
+        : "width:124px;"
+      : tight
+        ? "width:104px;"
+        : "width:132px;"
+    : a.photo
+      ? "width:200px;"
+      : "width:270px;";
   el.innerHTML = `
     <div data-lead style="position:absolute;left:0;top:0;height:0;width:0;border-top:1.5px dashed rgba(87,185,138,.85);transform-origin:0 0;pointer-events:none;"></div>
     <div data-dot style="position:absolute;left:0;top:0;width:13px;height:13px;border-radius:50%;background:#57b98a;transform:translate(-50%,-50%);box-shadow:0 0 0 4px rgba(87,185,138,.22),0 0 16px 2px rgba(87,185,138,.85);"></div>
     <div data-card style="position:absolute;left:0;top:0;background:rgba(11,18,14,.88);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.16);border-radius:12px;overflow:hidden;box-shadow:0 16px 36px -14px #000;will-change:transform;${cardW}">
-      ${a.photo ? `<img src="${a.photo.src}" alt="${tx(a.title)}" loading="lazy" style="display:block;width:100%;aspect-ratio:4/3;object-fit:cover;" />` : ""}
-      <div style="padding:9px 13px;">
-        ${a.value ? `<div style="font:800 1.15rem/1 -apple-system,system-ui,sans-serif;color:#fff;letter-spacing:-.01em;font-variant-numeric:tabular-nums;">${a.value}</div>` : ""}
-        <div style="font:600 .6rem/1.3 -apple-system,system-ui,sans-serif;text-transform:uppercase;letter-spacing:.14em;color:#7fd6a8;${a.value ? "margin-top:3px;" : ""}">${tx(a.title)}</div>
-        ${a.note ? `<div style="font-size:.68rem;color:rgba(255,255,255,.72);margin-top:2px;font-style:italic;">${tx(a.note)}</div>` : ""}
-        ${a.sub ? `<div style="font-size:.66rem;color:rgba(255,255,255,.58);margin-top:2px;">${tx(a.sub)}</div>` : ""}
-        ${a.source ? `<div style="font:500 .56rem/1.3 -apple-system,system-ui,sans-serif;color:rgba(255,255,255,.4);margin-top:5px;">${en ? "Source" : "Sumber"}: ${a.source.name}</div>` : ""}
+      ${withPhoto ? `<img src="${a.photo!.src}" alt="${tx(a.title)}" loading="lazy" style="display:block;width:100%;aspect-ratio:${compact ? "16/9" : "4/3"};object-fit:cover;" />` : ""}
+      <div style="padding:${compact ? "6px 9px" : "9px 13px"};">
+        ${a.value ? `<div style="font:800 ${compact ? ".92rem" : "1.15rem"}/1 -apple-system,system-ui,sans-serif;color:#fff;letter-spacing:-.01em;font-variant-numeric:tabular-nums;">${a.value}</div>` : ""}
+        <div style="font:600 ${compact ? ".52rem" : ".6rem"}/1.3 -apple-system,system-ui,sans-serif;text-transform:uppercase;letter-spacing:.14em;color:#7fd6a8;${a.value ? "margin-top:3px;" : ""}">${tx(a.title)}</div>
+        ${a.note ? `<div style="font-size:${compact ? ".58rem" : ".68rem"};color:rgba(255,255,255,.72);margin-top:2px;font-style:italic;">${tx(a.note)}</div>` : ""}
+        ${!compact && a.sub ? `<div style="font-size:.66rem;color:rgba(255,255,255,.58);margin-top:2px;">${tx(a.sub)}</div>` : ""}
+        ${!compact && a.source ? `<div style="font:500 .56rem/1.3 -apple-system,system-ui,sans-serif;color:rgba(255,255,255,.4);margin-top:5px;">${en ? "Source" : "Sumber"}: ${a.source.name}</div>` : ""}
       </div>
     </div>`;
   return el;
@@ -282,8 +300,18 @@ export default function PlaceStory({
   const [idx, setIdx] = useState(0);
   const [entered, setEntered] = useState(false);
   const [fs, setFs] = useState(false);
-  const [needRotate, setNeedRotate] = useState(false); // mobile held in portrait
   const [isCompact, setIsCompact] = useState(false); // small OR short viewport
+  /** barely any height to work with: a phone on its side. The decorative rows
+   *  come off so the story itself still fits instead of spilling over the top. */
+  const [isShort, setIsShort] = useState(false);
+  /** enough width to sit the player beside the words rather than under them.
+   *  Below this the info column would be about 160px, which is too narrow to
+   *  read a paragraph in. */
+  const [sideBySide, setSideBySide] = useState(false);
+  /** small in EITHER direction. Callouts get the narrow build here: a 320px
+   *  screen cannot take three of the wider ones across, and stacking more rows
+   *  instead runs out of sky. */
+  const [isTight, setIsTight] = useState(false);
   const [playing, setPlaying] = useState(true); // story autoplay — on by default
   const [soundOn, setSoundOn] = useState(!!(story.sound || story.music));
   const audioRef = useRef<HTMLAudioElement[]>([]);
@@ -296,6 +324,9 @@ export default function PlaceStory({
   const overlay = useRef<HTMLDivElement | null>(null);
   /** latest fetched park outline, so fly() never reads a stale one */
   const boundaryRef = useRef<GeoJSON.Polygon | GeoJSON.MultiPolygon | null>(null);
+  /** the bottom sheet, measured so callouts can be kept clear of whatever height
+   *  it actually is rather than of a guessed reserve */
+  const sheetRef = useRef<HTMLDivElement>(null);
   const glideRaf = useRef<number | null>(null);
   // true once the loss timeline has genuinely advanced past the first year this
   // beat (so a stale end-year value can't auto-skip the animation)
@@ -379,6 +410,69 @@ export default function PlaceStory({
     }
     // FIT THE PARK, if this beat asks for it.
     if (fitBoundary(ch, cam.duration)) return;
+
+    // FIT THE CALLOUTS on a small screen. Every beat's zoom was set against a
+    // 1440x810 desktop, where the frame reaches 405px from the centre. A phone
+    // reaches 187px at the same zoom, and these callouts sit 387 to 491px out,
+    // so on a phone they were not being hidden by any rule: they were simply
+    // off the side of the screen. Framing the points themselves is the only
+    // thing that holds at every size.
+    if (isCompact && !ch.cam.air) {
+      const pts = (ch.annotations ?? []).map((a) => a.lngLat);
+      if (pts.length) {
+        pts.push(ch.cam.center);
+        let w = 180;
+        let so = 90;
+        let e = -180;
+        let n = -90;
+        for (const [x, y] of pts) {
+          if (x < w) w = x;
+          if (x > e) e = x;
+          if (y < so) so = y;
+          if (y > n) n = y;
+        }
+        const H = map.getContainer().clientHeight || 700;
+        const sheet = sheetRef.current?.getBoundingClientRect().height ?? H * 0.4;
+        // A beat whose single callout sits on the camera centre gives a box with
+        // no size, and fitting that zooms to the maximum. Those beats already
+        // frame their subject, so leave them be.
+        const spread = Math.max(e - w, n - so);
+        const fitted =
+          spread < 0.015
+            ? undefined
+            : map.cameraForBounds(
+          [
+            [w, so],
+            [e, n],
+          ],
+          {
+            // The callout CARD hangs above and beside its dot, so this leaves
+            // room for the card and not just for the point. Capped, because
+            // padding that eats the frame forces the fit far further out than
+            // the points actually need.
+            padding: {
+              top: isShort ? 60 : 90,
+              bottom: Math.min(H * 0.56, sheet + 16),
+              left: isShort ? 48 : 56,
+              right: isShort ? 48 : 56,
+            },
+            bearing: ch.cam.bearing,
+            pitch: ch.cam.pitch,
+          },
+        );
+        if (fitted) {
+          map.easeTo({
+            ...fitted,
+            pitch: ch.cam.pitch,
+            roll: 0,
+            duration: cam.duration,
+            easing: glide,
+            essential: true,
+          });
+          return;
+        }
+      }
+    }
     if (i === 0 && ch.cam.air) {
       // FLY THE AEROPLANE, CALLOUT TO CALLOUT. The camera IS the aircraft (see
       // makePath / the AIR block); it heads straight at the next callout with it
@@ -970,9 +1064,9 @@ export default function PlaceStory({
     // data callouts + `float` photo cards are geo-anchored on the terrain;
     // plain photo cards render fixed in the side columns. On compact screens skip
     // all geo markers entirely — they'd collide with the bottom stack.
-    const anns = isCompact
-      ? []
-      : (story.chapters[idx].annotations ?? []).filter((a) => !a.photo || a.float);
+    const anns = (story.chapters[idx].annotations ?? []).filter(
+      (a) => !a.photo || a.float,
+    );
     if (!anns.length) return;
 
     const host = document.createElement("div");
@@ -982,7 +1076,7 @@ export default function PlaceStory({
     overlay.current = host;
 
     const built = anns.map((a, i) => {
-      const el = buildAnnotation(a, locale === "en");
+      const el = buildAnnotation(a, locale === "en", isCompact, isTight);
       host.appendChild(el);
       const p = map.project(a.lngLat);
       return {
@@ -1008,6 +1102,7 @@ export default function PlaceStory({
     const air = !!story.chapters[idx].cam.air;
     let lastCam = "";
     let measured = 0;
+    let sheetTop = Infinity;
 
     let lastFrame = 0;
     let raf = requestAnimationFrame(function track(now: number) {
@@ -1040,6 +1135,12 @@ export default function PlaceStory({
           c.w = c.card.offsetWidth || c.w;
           c.h = c.card.offsetHeight || c.h;
         }
+        // where the fact card actually starts. Measured, because on a phone it
+        // is a different height on every beat and a fixed reserve either wastes
+        // the screen or lets callouts slide underneath it.
+        const r = sheetRef.current?.getBoundingClientRect();
+        const host = map.getContainer().getBoundingClientRect();
+        sheetTop = r && r.height > 0 ? r.top - host.top : Infinity;
       }
 
       // 1. anchors follow the terrain point
@@ -1077,7 +1178,10 @@ export default function PlaceStory({
         // hanging in the sky tethered to nothing. Cheap, and it holds whatever
         // the projection does, which matters because this map draws on a globe
         // with exaggerated terrain and the geometry is not worth predicting.
-        const dotOnGround = c.y > H * 0.26;
+        // Only where the camera is tilted far enough that sky is actually in
+        // shot. On the flat, looking-down beats the whole frame is ground, and
+        // this was throwing away every callout in the top quarter of it.
+        const dotOnGround = map.getPitch() < 55 || c.y > H * 0.26;
         const onFrame =
           ahead > 2000 &&
           dotOnGround &&
@@ -1102,39 +1206,53 @@ export default function PlaceStory({
       //    pushes overlapping pairs apart was tried first and cycles instead of
       //    converging once cards are crowded or share a position exactly.)
       const PAD = 14;
-      const TOP = 76; // below the story's top bar
-      const BOT = H - (air ? 150 : 190); // above the fact card
+      const TOP = isCompact ? 58 : 76; // below the story's top bar
+      // clear of the fact card as measured, falling back to a reserve
+      const BOT = Math.min(
+        sheetTop === Infinity ? H - (air ? 150 : 190) : sheetTop - 10,
+        H - 40,
+      );
       const GAP = 10;
       // every card is laid out, visible or not, so one that is fading in is
       // already in its final place rather than sliding into it in view
       const live = built;
       if (live.length) {
+        const avail = W - 2 * PAD;
         const order = live
           .map((_, i) => i)
           .sort((i, j) => live[i].x - live[j].x || i - j);
-        const width = (row: number[]) =>
-          row.reduce((sum, i) => sum + live[i].w, 0) + GAP * (row.length - 1);
-        let rows: number[][];
-        if (width(order) <= W - 2 * PAD) rows = [order];
-        else {
-          // too many to fit across: split into two bands, the nearer dots (lower
-          // on screen) taking the bottom one
-          const byY = [...order].sort((i, j) => live[i].y - live[j].y);
-          const half = Math.ceil(order.length / 2);
-          rows = [
-            byY.slice(0, half).sort((i, j) => live[i].x - live[j].x),
-            byY.slice(half).sort((i, j) => live[i].x - live[j].x),
-          ];
+
+        // Pack into AS MANY ROWS AS FIT, rather than one or two. Six callouts
+        // will not sit side by side on a phone at any legible size, and capping
+        // the count just hid half of them; stacked two per row they all show.
+        const rows: number[][] = [];
+        let cur: number[] = [];
+        let curW = 0;
+        for (const i of order) {
+          const need = live[i].w + (cur.length ? GAP : 0);
+          if (cur.length && curW + need > avail) {
+            rows.push(cur);
+            cur = [];
+            curW = 0;
+          }
+          curW += cur.length ? need : live[i].w;
+          cur.push(i);
         }
-        rows.forEach((row, ri) => {
+        if (cur.length) rows.push(cur);
+
+        // and only as many rows as there is sky for. Anything beyond that fades
+        // out rather than piling up behind the sheet.
+        const rowH = Math.max(...live.map((c) => c.h)) + 12;
+        const maxRows = Math.max(1, Math.floor((BOT - TOP) / rowH));
+        const shown = rows.slice(0, maxRows);
+        const noRoom = new Set(rows.slice(maxRows).flat());
+
+        shown.forEach((row, ri) => {
           let cursor = PAD;
           const lx: number[] = [];
           for (const i of row) {
             const c = live[i];
-            const want = Math.max(
-              cursor + c.w / 2,
-              Math.min(c.x, W - PAD - c.w / 2),
-            );
+            const want = Math.max(cursor + c.w / 2, Math.min(c.x, W - PAD - c.w / 2));
             lx[i] = want;
             cursor = want + c.w / 2 + GAP;
           }
@@ -1146,17 +1264,17 @@ export default function PlaceStory({
           }
           for (const i of row) {
             const c = live[i];
+            // one row can float near its own dot; several have to take fixed
+            // bands, or they would collide as the camera moves
             const bottom =
-              rows.length === 1
+              shown.length === 1
                 ? Math.min(Math.max(c.y - 78, TOP + c.h), BOT)
-                : ri === 0
-                  ? TOP + c.h
-                  : BOT;
-            // ease onto the solved spot so nothing snaps as the layout shifts
+                : TOP + rowH * (ri + 1) - 12;
             c.ox += (lx[i] - c.x - c.ox) * ease(0.3);
             c.oy += (bottom - c.y - c.oy) * ease(0.3);
           }
         });
+        for (const i of noRoom) live[i].op += (0 - live[i].op) * ease(0.45);
       }
 
       // 4. draw. The DOT is pinned exactly to its terrain point, but the card
@@ -1204,7 +1322,7 @@ export default function PlaceStory({
       if (overlay.current === host) overlay.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [idx, isCompact]);
+  }, [idx, isCompact, isShort, isTight]);
 
   // On the tree-cover-loss beat, dim the protected-area fill so the magenta loss
   // layer underneath reads clearly (its default 0.45 opacity buries it). Restore
@@ -1267,11 +1385,10 @@ export default function PlaceStory({
     const check = () => {
       const w = window.innerWidth;
       const h = window.innerHeight;
-      const touch =
-        window.matchMedia("(pointer: coarse)").matches ||
-        (navigator.maxTouchPoints ?? 0) > 0;
-      setNeedRotate(h > w && touch && Math.min(w, h) <= 820);
       setIsCompact(w < 768 || h < 640);
+      setIsShort(h < 500);
+      setSideBySide(w < 768 && w >= 600);
+      setIsTight(w < 400 || h < 500);
     };
     check();
     window.addEventListener("resize", check);
@@ -1374,6 +1491,39 @@ export default function PlaceStory({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [boundaryGeom]);
+
+  // Type scale for the fact card. A phone held sideways has about 190px of
+  // sheet to work with, so it gets its own step rather than desktop sizes in a
+  // smaller box, which is what made everything look oversized.
+  const sz = isShort
+    ? {
+        title: "text-[1.15rem]",
+        eyebrow: "text-[0.55rem]",
+        stat: "text-[1.1rem]",
+        statLabel: "text-[0.66rem]",
+        body: "text-[0.76rem]",
+        point: "text-[0.72rem]",
+        source: "text-[0.58rem]",
+      }
+    : isCompact
+      ? {
+          title: "text-[1.5rem]",
+          eyebrow: "text-[0.6rem]",
+          stat: "text-[1.45rem]",
+          statLabel: "text-[0.72rem]",
+          body: "text-[0.85rem]",
+          point: "text-[0.8rem]",
+          source: "text-[0.62rem]",
+        }
+      : {
+          title: "text-[2.2rem] md:text-[3rem]",
+          eyebrow: "text-[0.68rem]",
+          stat: "text-[2.1rem] md:text-[2.6rem]",
+          statLabel: "text-[0.8rem]",
+          body: "text-[0.98rem]",
+          point: "text-[0.86rem]",
+          source: "text-[0.66rem]",
+        };
 
   const ch = story.chapters[idx];
   const isArrival = idx === 0;
@@ -1486,49 +1636,14 @@ export default function PlaceStory({
 
   return (
     <div className="pointer-events-none fixed inset-0 z-[40]">
-      {/* mobile portrait: cover the story and ask to rotate to landscape, so the
-          experience matches desktop's wide canvas */}
-      {needRotate && (
-        <div className="pointer-events-auto fixed inset-0 z-[80] flex flex-col items-center justify-center gap-5 bg-[#0a0f0c] px-8 text-center">
-          <div className="motion-safe:animate-[rotate-hint_2.6s_ease-in-out_infinite]">
-            <svg width="52" height="52" viewBox="0 0 24 24" fill="none" aria-hidden>
-              <rect
-                x="7"
-                y="2.5"
-                width="10"
-                height="19"
-                rx="2.2"
-                stroke="#57b98a"
-                strokeWidth="1.7"
-              />
-              <path d="M10.5 19h3" stroke="#57b98a" strokeWidth="1.7" strokeLinecap="round" />
-            </svg>
-          </div>
-          <div className="text-[1.05rem] font-semibold text-white">
-            {locale === "en" ? "Rotate your device" : "Putar perangkat"}
-          </div>
-          <p className="max-w-[15rem] text-[0.85rem] leading-relaxed text-white/55">
-            {locale === "en"
-              ? "This story is built for a wide screen. Turn to landscape for the full experience, just like on desktop."
-              : "Kisah ini dibuat untuk layar lebar. Putar ke mode landscape untuk pengalaman penuh, seperti di desktop."}
-          </p>
-          <button
-            onClick={onClose}
-            className="mt-1 text-[0.8rem] text-white/45 underline underline-offset-2 transition-colors hover:text-white/75"
-          >
-            {locale === "en" ? "Exit" : "Keluar"}
-          </button>
-        </div>
-      )}
-
       {/* letterbox bars + vignette — the cinematic frame */}
       <div
         className="absolute inset-x-0 top-0 bg-gradient-to-b from-black/85 to-transparent transition-[height] duration-700"
-        style={{ height: entered ? "16vh" : 0 }}
+        style={{ height: entered ? (isCompact ? "11vh" : "16vh") : 0 }}
       />
       <div
         className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 to-transparent transition-[height] duration-700"
-        style={{ height: entered ? "34vh" : 0 }}
+        style={{ height: entered ? (isCompact ? "26vh" : "34vh") : 0 }}
       />
       <div
         className="absolute inset-0 transition-opacity duration-1000"
@@ -1541,7 +1656,7 @@ export default function PlaceStory({
       {/* closing biodiversity montage: images fly in + drift across the screen.
           Keyed on idx so it replays each time this beat is entered. Sits behind
           the fact card. Skipped on mobile-portrait (rotate gate). */}
-      {ch.gallery && ch.gallery.length > 0 && !needRotate && (
+      {ch.gallery && ch.gallery.length > 0 && (
         <div key={`gallery-${idx}`} className="pointer-events-none absolute inset-0 overflow-hidden">
           {GALLERY_TILES.slice(0, isCompact ? 8 : GALLERY_TILES.length).map((tile, i) => {
             const item = ch.gallery![i % ch.gallery!.length];
@@ -1555,7 +1670,9 @@ export default function PlaceStory({
               >
                 <div className="gallery-in" style={{ ["--d" as string]: `${tile.d}ms` }}>
                   <div
-                    className="story-float group pointer-events-auto relative overflow-hidden rounded-xl shadow-[0_22px_55px_-20px_rgba(0,0,0,0.75)] ring-1 ring-white/15"
+                    className={`story-float group relative overflow-hidden rounded-xl shadow-[0_22px_55px_-20px_rgba(0,0,0,0.75)] ring-1 ring-white/15 ${
+                      isCompact ? "pointer-events-none" : "pointer-events-auto"
+                    }`}
                     style={{
                       width: `${w}px`,
                       height: `${h}px`,
@@ -1584,17 +1701,36 @@ export default function PlaceStory({
       )}
 
       {/* top: place name + close */}
-      <div className="pointer-events-auto absolute inset-x-0 top-0 flex items-start justify-between p-4 md:p-6">
-        <div className="animate-[panel-in_0.6s_ease]">
-          <div className="flex items-center gap-2 text-[0.66rem] uppercase tracking-[0.22em] text-white/70">
-            <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#57b98a]" />
-            Mandum Rimba · Kisah Kawasan
+      <div
+        className={`pointer-events-auto absolute inset-x-0 top-0 flex items-start justify-between gap-2 ${
+          isCompact
+            ? "p-2.5 pt-[max(0.625rem,env(safe-area-inset-top))]"
+            : "p-4 md:p-6"
+        }`}
+      >
+        <div className="min-w-0 animate-[panel-in_0.6s_ease]">
+          <div
+            className={`flex items-center gap-2 uppercase tracking-[0.22em] text-white/70 ${
+              isCompact ? "text-[0.56rem]" : "text-[0.66rem]"
+            }`}
+          >
+            <span className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-[#57b98a]" />
+            <span className="truncate">
+              {isCompact ? "Kisah Kawasan" : "Mandum Rimba \u00b7 Kisah Kawasan"}
+            </span>
           </div>
-          <div className="mt-1 text-[0.72rem] tracking-[0.1em] text-white/80">
+          <div
+            className={`truncate tracking-[0.1em] text-white/80 ${
+              isCompact ? "mt-0.5 text-[0.66rem]" : "mt-1 text-[0.72rem]"
+            }`}
+          >
             {t(story.region)}
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        {/* 44px targets on touch, and icon-only: the labelled pills ran off the
+            side of a 375px screen and the 32px buttons were under the size a
+            finger can reliably hit. */}
+        <div className={`flex shrink-0 items-center ${isCompact ? "gap-1" : "gap-2"}`}>
           {story.sound && (
             <button
               onClick={toggleSound}
@@ -1616,7 +1752,7 @@ export default function PlaceStory({
                     ? "Turn on ambient sound"
                     : "Nyalakan suara"
               }
-              className="flex h-8 w-8 items-center justify-center rounded-full border border-white/20 bg-black/30 text-white/85 backdrop-blur transition-colors hover:bg-black/50"
+              className={`flex items-center justify-center rounded-full border border-white/20 bg-black/30 text-white/85 backdrop-blur transition-colors hover:bg-black/50 ${isCompact ? "h-11 w-11" : "h-8 w-8"}`}
             >
               {soundOn ? (
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden>
@@ -1636,19 +1772,21 @@ export default function PlaceStory({
               onClick={share}
               aria-label={locale === "en" ? "Share" : "Bagikan"}
               title={locale === "en" ? "Share this story" : "Bagikan cerita ini"}
-              className="flex h-8 items-center gap-1.5 rounded-full border border-white/20 bg-black/30 px-3 text-[0.78rem] text-white/85 backdrop-blur transition-colors hover:bg-black/50"
+              className={`flex items-center justify-center gap-1.5 rounded-full border border-white/20 bg-black/30 text-white/85 backdrop-blur transition-colors hover:bg-black/50 ${
+                isCompact ? "h-11 w-11" : "h-8 px-3 text-[0.78rem]"
+              }`}
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
                 <path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M12 15V3m0 0-4 4m4-4 4 4" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
-              {locale === "en" ? "Share" : "Bagikan"}
+              {!isCompact && (locale === "en" ? "Share" : "Bagikan")}
             </button>
           )}
           <button
             onClick={toggleFs}
             aria-label={fs ? "Exit fullscreen" : "Fullscreen"}
             title={fs ? "Exit fullscreen" : "Fullscreen"}
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-white/20 bg-black/30 text-white/85 backdrop-blur transition-colors hover:bg-black/50"
+            className={`flex items-center justify-center rounded-full border border-white/20 bg-black/30 text-white/85 backdrop-blur transition-colors hover:bg-black/50 ${isCompact ? "h-11 w-11" : "h-8 w-8"}`}
           >
             {fs ? (
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden>
@@ -1662,9 +1800,18 @@ export default function PlaceStory({
           </button>
           <button
             onClick={onClose}
-            className="rounded-full border border-white/20 bg-black/30 px-3 py-1 text-[0.78rem] text-white/85 backdrop-blur transition-colors hover:bg-black/50"
+            aria-label={locale === "en" ? "Close" : "Tutup"}
+            className={`flex items-center justify-center rounded-full border border-white/20 bg-black/30 text-white/85 backdrop-blur transition-colors hover:bg-black/50 ${
+              isCompact ? "h-11 w-11" : "px-3 py-1 text-[0.78rem]"
+            }`}
           >
-            {locale === "en" ? "Close" : "Tutup"} ✕
+            {isCompact ? (
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden>
+                <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+            ) : (
+              <>{locale === "en" ? "Close" : "Tutup"} ✕</>
+            )}
           </button>
         </div>
       </div>
@@ -1763,9 +1910,16 @@ export default function PlaceStory({
           column (dvh = the real visible height, minus the top bar) so nothing
           overflows up into the chrome — the card fills what's left and scrolls. */}
       <div
+        ref={sheetRef}
         className={`pointer-events-auto absolute inset-x-0 bottom-0 ${
           isCompact
-            ? "flex max-h-[calc(100dvh-3.25rem)] flex-col p-2.5"
+            ? // Capped so the map is never squeezed to a strip. On a phone held
+              // sideways the sheet was taking about seventy per cent of the
+              // screen; half is the most it may have. Padded for the home
+              // indicator, or the transport row sits under it.
+              `flex flex-col p-2.5 pb-[max(0.625rem,env(safe-area-inset-bottom))] ${
+                isShort ? "max-h-[52dvh]" : "max-h-[calc(100dvh-4.75rem)]"
+              }`
             : "p-4 md:p-8"
         }`}
       >
@@ -1778,43 +1932,38 @@ export default function PlaceStory({
             name={t(story.instagram.name)}
             en={locale === "en"}
             compact={isCompact}
+            tiny={isShort}
           />
         )}
-        {/* COMPACT: tree-cover-loss timeline, stacked above the card */}
+        {/* COMPACT: the loss timeline as one line. Four stacked rows of label,
+            year, track, endpoints and attribution is a panel; on a phone it only
+            has to answer "which year am I looking at, and how far through". The
+            source stays on the fact card, which cites it anyway. */}
         {isCompact && showLoss && (
-          <div className="mx-auto mb-2 w-full max-w-[640px] shrink-0 rounded-2xl border border-white/12 bg-black/60 px-4 py-2 backdrop-blur-md">
-            <div className="flex items-center justify-between gap-3">
-              <span
-                className="text-[0.56rem] uppercase tracking-[0.18em]"
-                style={{ color: LOSS_COLOR }}
-              >
-                {locale === "en" ? "Tree cover loss" : "Tutupan pohon hilang"}
-              </span>
-              <span className="text-2xl font-extrabold leading-none tabular-nums text-white">
-                {lossYear}
-              </span>
-            </div>
-            <div className="relative mt-2.5 h-1 rounded-full bg-white/15">
+          <div className="mx-auto mb-1.5 flex w-full max-w-[640px] shrink-0 items-center gap-2.5 rounded-full border border-white/12 bg-black/60 px-3 py-1.5 backdrop-blur-md">
+            <span
+              className="shrink-0 text-[0.58rem] font-semibold uppercase tracking-[0.14em]"
+              style={{ color: LOSS_COLOR }}
+            >
+              {locale === "en" ? "Loss" : "Hilang"}
+            </span>
+            <div className="relative h-1 flex-1 rounded-full bg-white/15">
               <div
                 className="absolute inset-y-0 left-0 rounded-full"
                 style={{ width: `${lossPct}%`, background: LOSS_COLOR }}
               />
               <div
-                className="absolute top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white"
+                className="absolute top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white"
                 style={{ left: `${lossPct}%`, boxShadow: `0 0 8px 1px ${LOSS_COLOR}` }}
               />
             </div>
-            <div className="mt-1.5 flex justify-between text-[0.52rem] tabular-nums text-white/45">
-              <span>{lossYears![0]}</span>
-              <span>{lossYears![lossYears!.length - 1]}</span>
-            </div>
-            <div className="mt-1.5 text-[0.5rem] leading-tight text-white/35">
-              {locale === "en" ? "Source" : "Sumber"}: {LOSS_ATTRIBUTION}
-            </div>
+            <span className="shrink-0 text-[0.9rem] font-extrabold leading-none tabular-nums text-white">
+              {lossYear}
+            </span>
           </div>
         )}
         {/* COMPACT: legend chips, stacked above the card */}
-        {isCompact && legend.length > 0 && (
+        {isCompact && !isShort && legend.length > 0 && (
           <div className="mx-auto mb-2 flex w-full max-w-[640px] shrink-0 flex-wrap items-center gap-x-3 gap-y-1 rounded-2xl border border-white/12 bg-black/55 px-4 py-1.5 backdrop-blur-md">
             {legend.map((l) => (
               <span
@@ -1832,56 +1981,66 @@ export default function PlaceStory({
         )}
         {/* COMPACT: photos as a horizontal scroll strip ABOVE the fact card, so
             all info stays visible and nothing overlaps or clips */}
-        {isCompact && photoAnns.length > 0 && (
+        {isCompact && sidePhotos.length > 0 && (
           <div className="mx-auto mb-2 flex w-full max-w-[640px] shrink-0 gap-2 overflow-x-auto px-1 py-1 [-ms-overflow-style:none] [scrollbar-width:none]">
-            {photoAnns.map((a, i) => renderPhoto(a, i, true))}
+            {sidePhotos.map((a, i) => renderPhoto(a, i, true))}
           </div>
         )}
         <div
           key={idx}
-          className={`mx-auto flex w-full max-w-[640px] flex-col rounded-2xl border border-white/12 bg-black/65 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.8)] backdrop-blur-md animate-[panel-in_0.6s_cubic-bezier(.2,.7,.2,1)] ${
-            isCompact ? "min-h-0 flex-1 p-3.5" : "p-5 md:p-6"
+          className={`relative mx-auto flex w-full max-w-[640px] rounded-2xl border border-white/12 bg-black/65 shadow-[0_20px_60px_-20px_rgba(0,0,0,0.8)] backdrop-blur-md animate-[panel-in_0.6s_cubic-bezier(.2,.7,.2,1)] ${
+            isCompact
+              ? // Words on the left, player on the right where the screen is
+                // wide enough. A phone held sideways has no height to spare, so
+                // that is where this matters; upright it stacks instead, because
+                // side by side would leave about 160px for a paragraph.
+                `flex-1 ${sideBySide ? "items-end gap-3" : "flex-col"} ${
+                  isShort ? "min-h-[4.5rem] p-2.5 pb-3" : "min-h-[6.5rem] p-3 pb-3.5"
+                }`
+              : "flex-col p-5 md:p-6"
           }`}
         >
           <div
             className={
-              isCompact ? "min-h-0 flex-1 overflow-y-auto pr-1 [scrollbar-width:thin]" : ""
+              isCompact
+                ? `min-h-0 min-w-0 flex-1 overflow-y-auto pr-1 [scrollbar-width:thin] ${sideBySide ? "self-stretch" : ""}`
+                : ""
             }
           >
           {isArrival ? (
             <h1 className="m-0 text-white [text-wrap:balance]">
               <span
-                className={`block font-bold leading-[1.02] tracking-[-0.02em] ${isCompact ? "text-[1.7rem]" : "text-[2.2rem] md:text-[3rem]"}`}
+                className={`block font-bold leading-[1.02] tracking-[-0.02em] ${sz.title}`}
               >
                 {t(ch.title)}
               </span>
             </h1>
           ) : (
             <>
-              <div className="mb-1 text-[0.68rem] uppercase tracking-[0.2em] text-[#7fd6a8]">
+              <div className={`mb-1 uppercase tracking-[0.2em] text-[#7fd6a8] ${sz.eyebrow}`}>
                 {t(ch.title)}
               </div>
               {ch.stat && (
-                <div className="mb-1.5 flex items-baseline gap-3">
+                <div className={`flex items-baseline gap-2.5 ${isShort ? "mb-1" : "mb-1.5"}`}>
                   <span
-                    className={`font-bold leading-none tracking-[-0.02em] text-white tabular-nums ${isCompact ? "text-[1.7rem]" : "text-[2.1rem] md:text-[2.6rem]"}`}
+                    className={`font-bold leading-none tracking-[-0.02em] text-white tabular-nums ${sz.stat}`}
                   >
                     {ch.stat.value}
                   </span>
-                  <span className="text-[0.8rem] text-white/70">
+                  <span className={`text-white/70 ${sz.statLabel}`}>
                     {t(ch.stat.label)}
                   </span>
                 </div>
               )}
               <p
-                className={`m-0 max-w-[52ch] leading-snug text-white/90 [text-wrap:pretty] ${isCompact ? "text-[0.9rem]" : "text-[0.98rem]"}`}
+                className={`m-0 max-w-[52ch] leading-snug text-white/90 [text-wrap:pretty] ${sz.body}`}
               >
                 {t(ch.body)}
               </p>
               {ch.points && ch.points.length > 0 && (
                 <ul className="mt-2.5 flex max-w-[54ch] list-none flex-col gap-1.5 p-0">
                   {ch.points.map((pt, i) => (
-                    <li key={i} className="flex gap-2 text-[0.86rem] leading-snug text-white/85">
+                    <li key={i} className={`flex gap-2 leading-snug text-white/85 ${sz.point}`}>
                       <span
                         aria-hidden
                         className="mt-[0.5em] h-1.5 w-1.5 flex-none rounded-full"
@@ -1909,7 +2068,7 @@ export default function PlaceStory({
                   href={ch.source.url}
                   target="_blank"
                   rel="noreferrer"
-                  className="mt-1.5 inline-block text-[0.66rem] text-white/55 hover:text-white/80"
+                  className={`mt-1.5 inline-block text-white/55 hover:text-white/80 ${sz.source}`}
                 >
                   {locale === "en" ? "Source" : "Sumber"}: {ch.source.name}
                 </a>
@@ -1934,29 +2093,61 @@ export default function PlaceStory({
             </>
           )}
           </div>
-
-          {/* progress + transport controls: back · play/pause · forward · stop */}
-          <div className="mt-3 flex shrink-0 items-center gap-3">
-            <div className="flex gap-1.5">
-              {story.chapters.map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => fly(i)}
-                  aria-label={`beat ${i + 1}`}
-                  className={`h-1.5 rounded-full transition-all ${
-                    i === idx ? "w-6 bg-[#57b98a]" : "w-1.5 bg-white/35 hover:bg-white/60"
-                  }`}
-                />
-              ))}
+          {isCompact && (
+            <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[3px] overflow-hidden rounded-b-2xl bg-white/10">
+              <div
+                className="h-full rounded-r-full bg-[#57b98a] transition-[width] duration-500"
+                style={{ width: `${((idx + 1) / story.chapters.length) * 100}%` }}
+              />
             </div>
-            <span className="flex-1" />
-            <div className="flex items-center gap-1.5">
+          )}
+
+          {/* Progress and transport. On a phone these become two rows: thirteen
+              six-pixel dots and four buttons could not share one 375px line, and
+              the dots were far too small to hit anyway. The dots become a plain
+              progress bar with a beat count, and stepping is done with the
+              buttons, which is what a thumb can actually use. */}
+          <div
+            className={`shrink-0 ${
+              isCompact
+                ? `flex items-center gap-2 ${sideBySide ? "flex-col" : "mt-2 justify-end"}`
+                : "mt-3 flex items-center gap-3"
+            }`}
+          >
+            {isCompact ? (
+              <span
+                className={`tabular-nums leading-none text-white/50 ${
+                  isShort ? "text-[0.58rem]" : "text-[0.62rem]"
+                }`}
+              >
+                {idx + 1}/{story.chapters.length}
+              </span>
+            ) : (
+              <div className="flex gap-1.5">
+                {story.chapters.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => fly(i)}
+                    aria-label={`beat ${i + 1}`}
+                    className={`h-1.5 rounded-full transition-all ${
+                      i === idx ? "w-6 bg-[#57b98a]" : "w-1.5 bg-white/35 hover:bg-white/60"
+                    }`}
+                  />
+                ))}
+              </div>
+            )}
+            {!isCompact && <span className="flex-1" />}
+            <div
+              className={`flex items-center ${
+                isCompact ? (isShort ? "gap-1.5" : "gap-2") : "gap-1.5"
+              }`}
+            >
               <button
                 onClick={() => fly(idx - 1)}
                 disabled={idx === 0}
                 aria-label={locale === "en" ? "Previous" : "Sebelumnya"}
                 title={locale === "en" ? "Previous" : "Sebelumnya"}
-                className="flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-black/30 text-white/85 backdrop-blur transition-colors hover:bg-black/50 disabled:opacity-30 disabled:hover:bg-black/30"
+                className={`flex items-center justify-center rounded-full border border-white/20 bg-black/30 text-white/85 backdrop-blur transition-colors hover:bg-black/50 disabled:opacity-30 disabled:hover:bg-black/30 ${isCompact ? (isShort ? "h-10 w-10" : "h-11 w-11") : "h-9 w-9"}`}
               >
                 <svg width="13" height="13" viewBox="0 0 12 12" fill="currentColor" aria-hidden><path d="M9.5 1L4 6l5.5 5V1zM3 1H1.5v10H3V1z" /></svg>
               </button>
@@ -1988,7 +2179,9 @@ export default function PlaceStory({
                         ? "Play"
                         : "Main"
                 }
-                className="flex h-11 w-11 items-center justify-center rounded-full bg-[#57b98a] text-[#07130d] transition-[filter] hover:brightness-110"
+                className={`flex items-center justify-center rounded-full bg-[#57b98a] text-[#07130d] transition-[filter] hover:brightness-110 ${
+                  isCompact ? (isShort ? "h-12 w-12" : "h-[3.25rem] w-[3.25rem]") : "h-11 w-11"
+                }`}
               >
                 {isLast ? (
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
@@ -2005,18 +2198,23 @@ export default function PlaceStory({
                 disabled={isLast}
                 aria-label={locale === "en" ? "Next" : "Lanjut"}
                 title={locale === "en" ? "Next" : "Lanjut"}
-                className="flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-black/30 text-white/85 backdrop-blur transition-colors hover:bg-black/50 disabled:opacity-30 disabled:hover:bg-black/30"
+                className={`flex items-center justify-center rounded-full border border-white/20 bg-black/30 text-white/85 backdrop-blur transition-colors hover:bg-black/50 disabled:opacity-30 disabled:hover:bg-black/30 ${isCompact ? (isShort ? "h-10 w-10" : "h-11 w-11") : "h-9 w-9"}`}
               >
                 <svg width="13" height="13" viewBox="0 0 12 12" fill="currentColor" aria-hidden><path d="M2.5 1L8 6l-5.5 5V1zM9 1h1.5v10H9V1z" /></svg>
               </button>
-              <button
-                onClick={onClose}
-                aria-label={locale === "en" ? "Stop — back to map" : "Stop — balik ke peta"}
-                title={locale === "en" ? "Stop — back to map" : "Stop — balik ke peta"}
-                className="ml-1 flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-black/30 text-white/85 backdrop-blur transition-colors hover:bg-black/50"
-              >
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" aria-hidden><rect width="12" height="12" rx="2" /></svg>
-              </button>
+              {/* Stop does exactly what the X in the top bar does. On a phone
+                  that is a wasted target in the row your thumb uses most, so it
+                  is left to the desktop layout. */}
+              {!isCompact && (
+                <button
+                  onClick={onClose}
+                  aria-label={locale === "en" ? "Stop, back to map" : "Stop, balik ke peta"}
+                  title={locale === "en" ? "Stop, back to map" : "Stop, balik ke peta"}
+                  className="ml-1 flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-black/30 text-white/85 backdrop-blur transition-colors hover:bg-black/50"
+                >
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" aria-hidden><rect width="12" height="12" rx="2" /></svg>
+                </button>
+              )}
             </div>
           </div>
         </div>

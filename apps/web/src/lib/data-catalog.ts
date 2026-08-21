@@ -180,6 +180,63 @@ export const DATA_CATALOG: DatasetEntry[] = [
     status: "active",
   },
   {
+    layer: "karhutla-image",
+    name: {
+      id: "Citra asli harian (NASA Worldview / GIBS, True Color)",
+      en: "Daily true-colour imagery (NASA Worldview / GIBS)",
+    },
+    org: "NASA EOSDIS GIBS / Worldview (LANCE)",
+    url: "https://worldview.earthdata.nasa.gov/",
+    license: "Domain publik / Public domain (NASA)",
+    updated: "Harian / Daily",
+    coverage: {
+      id: "Global; MODIS Terra sejak 2000, VIIRS sejak 2015",
+      en: "Global; MODIS Terra from 2000, VIIRS from 2015",
+    },
+    description: {
+      id: "Mozaik citra satelit warna asli untuk SATU hari pilihan, disajikan langsung dari ubin NASA GIBS (tanpa kunci, tanpa kami olah). Dipakai untuk memeriksa karhutla: asap dan bekas bakar terlihat mata telanjang, sehingga hotspot bisa dicocokkan dengan apa yang benar-benar direkam sensor. Nama produk pada peta adalah nama lapisan Worldview persis, jadi hari yang sama bisa dibuka dan dibandingkan di Worldview.",
+      en: "True-colour satellite mosaic for ONE chosen day, streamed straight from NASA GIBS tiles (keyless, not processed by us). Used to check land & forest fires: smoke and burn scars are visible to the naked eye, so a hotspot can be matched against what the sensor actually recorded. The product name shown on the map is the exact Worldview layer name, so the same day can be opened and compared in Worldview.",
+    },
+    status: "active",
+  },
+  {
+    layer: "karhutla-hotspot",
+    name: {
+      id: "Hotspot harian arsip (NASA Worldview / GIBS, FIRMS)",
+      en: "Daily archived hotspots (NASA Worldview / GIBS, FIRMS)",
+    },
+    org: "NASA FIRMS via EOSDIS GIBS / Worldview",
+    url: "https://worldview.earthdata.nasa.gov/",
+    license: "Domain publik / Public domain (NASA)",
+    updated: "Harian / Daily",
+    coverage: {
+      id: "Global; MODIS sejak 2002, VIIRS 375 m sejak 2012",
+      en: "Global; MODIS from 2002, VIIRS 375 m from 2012",
+    },
+    description: {
+      id: "Deteksi anomali panas FIRMS untuk satu hari pilihan, sehingga satu musim karhutla bisa diputar hari demi hari, berbeda dari lapisan Hotspot (48 jam) yang hanya near-real-time. Karena GIBS hanya menerbitkan ubin vektornya dalam EPSG:4326, lapisan ini digambar lewat WMS GIBS sebagai gambar: belum bisa diklik. Hotspot adalah deteksi panas yang belum diverifikasi, bukan bukti kebakaran maupun keterkaitan dengan pihak mana pun.",
+      en: "FIRMS thermal-anomaly detections for one chosen day, so a fire season can be replayed day by day — unlike the Hotspots (48h) layer, which is near-real-time only. Because GIBS publishes these vector tiles in EPSG:4326 only, this layer is drawn via the GIBS WMS as an image, and is therefore not clickable. A hotspot is an unverified heat detection, not proof of a fire nor of any party's involvement.",
+    },
+    status: "active",
+  },
+  {
+    layer: null,
+    name: {
+      id: "Lapisan referensi (label, batas, jalan, garis pantai)",
+      en: "Reference overlays (labels, borders, roads, coastlines)",
+    },
+    org: "NASA EOSDIS GIBS / Worldview, dari OpenStreetMap",
+    url: "https://worldview.earthdata.nasa.gov/",
+    license: "OpenStreetMap ODbL",
+    updated: "Statis / Static",
+    coverage: { id: "Global (z0–8)", en: "Global (z0–8)" },
+    description: {
+      id: "Nama tempat, batas wilayah, jalan, dan garis pantai turunan OpenStreetMap yang disajikan NASA GIBS. Tampil otomatis bersama citra satelit NASA (bukan lapisan terpisah): citra itu menutupi peta dasar beserta labelnya, jadi overlay ini mengembalikan konteks lokasi. Hanya penanda orientasi, bukan sumber data lingkungan, dan tidak dipakai untuk perhitungan apa pun.",
+      en: "OpenStreetMap-derived place names, boundaries, roads, and coastlines served by NASA GIBS. Shown automatically with the NASA satellite imagery (not a separate layer): that imagery covers the basemap and its labels, so this overlay restores locational context. Orientation only — not an environmental data source, and not used in any calculation.",
+    },
+    status: "active",
+  },
+  {
     layer: null,
     name: { id: "Batas wilayah administratif", en: "Administrative boundaries" },
     org: "GADM 4.1",

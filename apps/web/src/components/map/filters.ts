@@ -1,4 +1,5 @@
 import { LAYERS } from "@/lib/layers";
+import { DEFAULT_HOTSPOT, DEFAULT_IMAGERY } from "@/lib/gibs";
 
 export type Basemap = "dark" | "satellite";
 
@@ -18,6 +19,16 @@ export interface MapFilters {
   protectedCategories: string[]; // TN | HL | CA | SM | other | moratorium
   speciesClasses: string[]; // aves | mammalia | reptilia | amphibia
   fireConfidence: string[]; // high | nominal | low
+  /** karhutla view (NASA Worldview / GIBS): the single UTC day both GIBS layers
+   *  are pinned to, `yyyy-mm-dd`. Empty means "not resolved yet" — MapView fills
+   *  it in on mount via gibsDefaultDate(). It is deliberately NOT defaulted at
+   *  module load: DEFAULT_FILTERS is evaluated on the server too, and a
+   *  clock-derived default there would differ from the browser's across UTC
+   *  midnight and desync hydration. */
+  karhutlaDate: string;
+  /** which Worldview product each GIBS layer draws from (exact GIBS layer ids) */
+  karhutlaImagery: string;
+  karhutlaHotspot: string;
 }
 
 export const ALERT_SYSTEMS = ["radd", "glad_l", "glad_s2"];
@@ -51,4 +62,7 @@ export const DEFAULT_FILTERS: MapFilters = {
   protectedCategories: [...PROTECTED_CATEGORIES],
   speciesClasses: [...SPECIES_CLASSES],
   fireConfidence: [...FIRE_CONFIDENCE],
+  karhutlaDate: "",
+  karhutlaImagery: DEFAULT_IMAGERY,
+  karhutlaHotspot: DEFAULT_HOTSPOT,
 };

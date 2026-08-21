@@ -6,8 +6,19 @@ import { LAYER_SUBCOLORS, swatchColor, type LayerDef } from "@/lib/layers";
 import PlaceSearch from "./PlaceSearch";
 import SpeciesSearch from "./SpeciesSearch";
 import BoundaryUpload from "./BoundaryUpload";
+import GibsProductSelect from "./GibsProductSelect";
 import type { FamilyStat } from "@/lib/species";
 import type { ImportResult } from "@/lib/geo-import";
+import {
+  GIBS_HOTSPOT,
+  GIBS_IMAGERY,
+  gibsClampDate,
+  gibsDateFloor,
+  gibsMaxDate,
+  gibsProductStart,
+  gibsShiftDate,
+  worldviewUrl,
+} from "@/lib/gibs";
 import {
   ALERT_SYSTEMS,
   CONCESSION_TYPES,
@@ -53,6 +64,10 @@ interface Props {
   /** guided globe tour: fly to a biogeographic realm / play the full tour */
   onFlyToRealm?: (realm: string) => void;
   onPlayTour?: () => void;
+  /** karhutla (NASA Worldview / GIBS): the resolved UTC day both GIBS layers are
+   *  pinned to. filters.karhutlaDate can still be "" during the first client
+   *  render, so MapView passes the value it actually drew with. */
+  karhutlaDate?: string;
   /** minimized (collapsed to a pill) — lifted so the map nav controls can hide
    *  behind the expanded sheet on mobile */
   minimized: boolean;
@@ -117,6 +132,7 @@ export default function LayerPanel({
   onClearBoundary,
   onFlyToRealm,
   onPlayTour,
+  karhutlaDate = "",
   minimized,
   onMinimizedChange,
   variant = "float",
@@ -144,6 +160,55 @@ export default function LayerPanel({
   const panelBtn =
     "cursor-pointer rounded-full border border-[var(--glass-border)] bg-[var(--glass-highlight)] px-[0.6rem] py-[0.18rem] text-[0.78rem] text-muted transition-[color,border-color] hover:border-[var(--text-dim)] hover:text-foreground";
   const subFilters = "flex flex-wrap gap-[0.35rem] pl-[1.7rem] pt-[0.45rem]";
+  // ---- karhutla (NASA Worldview / GIBS) ----
+  // The two GIBS layers share ONE day but pick their product independently.
+  const gibsProductOf = (id: string) =>
+    id === "karhutla-image" ? filters.karhutlaImagery : filters.karhutlaHotspot;
+  const activeGibs = layers.filter(
+    (l) => l.gibs && filters.layers.includes(l.id),
+  );
+  // the day's floor is the LATEST archive start among the GIBS layers currently
+  // on, so the selected day is valid for everything actually being drawn
+  const karhutlaMin = gibsDateFloor(
+    filters.layers,
+    filters.karhutlaImagery,
+    filters.karhutlaHotspot,
+  );
+  const karhutlaMax = gibsMaxDate();
+  // one shared date control, rendered under whichever GIBS layer comes first
+  const dateOwner = activeGibs[0]?.id;
+  const setKarhutlaDate = (next: string) =>
+    set("karhutlaDate", gibsClampDate(next, karhutlaMin));
+  // turning a GIBS layer on can raise the date floor past the current day, which
+  // would leave it painting a day from before its archive — clamp in the same update
+  const toggleLayer = (def: LayerDef) => {
+    const nextLayers = toggleIn(filters.layers, def.id);
+    if (!def.gibs || !nextLayers.includes(def.id)) {
+      set("layers", nextLayers);
+      return;
+    }
+    onChange({
+      ...filters,
+      layers: nextLayers,
+      karhutlaDate: gibsClampDate(
+        karhutlaDate,
+        gibsDateFloor(
+          nextLayers,
+          filters.karhutlaImagery,
+          filters.karhutlaHotspot,
+        ),
+      ),
+    });
+  };
+  const setKarhutlaProduct = (layerId: string, productId: string) =>
+    onChange({
+      ...filters,
+      [layerId === "karhutla-image" ? "karhutlaImagery" : "karhutlaHotspot"]:
+        productId,
+      // the incoming product's archive may begin after the day now selected
+      karhutlaDate: gibsClampDate(karhutlaDate, gibsProductStart(productId)),
+    });
+
   const chip =
     "inline-flex cursor-pointer select-none items-center gap-[0.3rem] rounded-full border border-[var(--glass-border)] bg-[var(--glass-highlight)] py-[0.14rem] pl-[0.42rem] pr-[0.62rem] text-[0.76rem] text-muted transition-[color,border-color,background-color] has-[input:checked]:has-[input:checked]:text-foreground [&_input]:m-0 [&_input]:accent-[var(--accent)]";
 
@@ -375,7 +440,7 @@ export default function LayerPanel({
                 id={`layer-${def.id}`}
                 checked={active}
                 disabled={!available}
-                onChange={() => set("layers", toggleIn(filters.layers, def.id))}
+                onChange={() => toggleLayer(def)}
               />
               <span
                 className="h-3 w-3 shrink-0 rounded-[3px]"
@@ -410,6 +475,89 @@ export default function LayerPanel({
                     <span>{t(`filterValues.${opt}`)}</span>
                   </label>
                 ))}
+              </div>
+            )}
+
+            {/* karhutla: pick the Worldview product, then scrub the day. The
+                product is shown by its exact NASA Worldview / GIBS layer name,
+                so it can be pasted into Worldview and checked pixel-for-pixel. */}
+            {active && def.gibs && (
+              <div className="pl-[1.7rem] pt-[0.5rem]">
+                <p className="m-0 mb-[0.25rem] text-[0.72rem] text-muted">
+                  {t("karhutlaProduct")}
+                </p>
+                {/* the exact Worldview layer name + its platform/archive, two
+                    lines per option — see GibsProductSelect on why not <select> */}
+                <GibsProductSelect
+                  products={def.gibs === "imagery" ? GIBS_IMAGERY : GIBS_HOTSPOT}
+                  value={gibsProductOf(def.id)}
+                  onChange={(id) => setKarhutlaProduct(def.id, id)}
+                />
+
+                {dateOwner === def.id && (
+                  <>
+                    <label
+                      className="mb-[0.25rem] mt-[0.55rem] block text-[0.72rem] text-muted"
+                      htmlFor="karhutla-date"
+                    >
+                      {t("karhutlaDate")}
+                    </label>
+                    <div className="flex items-center gap-[0.3rem]">
+                      <button
+                        className={panelBtn}
+                        onClick={() =>
+                          setKarhutlaDate(
+                            gibsShiftDate(karhutlaDate, -1, karhutlaMin),
+                          )
+                        }
+                        disabled={karhutlaDate <= karhutlaMin}
+                        aria-label={t("karhutlaPrev")}
+                        title={t("karhutlaPrev")}
+                      >
+                        ◀
+                      </button>
+                      <input
+                        id="karhutla-date"
+                        type="date"
+                        value={karhutlaDate}
+                        min={karhutlaMin}
+                        max={karhutlaMax}
+                        onChange={(e) =>
+                          e.target.value && setKarhutlaDate(e.target.value)
+                        }
+                        className="min-w-0 flex-1 cursor-pointer rounded-lg border border-[var(--glass-border)] bg-[var(--glass-highlight)] px-[0.45rem] py-[0.28rem] text-[0.76rem] tabular-nums text-foreground"
+                      />
+                      <button
+                        className={panelBtn}
+                        onClick={() =>
+                          setKarhutlaDate(
+                            gibsShiftDate(karhutlaDate, 1, karhutlaMin),
+                          )
+                        }
+                        disabled={karhutlaDate >= karhutlaMax}
+                        aria-label={t("karhutlaNext")}
+                        title={t("karhutlaNext")}
+                      >
+                        ▶
+                      </button>
+                    </div>
+                    <p className="m-0 mt-[0.35rem] text-[0.68rem] leading-snug text-muted">
+                      {t("karhutlaNote")}
+                    </p>
+                    <a
+                      className="mt-[0.3rem] inline-block text-[0.7rem] text-accent"
+                      href={worldviewUrl(
+                        filters.karhutlaImagery,
+                        filters.karhutlaHotspot,
+                        karhutlaDate,
+                      )}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {t("karhutlaOpenWorldview")} ↗
+                    </a>
+                  </>
+                )}
               </div>
             )}
 

@@ -16,7 +16,7 @@ export interface LayerDef {
   id: string;
   /** pmtiles file name under {TILES_BASE}/tiles/ and source-layer name */
   tile: string;
-  kind: "fill" | "circle" | "line";
+  kind: "fill" | "circle" | "line" | "raster";
   /** the layer's representative colour (legend header + fallback for any
    *  feature whose category isn't in LAYER_SUBCOLORS) */
   color: string;
@@ -29,7 +29,7 @@ export interface LayerDef {
   sourceName: string;
   sourceUrl: string;
   /** dataset vintage shown as "Data year" in the feature popup — the year(s)
-   *  the source data represents (e.g. "2020", "2019–2025"). Kept in step with
+   *  the source data represents (e.g. "2020", "2019-2025"). Kept in step with
    *  the Sumber Data catalog's `updated` column. Helps make clear that e.g. a
    *  concession boundary is a dated snapshot, not a live legal record. */
   dataYear?: string;
@@ -39,10 +39,44 @@ export interface LayerDef {
   /** for fills: colour each feature by this GeoJSON property (a hex string),
    *  e.g. ecoregions carry RESOLVE's official per-ecoregion COLOR */
   colorProp?: string;
+  /** NASA Worldview / GIBS raster layer (no PMTiles, no ingest — see lib/gibs.ts).
+   *  "imagery" paints UNDER the data layers (it is a basemap for the chosen day);
+   *  "hotspot" paints OVER them. Both are driven by the karhutla date picker. */
+  gibs?: "imagery" | "hotspot";
 }
 
 export const LAYERS: LayerDef[] = [
   // ---- fills (drawn first, under the points) ----
+  {
+    // Karhutla, real imagery: the NASA Worldview true-colour mosaic for ONE
+    // chosen day. Smoke plumes and burn scars are visible directly, so a hotspot
+    // can be corroborated against what the sensor saw. Painted under the data
+    // layers (it stands in for a basemap). Raster from GIBS — nothing ingested.
+    id: "karhutla-image",
+    tile: "karhutla-image",
+    kind: "raster",
+    gibs: "imagery",
+    color: "#b0bec5", // blue-grey 200 — imagery, not a category
+    defaultOn: false,
+    sourceName: "NASA Worldview / GIBS — Corrected Reflectance (True Color)",
+    sourceUrl: "https://worldview.earthdata.nasa.gov/",
+    dataYear: "per hari, 2000-kini",
+  },
+  {
+    // Karhutla, hotspot: the SAME FIRMS thermal anomalies as the `fires` layer
+    // below, but for any single day back to 2002 rather than the last 48 hours,
+    // so a fire season can be replayed. Rendered by the GIBS WMS (GIBS ships
+    // these tiles as EPSG:4326 vector only), so it is a picture: not clickable.
+    id: "karhutla-hotspot",
+    tile: "karhutla-hotspot",
+    kind: "raster",
+    gibs: "hotspot",
+    color: "#ff3d00", // deep-orange A400
+    defaultOn: false,
+    sourceName: "NASA Worldview / GIBS — Thermal Anomalies (FIRMS)",
+    sourceUrl: "https://worldview.earthdata.nasa.gov/",
+    dataYear: "per hari, 2002-kini",
+  },  
   {
     // Peta Sebaran Satwa: threatened wildlife (all classes) occurrence density,
     // smoothed into organic contour bands (not dots, not a grid). Loaded from a
@@ -100,7 +134,7 @@ export const LAYERS: LayerDef[] = [
       "https://data.globalforestwatch.org/datasets/d52e0e67ad21401cbf3a2c002599cf58_10",
   },
   {
-    // Tree cover loss over time (2001–2025, >30% canopy): GFW's live encoded
+    // Tree cover loss over time (2001-2025, >30% canopy): GFW's live encoded
     // raster (Hansen/UMD), streamed straight from GFW's CDN — not our own tiles.
     // Rendered + driven specially in MapView (raster-color + ForestLossTimeline),
     // so `tile` is only a placeholder for the panel/legend plumbing.
@@ -134,23 +168,23 @@ export const LAYERS: LayerDef[] = [
     sourceUrl:
       "https://www.desinventar.net/DesInventar/profiletab.jsp?countrycode=idn",
   },
-  {
-    // Hotspot: near-real-time thermal-anomaly detections from NASA FIRMS
-    // (VIIRS 375 m, NRT), served from the backend and coloured by detection
-    // confidence. Observational only — a hotspot is not a confirmed fire.
-    id: "fires",
-    tile: "fires",
-    kind: "circle",
-    // served by the NestJS backend (/v1/fires): the FIRMS key stays a backend
-    // secret, never shipped to the browser
-    geojson: `${API_BASE}/v1/fires`,
-    color: "#ff5722", // deep-orange 500 (fallback / nominal)
-    strokeColor: "#3e2723",
-    defaultOn: false,
-    sourceName: "NASA FIRMS — VIIRS hotspot (NRT, ≤48 jam)",
-    sourceUrl: "https://firms.modaps.eosdis.nasa.gov/",
-    dataYear: "48 jam terakhir",
-  },
+  // {
+  //   // Hotspot: near-real-time thermal-anomaly detections from NASA FIRMS
+  //   // (VIIRS 375 m, NRT), served from the backend and coloured by detection
+  //   // confidence. Observational only — a hotspot is not a confirmed fire.
+  //   id: "fires",
+  //   tile: "fires",
+  //   kind: "circle",
+  //   // served by the NestJS backend (/v1/fires): the FIRMS key stays a backend
+  //   // secret, never shipped to the browser
+  //   geojson: `${API_BASE}/v1/fires`,
+  //   color: "#ff5722", // deep-orange 500 (fallback / nominal)
+  //   strokeColor: "#3e2723",
+  //   defaultOn: false,
+  //   sourceName: "NASA FIRMS — VIIRS hotspot (NRT, ≤48 jam)",
+  //   sourceUrl: "https://firms.modaps.eosdis.nasa.gov/",
+  //   dataYear: "48 jam terakhir",
+  // },
 
   // ================= biodiversity map (/biodiversitas) =================
   {

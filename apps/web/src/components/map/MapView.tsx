@@ -27,6 +27,17 @@ import {
   registerGfwLossProtocol,
   gfwLossTiles,
 } from "@/lib/gfw-loss-protocol";
+import {
+  GIBS_ATTRIBUTION,
+  GIBS_IMAGERY_MAXZOOM,
+  gibsClampDate,
+  gibsDateFloor,
+  gibsDefaultDate,
+  gibsHotspotTiles,
+  gibsImageryTiles,
+  gibsReferenceTiles,
+  GIBS_REFERENCE,
+} from "@/lib/gibs";
 import mountainsData from "@/data/mountains.json";
 import {
   getSpecies,
@@ -94,6 +105,13 @@ function readUrlState(): { filters: MapFilters } {
   filters.protectedCategories = list("pro") ?? filters.protectedCategories;
   filters.speciesClasses = list("cls") ?? filters.speciesClasses;
   filters.fireConfidence = list("fire") ?? filters.fireConfidence;
+  // karhutla (NASA Worldview / GIBS): the day + the two chosen products. The
+  // date is only accepted in strict yyyy-mm-dd form — it goes straight into a
+  // GIBS request path, so a malformed one would just 404 every tile.
+  const kdate = p.get("kdate");
+  if (kdate && /^\d{4}-\d{2}-\d{2}$/.test(kdate)) filters.karhutlaDate = kdate;
+  filters.karhutlaImagery = p.get("kimg") ?? filters.karhutlaImagery;
+  filters.karhutlaHotspot = p.get("khot") ?? filters.karhutlaHotspot;
 
   return { filters };
 }
@@ -129,6 +147,10 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
   const groupLayers = LAYERS.filter(
     (l) => (l.group ?? "main") === (group ?? "main"),
   );
+  // the NASA Worldview / GIBS layers belong to the main deforestation map only.
+  // /biodiversitas must not create their sources, request their tiles, or carry
+  // their state in its URL.
+  const hasGibs = groupLayers.some((l) => l.gibs);
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const searchMarkerRef = useRef<maplibregl.Marker | null>(null);
@@ -182,8 +204,34 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
   const [lossYearIdx, setLossYearIdx] = useState(LOSS_YEARS.length - 1);
   const [lossPlaying, setLossPlaying] = useState(false);
   const showLoss = filters.layers.includes("forestloss");
+  // The UTC day both NASA Worldview / GIBS layers are actually drawn at, and the
+  // single source of truth for it. filters.karhutlaDate is "" until the effect
+  // below resolves it (filters.ts explains why it cannot be defaulted at module
+  // load), and a hand-edited ?kdate= can land outside the active products'
+  // archives — so resolve and clamp HERE, before any tile URL is built, rather
+  // than letting the map request a day it would only 404 on.
+  const karhutlaDate = gibsClampDate(
+    filters.karhutlaDate || gibsDefaultDate(),
+    gibsDateFloor(
+      filters.layers,
+      filters.karhutlaImagery,
+      filters.karhutlaHotspot,
+    ),
+  );
   const theme = useSiteTheme();
   const locale = useLocale();
+
+  // Pin the karhutla date to a real day as soon as we're on the client. Doing it
+  // here (rather than in DEFAULT_FILTERS) keeps the server-rendered markup free of
+  // anything clock-derived, so the date control hydrates without a mismatch. The
+  // day is also clamped into range, since a hand-edited ?kdate= could otherwise
+  // sit outside the archive of the products it was paired with.
+  useEffect(() => {
+    setFilters((f) =>
+      f.karhutlaDate === karhutlaDate ? f : { ...f, karhutlaDate },
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Kisah Kawasan: when the map settles over a place that has a story (and one
   // isn't already playing), offer it with a soft prompt. Dismiss = don't nag.
@@ -360,8 +408,19 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
     p.set("pro", f.protectedCategories.join(","));
     p.set("cls", f.speciesClasses.join(","));
     p.set("fire", f.fireConfidence.join(","));
+    if (hasGibs) {
+      if (f.karhutlaDate) p.set("kdate", f.karhutlaDate);
+      p.set("kimg", f.karhutlaImagery);
+      p.set("khot", f.karhutlaHotspot);
+    } else {
+      // /biodiversitas has no GIBS layers: drop any karhutla keys a pasted URL
+      // carried in, rather than leaving dead state in the address bar
+      p.delete("kdate");
+      p.delete("kimg");
+      p.delete("khot");
+    }
     window.history.replaceState(null, "", `?${p.toString()}`);
-  }, []);
+  }, [hasGibs]);
 
   // ---------- GFW tree-cover-loss timeline ----------
   // re-point the raster tiles at the chosen end year; the gfwloss:// protocol
@@ -374,6 +433,31 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
       | undefined;
     src?.setTiles([gfwLossTiles(LOSS_YEARS[lossYearIdx])]);
   }, [ready, lossYearIdx]);
+
+  // ---------- karhutla: NASA Worldview / GIBS ----------
+  // Both GIBS layers carry a TIME dimension baked into their URL, so changing the
+  // day (or the product) means re-pointing the source rather than filtering it.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready) return;
+    // only re-point when the URL genuinely changed: setTiles drops the tile cache
+    // and refetches, and the day resolves to the same value on mount
+    const retile = (sourceId: string, url: string) => {
+      const src = map.getSource(sourceId) as
+        | maplibregl.RasterTileSource
+        | undefined;
+      if (!src || src.tiles?.[0] === url) return;
+      src.setTiles([url]);
+    };
+    retile(
+      "src-gibs-image",
+      gibsImageryTiles(filters.karhutlaImagery, karhutlaDate),
+    );
+    retile(
+      "src-gibs-hotspot",
+      gibsHotspotTiles(filters.karhutlaHotspot, karhutlaDate),
+    );
+  }, [ready, karhutlaDate, filters.karhutlaImagery, filters.karhutlaHotspot]);
 
   // auto-advance while playing; stop at the last year
   useEffect(() => {
@@ -489,9 +573,14 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
       // tilesets for empty collections are never built/uploaded, probe first
       // so we don't request (and 404 on) layers that have no data yet. Only
       // R2-PMTiles layers are probed; GeoJSON-backed layers (ecoregions, biogeo)
-      // load from the bundled file, so they'd 404 against R2 needlessly.
+      // load from the bundled file, and the GIBS rasters stream from NASA, so
+      // both would 404 against R2 needlessly.
       const tileNames = [
-        ...new Set(groupLayers.filter((l) => !l.geojson).map((l) => l.tile)),
+        ...new Set(
+          groupLayers
+            .filter((l) => !l.geojson && l.kind !== "raster")
+            .map((l) => l.tile),
+        ),
       ];
       const avail = new Set<string>();
       await Promise.all(
@@ -506,6 +595,34 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
           }
         }),
       );
+
+      // Karhutla imagery (NASA Worldview / GIBS true colour): added before
+      // everything else so the day's mosaic paints under the loss raster and all
+      // the data layers. Live from GIBS, keyless — nothing to probe on R2.
+      if (hasGibs) {
+        map.addSource("src-gibs-image", {
+          type: "raster",
+          tiles: [gibsImageryTiles(filters.karhutlaImagery, karhutlaDate)],
+          tileSize: 256,
+          minzoom: 0,
+          // GoogleMapsCompatible_Level9 stops at z8; past that MapLibre stretches
+          // the z8 tile rather than requesting one GIBS would 404 on
+          maxzoom: GIBS_IMAGERY_MAXZOOM,
+          attribution: GIBS_ATTRIBUTION,
+        });
+        map.addLayer({
+          id: "lyr-karhutla-image",
+          type: "raster",
+          source: "src-gibs-image",
+          layout: {
+            visibility: filters.layers.includes("karhutla-image")
+              ? "visible"
+              : "none",
+          },
+          paint: { "raster-opacity": 1 },
+        });
+        avail.add("karhutla-image"); // live GIBS raster, always available
+      }
 
       // GFW tree-cover-loss: a live encoded raster from GFW's CDN, added first
       // (under the data layers). MapLibre v5 raster-color reads the year from the
@@ -538,8 +655,9 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
       const added = new Set<string>();
       for (const def of groupLayers) {
         // forest-loss is the GFW raster added above, not a vector tileset —
-        // skip the generic builder for it.
-        if (def.id === "forestloss") continue;
+        // skip the generic builder for it. Same for the two GIBS rasters, which
+        // are added by hand around this loop so they land at the right depth.
+        if (def.id === "forestloss" || def.gibs) continue;
         // local GeoJSON layers (distribution areas) load from the bundled file, not R2
         if (def.geojson) {
           const sourceId = `src-${def.id}`;
@@ -573,6 +691,64 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
           added.add(sourceId);
         }
         map.addLayer(buildLayer(def, sourceId));
+      }
+
+      // Karhutla hotspots (NASA Worldview / GIBS thermal anomalies): added after
+      // the data layers so detections read on top of concessions and peat. This
+      // is a WMS-rendered picture, not features — GIBS publishes the hotspot
+      // tiles as EPSG:4326 vector only, which MapLibre can't consume (see
+      // lib/gibs.ts). So it is deliberately absent from the click handler below;
+      // the FIRMS `fires` layer is the clickable one.
+      if (hasGibs) {
+        map.addSource("src-gibs-hotspot", {
+          type: "raster",
+          tiles: [gibsHotspotTiles(filters.karhutlaHotspot, karhutlaDate)],
+          tileSize: 512,
+          minzoom: 0,
+          // the detections are 375 m–1 km; past z12 a finer request buys nothing
+          maxzoom: 12,
+          attribution: GIBS_ATTRIBUTION,
+        });
+        map.addLayer({
+          id: "lyr-karhutla-hotspot",
+          type: "raster",
+          source: "src-gibs-hotspot",
+          layout: {
+            visibility: filters.layers.includes("karhutla-hotspot")
+              ? "visible"
+              : "none",
+          },
+          paint: { "raster-opacity": 1 },
+        });
+        avail.add("karhutla-hotspot"); // live GIBS raster, always available
+
+        // Karhutla reference overlays: labels / borders+roads / coastlines. These
+        // are not a layer the user toggles — they ride automatically with the
+        // true-colour imagery, which paints over our basemap and takes its place
+        // names with it. Added last of the data stack so the ink sits above the
+        // imagery AND the hotspots. Static tiles (no TIME), so the date effect
+        // never touches them.
+        for (const ref of GIBS_REFERENCE) {
+          map.addSource(`src-gibs-ref-${ref.key}`, {
+            type: "raster",
+            tiles: [gibsReferenceTiles(ref.id)],
+            tileSize: 256,
+            minzoom: 0,
+            maxzoom: GIBS_IMAGERY_MAXZOOM, // Level9, same ceiling as the imagery
+            attribution: GIBS_ATTRIBUTION,
+          });
+          map.addLayer({
+            id: `lyr-karhutla-ref-${ref.key}`,
+            type: "raster",
+            source: `src-gibs-ref-${ref.key}`,
+            layout: {
+              visibility: filters.layers.includes("karhutla-image")
+                ? "visible"
+                : "none",
+            },
+            paint: { "raster-opacity": 1 },
+          });
+        }
       }
 
       // major-mountain name labels, on top of everything. Hidden by default;
@@ -674,9 +850,11 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
           return;
         }
       }
-      const layerIds = LAYERS.map((l) => `lyr-${l.id}`).filter((id) =>
-        map.getLayer(id),
-      );
+      // rasters (the GIBS karhutla pair) hold no queryable features — a click
+      // over a GIBS hotspot falls through to whatever data layer is beneath it
+      const layerIds = LAYERS.filter((l) => l.kind !== "raster")
+        .map((l) => `lyr-${l.id}`)
+        .filter((id) => map.getLayer(id));
       const features = map.queryRenderedFeatures(e.point, { layers: layerIds });
       if (features.length === 0) {
         setSelected(null);
@@ -806,6 +984,14 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
         "visibility",
         filters.layers.includes(def.id) ? "visible" : "none",
       );
+    }
+
+    // the reference overlays follow the imagery rather than a toggle of their own
+    const refOn = filters.layers.includes("karhutla-image");
+    for (const ref of GIBS_REFERENCE) {
+      const id = `lyr-karhutla-ref-${ref.key}`;
+      if (!map.getLayer(id)) continue;
+      map.setLayoutProperty(id, "visibility", refOn ? "visible" : "none");
     }
 
     // per-layer attribute filters
@@ -1246,6 +1432,7 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
         onClearBoundary={() => setBoundary(null)}
         onFlyToRealm={flyToRealm}
         onPlayTour={playTour}
+        karhutlaDate={karhutlaDate}
         minimized={layerMinimized}
         onMinimizedChange={setLayerMinimized}
       />
@@ -1472,6 +1659,13 @@ function buildLayer(
           "circle-stroke-opacity": 0.9,
         },
       };
+    case "raster":
+      // The GIBS karhutla layers are the only rasters, and both are wired up by
+      // hand in the load handler (their sources are time-parameterised URLs, not
+      // a tileset). Reaching here means one was left in the generic loop.
+      throw new Error(
+        `raster layer "${def.id}" must be added directly, not via buildLayer`,
+      );
   }
 }
 

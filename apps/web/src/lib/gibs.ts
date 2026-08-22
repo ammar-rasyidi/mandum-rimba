@@ -41,40 +41,70 @@ export interface GibsProduct {
   start: string;
 }
 
+/** An imagery product additionally carries its tile pyramid: imagery comes from
+ *  WMTS (where the pyramid is part of the URL), hotspots from WMS (where it is
+ *  not a thing at all). */
+export interface GibsImageryProduct extends GibsProduct {
+  /** GIBS TileMatrixSet. NOT uniform: PACE/OCI is published on Level7 while
+   *  every other true-colour product is on Level9, and asking for the wrong one
+   *  is a hard 400 rather than an empty tile. */
+  tms: string;
+  /** deepest zoom GIBS actually serves for this product, verified by request
+   *  (GIBS is looser than its own capabilities, so this is measured, not
+   *  derived from the Level number). MapLibre stretches the last tile beyond. */
+  maxZoom: number;
+}
+
 /**
  * True-colour mosaics, in the order Worldview stacks them (newest platform
  * first). VIIRS is 375 m and sharper; MODIS Terra reaches back to 2000, so it is
  * the only option for historic fire seasons (1997, 2015 haze events are before
  * VIIRS). Same five products as the shared Worldview permalink.
  */
-export const GIBS_IMAGERY: GibsProduct[] = [
+export const GIBS_IMAGERY: GibsImageryProduct[] = [
+  {
+    id: "OCI_PACE_True_Color",
+    platform: "OCI · PACE",
+    start: "2024-02-25",
+    tms: "GoogleMapsCompatible_Level7",
+    maxZoom: 7, // z8 returns 400
+  },
   {
     id: "VIIRS_NOAA21_CorrectedReflectance_TrueColor",
     platform: "VIIRS · NOAA-21",
     start: "2023-02-10",
+    tms: "GoogleMapsCompatible_Level9",
+    maxZoom: 8,
   },
   {
     id: "VIIRS_NOAA20_CorrectedReflectance_TrueColor",
     platform: "VIIRS · NOAA-20",
     start: "2018-01-05",
+    tms: "GoogleMapsCompatible_Level9",
+    maxZoom: 8,
   },
   {
     id: "VIIRS_SNPP_CorrectedReflectance_TrueColor",
     platform: "VIIRS · Suomi NPP",
     start: "2015-11-24",
+    tms: "GoogleMapsCompatible_Level9",
+    maxZoom: 8,
   },
   {
     id: "MODIS_Aqua_CorrectedReflectance_TrueColor",
     platform: "MODIS · Aqua",
     start: "2002-07-03",
+    tms: "GoogleMapsCompatible_Level9",
+    maxZoom: 8,
   },
   {
     id: "MODIS_Terra_CorrectedReflectance_TrueColor",
     platform: "MODIS · Terra",
     start: "2000-02-24",
+    tms: "GoogleMapsCompatible_Level9",
+    maxZoom: 8,
   },
 ];
-
 /**
  * Thermal anomalies / fire detections. "_All" = day + night passes combined
  * (Worldview's default); the FIRMS algorithm behind them is the same one the
@@ -130,16 +160,32 @@ export function gibsReferenceTiles(product: string): string {
   return `${WMTS}/${product}/default/GoogleMapsCompatible_Level9/{z}/{y}/{x}.png`;
 }
 
-export const DEFAULT_IMAGERY = GIBS_IMAGERY[1].id; // NOAA-20: full-archive VIIRS
+// MODIS Terra: the deepest archive (2000) and Worldview's own default pick
+export const DEFAULT_IMAGERY = "MODIS_Terra_CorrectedReflectance_TrueColor";
 export const DEFAULT_HOTSPOT = GIBS_HOTSPOT[1].id; // NOAA-20, same platform
 
-/** GoogleMapsCompatible_Level9 tops out at z8; MapLibre overzooms past that */
-export const GIBS_IMAGERY_MAXZOOM = 8;
+/** the reference overlays are all Level9, which tops out at z8 */
+export const GIBS_REFERENCE_MAXZOOM = 8;
+
+/** look up an imagery product (falls back to the default if the id is unknown,
+ *  e.g. a stale ?kimg= from an older share link) */
+export function gibsImageryProduct(productId: string): GibsImageryProduct {
+  return (
+    GIBS_IMAGERY.find((p) => p.id === productId) ??
+    GIBS_IMAGERY.find((p) => p.id === DEFAULT_IMAGERY)!
+  );
+}
+
+/** deepest zoom to request for a product — the raster source's `maxzoom` */
+export function gibsImageryMaxZoom(productId: string): number {
+  return gibsImageryProduct(productId).maxZoom;
+}
 
 /** WMTS REST template for a true-colour mosaic on a given day (`{z}/{y}/{x}`,
  *  note the WMTS row-before-column order). */
-export function gibsImageryTiles(product: string, date: string): string {
-  return `${WMTS}/${product}/default/${date}/GoogleMapsCompatible_Level9/{z}/{y}/{x}.jpg`;
+export function gibsImageryTiles(productId: string, date: string): string {
+  const p = gibsImageryProduct(productId);
+  return `${WMTS}/${p.id}/default/${date}/${p.tms}/{z}/{y}/{x}.jpg`;
 }
 
 /** WMS GetMap template for the hotspot overlay. MapLibre substitutes

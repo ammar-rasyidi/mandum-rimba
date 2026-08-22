@@ -29,7 +29,8 @@ import {
 } from "@/lib/gfw-loss-protocol";
 import {
   GIBS_ATTRIBUTION,
-  GIBS_IMAGERY_MAXZOOM,
+  GIBS_REFERENCE_MAXZOOM,
+  gibsImageryMaxZoom,
   gibsClampDate,
   gibsDateFloor,
   gibsDefaultDate,
@@ -449,10 +450,47 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
       if (!src || src.tiles?.[0] === url) return;
       src.setTiles([url]);
     };
-    retile(
-      "src-gibs-image",
-      gibsImageryTiles(filters.karhutlaImagery, karhutlaDate),
-    );
+    // Imagery products do NOT share a tile pyramid (PACE/OCI tops out one level
+    // below the rest), and a raster source's maxzoom is fixed at creation — so a
+    // product change that moves the ceiling means rebuilding the source rather
+    // than just re-pointing it. Re-added before whatever currently sits above it
+    // so the mosaic keeps its place at the bottom of the stack.
+    const imgUrl = gibsImageryTiles(filters.karhutlaImagery, karhutlaDate);
+    const imgMax = gibsImageryMaxZoom(filters.karhutlaImagery);
+    const imgSrc = map.getSource("src-gibs-image") as
+      | maplibregl.RasterTileSource
+      | undefined;
+    if (imgSrc && imgSrc.maxzoom !== imgMax) {
+      const arr = map.getStyle().layers;
+      const beforeId =
+        arr[arr.findIndex((l) => l.id === "lyr-karhutla-image") + 1]?.id;
+      const visibility = map.getLayoutProperty(
+        "lyr-karhutla-image",
+        "visibility",
+      );
+      map.removeLayer("lyr-karhutla-image");
+      map.removeSource("src-gibs-image");
+      map.addSource("src-gibs-image", {
+        type: "raster",
+        tiles: [imgUrl],
+        tileSize: 256,
+        minzoom: 0,
+        maxzoom: imgMax,
+        attribution: GIBS_ATTRIBUTION,
+      });
+      map.addLayer(
+        {
+          id: "lyr-karhutla-image",
+          type: "raster",
+          source: "src-gibs-image",
+          layout: { visibility },
+          paint: { "raster-opacity": 1 },
+        },
+        beforeId,
+      );
+    } else {
+      retile("src-gibs-image", imgUrl);
+    }
     retile(
       "src-gibs-hotspot",
       gibsHotspotTiles(filters.karhutlaHotspot, karhutlaDate),
@@ -607,7 +645,7 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
           minzoom: 0,
           // GoogleMapsCompatible_Level9 stops at z8; past that MapLibre stretches
           // the z8 tile rather than requesting one GIBS would 404 on
-          maxzoom: GIBS_IMAGERY_MAXZOOM,
+          maxzoom: gibsImageryMaxZoom(filters.karhutlaImagery),
           attribution: GIBS_ATTRIBUTION,
         });
         map.addLayer({
@@ -734,7 +772,7 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
             tiles: [gibsReferenceTiles(ref.id)],
             tileSize: 256,
             minzoom: 0,
-            maxzoom: GIBS_IMAGERY_MAXZOOM, // Level9, same ceiling as the imagery
+            maxzoom: GIBS_REFERENCE_MAXZOOM,
             attribution: GIBS_ATTRIBUTION,
           });
           map.addLayer({

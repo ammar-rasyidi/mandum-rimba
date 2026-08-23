@@ -39,6 +39,13 @@ export interface LayerDef {
   /** for fills: colour each feature by this GeoJSON property (a hex string),
    *  e.g. ecoregions carry RESOLVE's official per-ecoregion COLOR */
   colorProp?: string;
+  /** feature property that uniquely identifies a feature, used to highlight the
+   *  WHOLE clicked polygon: the tiles carry no MapLibre feature id, and the
+   *  geometry from queryRenderedFeatures is clipped to the clicked tile, so a
+   *  big area would otherwise highlight in fragments. Layers without one (the
+   *  mangrove tiles ship no properties at all) fall back to that clipped
+   *  geometry, which is fine for the small polygons they hold. */
+  idProp?: string;
   /** NASA Worldview / GIBS raster layer (no PMTiles, no ingest — see lib/gibs.ts).
    *  "imagery" paints UNDER the data layers (it is a basemap for the chosen day);
    *  "hotspot" paints OVER them. Both are driven by the karhutla date picker. */
@@ -93,6 +100,7 @@ export const LAYERS: LayerDef[] = [
   {
     id: "concessions",
     tile: "concessions",
+    idProp: "id",
     kind: "fill",
     color: "#fb8c00", // orange 600, extractive (coloured by type below)
     defaultOn: true,
@@ -103,6 +111,7 @@ export const LAYERS: LayerDef[] = [
   {
     id: "protected",
     tile: "protected",
+    idProp: "id",
     kind: "fill",
     color: "#3949ab", // indigo 600, conservation (coloured by category below)
     defaultOn: true,
@@ -126,6 +135,7 @@ export const LAYERS: LayerDef[] = [
     // soil. PMTiles built from the "Indonesia peat lands" vector hosted on GFW.
     id: "peatland",
     tile: "peatland",
+    idProp: "objectid",
     kind: "fill",
     color: "#6d4c41", // brown 600
     defaultOn: true,

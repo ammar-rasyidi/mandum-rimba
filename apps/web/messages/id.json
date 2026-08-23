@@ -173,6 +173,13 @@
     "uploadError": "Gagal membaca berkas",
     "boundaryLoaded": "Batas dimuat",
     "clearBoundary": "Hapus batas",
+    "measure": "Ukur jarak",
+    "measureActive": "Mengukur, klik di peta",
+    "measureTotal": "Total jarak",
+    "measurePoints": "{count} titik",
+    "measureUndo": "Mundur",
+    "measureClear": "Hapus",
+    "measureHint": "Klik peta untuk menambah titik. Tekan Esc untuk berhenti mengukur tanpa menghapus garis.",
     "searchNoResults": "Tempat tidak ditemukan",
     "basemap": "Peta dasar",
     "basemaps": {

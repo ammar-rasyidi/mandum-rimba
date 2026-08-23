@@ -7,6 +7,7 @@ import PlaceSearch from "./PlaceSearch";
 import SpeciesSearch from "./SpeciesSearch";
 import BoundaryUpload from "./BoundaryUpload";
 import GibsProductSelect from "./GibsProductSelect";
+import MeasureTool from "./MeasureTool";
 import type { FamilyStat } from "@/lib/species";
 import type { ImportResult } from "@/lib/geo-import";
 import {
@@ -64,6 +65,13 @@ interface Props {
   /** guided globe tour: fly to a biogeographic realm / play the full tour */
   onFlyToRealm?: (realm: string) => void;
   onPlayTour?: () => void;
+  /** ruler: armed state, vertex count, running total (metres) + its controls */
+  measuring?: boolean;
+  measurePoints?: number;
+  measureTotalM?: number;
+  onMeasureToggle?: () => void;
+  onMeasureUndo?: () => void;
+  onMeasureClear?: () => void;
   /** karhutla (NASA Worldview / GIBS): the resolved UTC day both GIBS layers are
    *  pinned to. filters.karhutlaDate can still be "" during the first client
    *  render, so MapView passes the value it actually drew with. */
@@ -133,6 +141,12 @@ export default function LayerPanel({
   onFlyToRealm,
   onPlayTour,
   karhutlaDate = "",
+  measuring = false,
+  measurePoints = 0,
+  measureTotalM = 0,
+  onMeasureToggle,
+  onMeasureUndo,
+  onMeasureClear,
   minimized,
   onMinimizedChange,
   variant = "float",
@@ -292,6 +306,21 @@ export default function LayerPanel({
             onLoaded={onBoundaryLoaded}
             loadedName={boundaryName}
             onClear={onClearBoundary ?? (() => {})}
+          />
+        </div>
+      )}
+
+      {/* ruler — pinned above the scroll area so the running total stays visible
+          while you click vertices on the map */}
+      {onMeasureToggle && (
+        <div className="mb-3 shrink-0">
+          <MeasureTool
+            active={measuring}
+            points={measurePoints}
+            totalM={measureTotalM}
+            onToggle={onMeasureToggle}
+            onUndo={onMeasureUndo ?? (() => {})}
+            onClear={onMeasureClear ?? (() => {})}
           />
         </div>
       )}

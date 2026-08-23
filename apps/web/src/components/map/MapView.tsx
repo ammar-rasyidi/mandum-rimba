@@ -5,7 +5,11 @@ import { useLocale } from "next-intl";
 import maplibregl from "maplibre-gl";
 import { Protocol } from "pmtiles";
 import { LAYERS, colorExpression, type LayerDef } from "@/lib/layers";
-import { geodesicAreaHa } from "@/lib/geo-area";
+import {
+  formatDistance,
+  geodesicAreaHa,
+  pathLengthM,
+} from "@/lib/geo-area";
 import { TILES_BASE } from "@/lib/api";
 import LayerPanel from "./LayerPanel";
 import MobilePanelSheet, {
@@ -186,6 +190,21 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
   const [families, setFamilies] = useState<FamilyStat[]>([]);
   const [familyColors, setFamilyColors] = useState<Record<string, string>>({});
   const [selectedFamilies, setSelectedFamilies] = useState<string[]>([]);
+  // The clicked feature's outline. Either a filter into the feature's own source
+  // (full geometry, when the layer has an idProp) or the clipped geometry we got
+  // back from the click (small polygons only). Cleared whenever `selected` is.
+  const [highlight, setHighlight] = useState<
+    | { kind: "filter"; sourceId: string; sourceLayer: string; prop: string; value: string | number }
+    | { kind: "geometry"; geometry: GeoJSON.Geometry }
+    | null
+  >(null);
+  // Ruler: click-to-measure great-circle distance. `measureRef` mirrors the
+  // active flag because the map's click handler is bound once, on mount, and
+  // would otherwise close over a stale `false`.
+  const [measuring, setMeasuring] = useState(false);
+  const [measurePoints, setMeasurePoints] = useState<[number, number][]>([]);
+  const measureRef = useRef(false);
+  measureRef.current = measuring;
   // /peta: an uploaded project boundary (KMZ/KML/DXF) overlaid on the map
   const [boundary, setBoundary] = useState<{
     geojson: GeoJSON.FeatureCollection;
@@ -843,6 +862,13 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
     });
 
     map.on("click", (e) => {
+      // ruler owns the click while it's armed: drop a vertex, and never fall
+      // through to feature selection (which would open the detail drawer)
+      if (measureRef.current) {
+        setMeasurePoints((pts) => [...pts, [e.lngLat.lng, e.lngLat.lat]]);
+        return;
+      }
+      setHighlight(null);
       // species-atlas occurrence record: show a provenance popup (dataset, year,
       // basis, GBIF link) instead of the feature drawer.
       if (map.getLayer("lyr-sp-points")) {
@@ -896,6 +922,7 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
       const features = map.queryRenderedFeatures(e.point, { layers: layerIds });
       if (features.length === 0) {
         setSelected(null);
+        setHighlight(null);
         return;
       }
       // Peta Sebaran Satwa is the bottom layer; when it's the topmost hit (i.e.
@@ -956,6 +983,27 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
       const f = features[0];
       const def = LAYERS.find((l) => `lyr-${l.id}` === f.layer.id);
       if (!def) return;
+      // capture the outline HERE: the wetland branches below replace the
+      // property bag wholesale, which would throw away the identifier
+      const idValue = def.idProp
+        ? (f.properties as Record<string, unknown>)?.[def.idProp]
+        : undefined;
+      if (
+        def.idProp &&
+        (typeof idValue === "string" || typeof idValue === "number")
+      ) {
+        setHighlight({
+          kind: "filter",
+          sourceId: f.source,
+          sourceLayer: f.sourceLayer ?? def.tile,
+          prop: def.idProp,
+          value: idValue,
+        });
+      } else if (f.geometry) {
+        setHighlight({ kind: "geometry", geometry: f.geometry });
+      } else {
+        setHighlight(null);
+      }
       // Wetland habitat layers: the raw tiles carry only junk source fields
       // (peatland) or nothing at all (mangrove), so replace the property bag
       // with just the useful area. Peatland ships an exact per-polygon
@@ -1406,6 +1454,187 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
     }
   }, [boundary, ready]);
 
+  // Draw the selected feature's outline: a bright casing-backed line so it reads
+  // on the light, dark and satellite basemaps alike. Sits above the data layers
+  // but below the ruler, which owns the very top of the stack.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready) return;
+    const IDS = ["lyr-highlight-line", "lyr-highlight-casing"];
+    const SRC = "src-highlight";
+    const clear = () => {
+      for (const id of IDS) if (map.getLayer(id)) map.removeLayer(id);
+      if (map.getSource(SRC)) map.removeSource(SRC);
+    };
+    clear();
+    if (!highlight) return;
+
+    let source: string;
+    let sourceLayer: string | undefined;
+    let filter: unknown[] | undefined;
+    if (highlight.kind === "filter") {
+      // draw straight from the feature's own tiles, so the whole polygon
+      // highlights rather than just the tile that happened to be clicked
+      source = highlight.sourceId;
+      sourceLayer = highlight.sourceLayer;
+      filter = ["==", ["get", highlight.prop], highlight.value];
+    } else {
+      map.addSource(SRC, {
+        type: "geojson",
+        data: { type: "Feature", geometry: highlight.geometry, properties: {} },
+      });
+      source = SRC;
+    }
+    const base = {
+      source,
+      ...(sourceLayer ? { "source-layer": sourceLayer } : {}),
+      ...(filter ? { filter } : {}),
+    } as const;
+    map.addLayer({
+      ...base,
+      id: "lyr-highlight-casing",
+      type: "line",
+      paint: {
+        "line-color": "rgba(0,0,0,0.6)",
+        "line-width": 5.5,
+        "line-blur": 0.5,
+      },
+    } as maplibregl.LayerSpecification);
+    map.addLayer({
+      ...base,
+      id: "lyr-highlight-line",
+      type: "line",
+      paint: {
+        "line-color": "#ffffff",
+        "line-width": 2.4,
+      },
+    } as maplibregl.LayerSpecification);
+    return clear;
+  }, [highlight, ready]);
+
+  // ---------- ruler ----------
+  // Crosshair + no double-click zoom while armed, so a fast second vertex
+  // doesn't zoom the map out from under the measurement.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready) return;
+    map.getCanvas().style.cursor = measuring ? "crosshair" : "";
+    if (measuring) map.doubleClickZoom.disable();
+    else map.doubleClickZoom.enable();
+  }, [measuring, ready]);
+
+  // Escape drops out of measuring without clearing the line, so a mis-click
+  // doesn't cost the whole measurement
+  useEffect(() => {
+    if (!measuring) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMeasuring(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [measuring]);
+
+  // the drawn line, its vertices, and a cumulative-distance label per vertex
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready) return;
+    const SRC = "src-measure";
+    const IDS = [
+      "lyr-measure-label",
+      "lyr-measure-pt",
+      "lyr-measure-line",
+      "lyr-measure-casing",
+    ];
+
+    if (measurePoints.length === 0) {
+      for (const id of IDS) if (map.getLayer(id)) map.removeLayer(id);
+      if (map.getSource(SRC)) map.removeSource(SRC);
+      return;
+    }
+
+    // one Point feature per vertex carrying its running total, plus the
+    // LineString joining them
+    let running = 0;
+    const features: GeoJSON.Feature[] = measurePoints.map((p, i) => {
+      if (i > 0) running = pathLengthM(measurePoints.slice(0, i + 1));
+      return {
+        type: "Feature",
+        geometry: { type: "Point", coordinates: p },
+        properties: { label: i === 0 ? "" : formatDistance(running, locale) },
+      };
+    });
+    if (measurePoints.length > 1) {
+      features.push({
+        type: "Feature",
+        geometry: { type: "LineString", coordinates: measurePoints },
+        properties: { label: "" },
+      });
+    }
+    const data: GeoJSON.FeatureCollection = {
+      type: "FeatureCollection",
+      features,
+    };
+
+    const src = map.getSource(SRC) as maplibregl.GeoJSONSource | undefined;
+    if (src) {
+      src.setData(data);
+      return;
+    }
+    map.addSource(SRC, { type: "geojson", data });
+    map.addLayer({
+      id: "lyr-measure-casing",
+      type: "line",
+      source: SRC,
+      filter: ["==", ["geometry-type"], "LineString"],
+      paint: {
+        "line-color": "rgba(0,0,0,0.55)",
+        "line-width": 4.6,
+      },
+    });
+    map.addLayer({
+      id: "lyr-measure-line",
+      type: "line",
+      source: SRC,
+      filter: ["==", ["geometry-type"], "LineString"],
+      paint: {
+        "line-color": "#ffffff",
+        "line-width": 2.2,
+        "line-dasharray": [2, 1.4],
+      },
+    });
+    map.addLayer({
+      id: "lyr-measure-pt",
+      type: "circle",
+      source: SRC,
+      filter: ["==", ["geometry-type"], "Point"],
+      paint: {
+        "circle-radius": 4.5,
+        "circle-color": "#ffffff",
+        "circle-stroke-color": "#111417",
+        "circle-stroke-width": 1.6,
+      },
+    });
+    map.addLayer({
+      id: "lyr-measure-label",
+      type: "symbol",
+      source: SRC,
+      filter: ["==", ["geometry-type"], "Point"],
+      layout: {
+        "text-field": ["get", "label"],
+        "text-font": ["Noto Sans Regular"],
+        "text-size": 11,
+        "text-anchor": "bottom-left",
+        "text-offset": [0.55, -0.4],
+        "text-allow-overlap": true,
+      },
+      paint: {
+        "text-color": "#ffffff",
+        "text-halo-color": "rgba(0,0,0,0.85)",
+        "text-halo-width": 1.5,
+      },
+    });
+  }, [measurePoints, ready, locale]);
+
   return (
     <div className="fixed inset-0 flex">
       {/* opaque sky behind the map: in globe & terrain views the canvas is
@@ -1435,6 +1664,10 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
         onShare={() => setShareOpen(true)}
         onReset={() => {
           setFilters({ ...DEFAULT_FILTERS });
+          setMeasuring(false);
+          setMeasurePoints([]);
+          setSelected(null);
+          setHighlight(null);
           setSelectedFamilies([]);
           setSpeciesKey(null);
           setSpeciesLabel("");
@@ -1471,6 +1704,12 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
         onFlyToRealm={flyToRealm}
         onPlayTour={playTour}
         karhutlaDate={karhutlaDate}
+        measuring={measuring}
+        measurePoints={measurePoints.length}
+        measureTotalM={pathLengthM(measurePoints)}
+        onMeasureToggle={() => setMeasuring((m) => !m)}
+        onMeasureUndo={() => setMeasurePoints((p) => p.slice(0, -1))}
+        onMeasureClear={() => setMeasurePoints([])}
         minimized={layerMinimized}
         onMinimizedChange={setLayerMinimized}
       />
@@ -1489,7 +1728,13 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
         />
       )}
       {selected && (
-        <DetailDrawer feature={selected} onClose={() => setSelected(null)} />
+        <DetailDrawer
+          feature={selected}
+          onClose={() => {
+            setSelected(null);
+            setHighlight(null);
+          }}
+        />
       )}
       {shareOpen && (
         <ShareModal

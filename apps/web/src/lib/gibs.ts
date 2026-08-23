@@ -49,9 +49,10 @@ export interface GibsImageryProduct extends GibsProduct {
    *  every other true-colour product is on Level9, and asking for the wrong one
    *  is a hard 400 rather than an empty tile. */
   tms: string;
-  /** deepest zoom GIBS actually serves for this product, verified by request
-   *  (GIBS is looser than its own capabilities, so this is measured, not
-   *  derived from the Level number). MapLibre stretches the last tile beyond. */
+  /** deepest zoom GIBS actually serves for this product, verified by request:
+   *  GIBS is looser than its own capabilities (Level9 is advertised to z8 but
+   *  serves z9), so this is measured, not derived from the Level number. Past
+   *  it MapLibre stretches the last tile instead of asking for a 400. */
   maxZoom: number;
 }
 
@@ -67,42 +68,42 @@ export const GIBS_IMAGERY: GibsImageryProduct[] = [
     platform: "OCI · PACE",
     start: "2024-02-25",
     tms: "GoogleMapsCompatible_Level7",
-    maxZoom: 7, // z8 returns 400
+    maxZoom: 7, // verified: z8 returns 400
   },
   {
     id: "VIIRS_NOAA21_CorrectedReflectance_TrueColor",
     platform: "VIIRS · NOAA-21",
     start: "2023-02-10",
     tms: "GoogleMapsCompatible_Level9",
-    maxZoom: 8,
+    maxZoom: 9,
   },
   {
     id: "VIIRS_NOAA20_CorrectedReflectance_TrueColor",
     platform: "VIIRS · NOAA-20",
     start: "2018-01-05",
     tms: "GoogleMapsCompatible_Level9",
-    maxZoom: 8,
+    maxZoom: 9,
   },
   {
     id: "VIIRS_SNPP_CorrectedReflectance_TrueColor",
     platform: "VIIRS · Suomi NPP",
     start: "2015-11-24",
     tms: "GoogleMapsCompatible_Level9",
-    maxZoom: 8,
+    maxZoom: 9,
   },
   {
     id: "MODIS_Aqua_CorrectedReflectance_TrueColor",
     platform: "MODIS · Aqua",
     start: "2002-07-03",
     tms: "GoogleMapsCompatible_Level9",
-    maxZoom: 8,
+    maxZoom: 9,
   },
   {
     id: "MODIS_Terra_CorrectedReflectance_TrueColor",
     platform: "MODIS · Terra",
     start: "2000-02-24",
     tms: "GoogleMapsCompatible_Level9",
-    maxZoom: 8,
+    maxZoom: 9,
   },
 ];
 /**
@@ -164,8 +165,8 @@ export function gibsReferenceTiles(product: string): string {
 export const DEFAULT_IMAGERY = "MODIS_Terra_CorrectedReflectance_TrueColor";
 export const DEFAULT_HOTSPOT = GIBS_HOTSPOT[1].id; // NOAA-20, same platform
 
-/** the reference overlays are all Level9, which tops out at z8 */
-export const GIBS_REFERENCE_MAXZOOM = 8;
+/** the reference overlays are all Level9, and GIBS serves them through z9 */
+export const GIBS_REFERENCE_MAXZOOM = 9;
 
 /** look up an imagery product (falls back to the default if the id is unknown,
  *  e.g. a stale ?kimg= from an older share link) */

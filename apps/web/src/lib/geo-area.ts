@@ -1,5 +1,6 @@
 /**
- * Geodesic area of a GeoJSON Polygon / MultiPolygon, in hectares.
+ * Geodesic measurement helpers: area of a GeoJSON Polygon / MultiPolygon in
+ * hectares, and great-circle distance along a path in metres (the ruler tool).
  *
  * Uses the spherical-excess ring formula (the same one @turf/area and
  * @mapbox/geojson-area use) on the WGS84 sphere, so there's no dependency and
@@ -42,4 +43,41 @@ export function geodesicAreaHa(geom: unknown): number {
       m2 += polygonArea(poly);
   }
   return m2 / 10_000;
+}
+
+
+/**
+ * Great-circle distance between two [lon, lat] points, in metres (haversine on
+ * the WGS84 sphere). Good to ~0.3% against the ellipsoid, far tighter than the
+ * precision anyone reads off a map ruler.
+ */
+export function haversineM(
+  a: [number, number],
+  b: [number, number],
+): number {
+  const dLat = (b[1] - a[1]) * RAD;
+  const dLon = (b[0] - a[0]) * RAD;
+  const lat1 = a[1] * RAD;
+  const lat2 = b[1] * RAD;
+  const h =
+    Math.sin(dLat / 2) ** 2 +
+    Math.sin(dLon / 2) ** 2 * Math.cos(lat1) * Math.cos(lat2);
+  return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
+}
+
+/** Total length of a [lon, lat] path, in metres (0 for fewer than 2 points). */
+export function pathLengthM(points: [number, number][]): number {
+  let total = 0;
+  for (let i = 1; i < points.length; i++)
+    total += haversineM(points[i - 1], points[i]);
+  return total;
+}
+
+/** Ruler readout: metres under 1 km, otherwise kilometres, localised. */
+export function formatDistance(metres: number, locale: string): string {
+  if (metres < 1000)
+    return `${metres.toLocaleString(locale, { maximumFractionDigits: 0 })} m`;
+  return `${(metres / 1000).toLocaleString(locale, {
+    maximumFractionDigits: metres < 10_000 ? 2 : 1,
+  })} km`;
 }

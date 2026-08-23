@@ -173,6 +173,13 @@
     "uploadError": "Couldn't read the file",
     "boundaryLoaded": "Boundary loaded",
     "clearBoundary": "Clear boundary",
+    "measure": "Measure distance",
+    "measureActive": "Measuring, click the map",
+    "measureTotal": "Total distance",
+    "measurePoints": "{count} points",
+    "measureUndo": "Undo",
+    "measureClear": "Clear",
+    "measureHint": "Click the map to add points. Press Esc to stop measuring without clearing the line.",
     "searchNoResults": "No places found",
     "basemap": "Basemap",
     "basemaps": {

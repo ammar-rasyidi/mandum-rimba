@@ -43,6 +43,11 @@ import {
   gibsReferenceTiles,
   GIBS_REFERENCE,
 } from "@/lib/gibs";
+import {
+  BASEMAP_DARK,
+  BASEMAP_LABELS,
+  BASEMAP_LIGHT,
+} from "@/lib/basemaps";
 import mountainsData from "@/data/mountains.json";
 import {
   getSpecies,
@@ -557,21 +562,19 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
         // mountain-name labels; the raster basemaps themselves carry no text
         glyphs: "https://fonts.openmaptiles.org/{fontstack}/{range}.pbf",
         sources: {
+          // CARTO when a key is configured, Esri Canvas when not — see
+          // lib/basemaps.ts on why an anonymous CARTO tile is not usable
           "basemap-dark": {
             type: "raster",
-            tiles: [
-              "https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png",
-            ],
+            tiles: [BASEMAP_DARK.tiles],
             tileSize: 256,
-            attribution: "© OpenStreetMap contributors © CARTO | Mandum Rimba",
+            attribution: BASEMAP_DARK.attribution,
           },
           "basemap-light": {
             type: "raster",
-            tiles: [
-              "https://basemaps.cartocdn.com/light_all/{z}/{x}/{y}@2x.png",
-            ],
+            tiles: [BASEMAP_LIGHT.tiles],
             tileSize: 256,
-            attribution: "© OpenStreetMap contributors © CARTO | Mandum Rimba",
+            attribution: BASEMAP_LIGHT.attribution,
           },
           "basemap-satellite": {
             type: "raster",
@@ -582,6 +585,16 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
             attribution:
               "Imagery © Esri, Maxar, Earthstar Geographics | Mandum Rimba",
           },
+          ...(BASEMAP_LABELS.dark
+            ? {
+                "basemap-labels": {
+                  type: "raster" as const,
+                  tiles: [BASEMAP_LABELS.dark],
+                  tileSize: 256,
+                  attribution: BASEMAP_DARK.attribution,
+                },
+              }
+            : {}),
         },
         layers: [
           { id: "basemap-dark", type: "raster", source: "basemap-dark" },
@@ -597,6 +610,19 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
             source: "basemap-satellite",
             layout: { visibility: "none" },
           },
+          // place names for the Esri fallback, which serves an unlabelled base.
+          // Declared here, with the basemaps, so every data layer added later on
+          // `load` still stacks above the labels rather than under them.
+          ...(BASEMAP_LABELS.dark
+            ? [
+                {
+                  id: "basemap-labels",
+                  type: "raster" as const,
+                  source: "basemap-labels",
+                  layout: { visibility: "none" as const },
+                },
+              ]
+            : []),
         ],
       },
       center: [118, -2.3],
@@ -1049,6 +1075,26 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
         "visibility",
         id === active ? "visible" : "none",
       );
+    }
+
+    // The Esri fallback's base carries no text, so its labels ride on top of the
+    // street views only — the satellite view has its own treatment, and CARTO's
+    // styles already include their names, in which case this layer is absent.
+    if (map.getLayer("basemap-labels")) {
+      const street = filters.basemap !== "satellite";
+      map.setLayoutProperty(
+        "basemap-labels",
+        "visibility",
+        street ? "visible" : "none",
+      );
+      if (street) {
+        const src = map.getSource("basemap-labels") as
+          | maplibregl.RasterTileSource
+          | undefined;
+        const want =
+          theme === "light" ? BASEMAP_LABELS.light : BASEMAP_LABELS.dark;
+        if (want && src && src.tiles?.[0] !== want) src.setTiles([want]);
+      }
     }
 
     // mountain-name labels ride with the satellite basemap (the map/dark

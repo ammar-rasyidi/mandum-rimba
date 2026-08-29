@@ -17,7 +17,12 @@ import {
   usAqiFromPm25,
   type AirQualityPoint,
 } from "@mandumrimba/shared";
-import { buildAirGrid, type AirGrid } from "./air-field";
+import {
+  buildAirGridSeries,
+  sliceAirGrid,
+  type AirGrid,
+  type AirGridSeries,
+} from "./air-field";
 import { AIR_QUALITY_BASE, fetchPoints, type OpenMeteoRow } from "./open-meteo";
 import { Region, RegionDocument } from "../common/schemas";
 import { CacheHeaderInterceptor } from "./cache.interceptor";
@@ -57,13 +62,17 @@ import { CacheHeaderInterceptor } from "./cache.interceptor";
  */
 const TTL_MS = 6 * 60 * 60 * 1000;
 /**
- * Four hours. The regional grid costs 432 locations twice over (wind + PM2.5),
- * so hourly would be 20.736 a day against a 10.000 ceiling; at four it is
- * 5.184, and nothing is lost — GFS publishes every 6 h, CAMS every 12.
+ * Twelve hours, which is CAMS's own publishing cycle. The grid costs 2.361
+ * locations a refresh, so this is 4.722 a day against a 10.000 ceiling. It
+ * costs no freshness: we hold three days of HOURLY values and read the current
+ * hour out of them on every request (see air-field.ts).
  */
-const FIELD_TTL_MS = 4 * 60 * 60 * 1000;
+const FIELD_TTL_MS = 12 * 60 * 60 * 1000;
 /** cooldown after a failed grid build, so retries do not thrash the upstream */
 const FIELD_RETRY_MS = 2 * 60 * 1000;
+/** cooldown after the DAILY quota is spent — it resets at 00:00 UTC, so short
+ *  retries are pure noise against a service that already said no */
+const QUOTA_RETRY_MS = 60 * 60 * 1000;
 
 const ATTRIBUTION =
   "Copernicus Atmosphere Monitoring Service (CAMS) via Open-Meteo. " +
@@ -112,10 +121,12 @@ export class AirController {
   private cache: { at: number; rows: (OpenMeteoRow | undefined)[] } | null =
     null;
   private inFlight: Promise<void> | null = null;
-  private fieldCache: { at: number; data: AirGrid } | null = null;
+  /** the whole hourly series, not one rendered hour */
+  private fieldCache: AirGridSeries | null = null;
   /** de-dupes concurrent cold builds; one fetch, many waiters */
-  private fieldInFlight: Promise<AirGrid | null> | null = null;
+  private fieldInFlight: Promise<AirGridSeries | null> | null = null;
   private fieldFailedAt = 0;
+  private fieldRetryMs = FIELD_RETRY_MS;
 
   constructor(
     @InjectModel(Region.name) private regionModel: Model<RegionDocument>,
@@ -202,44 +213,50 @@ export class AirController {
     @Res({ passthrough: true }) res: Response,
   ): Promise<AirGrid | { warming: true } | null> {
     const fresh =
-      this.fieldCache && Date.now() - this.fieldCache.at < FIELD_TTL_MS;
+      this.fieldCache && Date.now() - this.fieldCache.fetchedAt < FIELD_TTL_MS;
     if (!fresh) void this.refreshField();
 
-    if (!this.fieldCache) {
-      // Same reason /v1/air never blocks: two 432-location requests are paced
-      // across a minute by the shared budget, well past the 30 s function
+    const slice = this.fieldCache ? sliceAirGrid(this.fieldCache) : null;
+    if (!slice) {
+      // Same reason /v1/air never blocks: 2.361 locations are paced across
+      // several minutes by the shared budget, far past the 30 s function
       // budget. Say we are warming and let the client come back.
       res.setHeader("Cache-Control", "no-store");
       return { warming: true };
     }
+    // one hour, not the series: the CDN may hold it for an hour, no longer,
+    // because the next hour is a different slice of the same cached data
     res.setHeader(
       "Cache-Control",
-      "public, max-age=300, s-maxage=3600, stale-while-revalidate=86400",
+      "public, max-age=300, s-maxage=1800, stale-while-revalidate=86400",
     );
-    return this.fieldCache.data;
+    return slice;
   }
 
-  private async refreshField(): Promise<AirGrid | null> {
+  private async refreshField(): Promise<AirGridSeries | null> {
     if (this.fieldInFlight) return this.fieldInFlight;
     // Back off after a failure. Without this every request retries a build that
-    // takes a minute and spends 864 locations, so one transient upstream
+    // takes minutes and spends 2.361 locations, so one transient upstream
     // problem becomes a thrash loop that never converges — which is exactly how
     // this endpoint first behaved: permanently "warming", silently.
-    if (Date.now() - this.fieldFailedAt < FIELD_RETRY_MS) {
-      return this.fieldCache?.data ?? null;
+    if (Date.now() - this.fieldFailedAt < this.fieldRetryMs) {
+      return this.fieldCache;
     }
-    this.fieldInFlight = buildAirGrid()
-      .then((data) => {
-        this.fieldCache = { at: Date.now(), data };
+    this.fieldInFlight = buildAirGridSeries()
+      .then((series) => {
+        this.fieldCache = series;
         this.fieldFailedAt = 0;
-        return data;
+        return series;
       })
       .catch((err) => {
         this.fieldFailedAt = Date.now();
-        this.logger.error(
-          `air field build failed: ${err instanceof Error ? err.message : err}`,
-        );
-        return this.fieldCache?.data ?? null;
+        const msg = err instanceof Error ? err.message : String(err);
+        // a spent daily quota will not come back in two minutes; sit it out
+        this.fieldRetryMs = /quota exhausted/.test(msg)
+          ? QUOTA_RETRY_MS
+          : FIELD_RETRY_MS;
+        this.logger.error(`air field build failed: ${msg}`);
+        return this.fieldCache;
       })
       .finally(() => {
         this.fieldInFlight = null;

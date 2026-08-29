@@ -1,25 +1,11 @@
 /**
- * The maths behind the animated air map: turning a coarse regional grid plus
- * 502 irregular district readings into one smooth colour field, and the wind
- * nodes into something a particle can be advected through.
+ * The maths behind the animated air map: turning the PM2.5 grid into a smooth
+ * colour field, and the wind grid into something a particle can be advected
+ * through. Both are bilinear between nodes, on their own resolutions.
  *
- * Kept out of the component so both halves are testable, and so the honest
- * parts stay visible: which readings are sharp and local, which are a broad
- * modelled backdrop, and where a wind vector is interpolated rather than known.
+ * Kept out of the component so both halves are testable, and so the honest part
+ * stays visible: every value between nodes is interpolated, not measured.
  */
-
-export interface AirPoint {
-  lon: number;
-  lat: number;
-  pm25: number;
-  /**
-   * Gaussian half-width in degrees. Two populations share one raster: district
-   * readings are local and sharp (small sigma), the regional CAMS grid nodes
-   * are a broad backdrop (large sigma). Weighting them by their own scale lets
-   * a district override the backdrop near itself without punching a hole in it.
-   */
-  sigma: number;
-}
 
 /**
  * US EPA AQI colours, with a blue tail below the scale.
@@ -78,22 +64,15 @@ export interface FieldBox {
   north: number;
 }
 
-/** ~0.25° cells: fine enough that a plume has shape, coarse enough that the
- *  whole raster is built in one frame. The canvas is upscaled with smoothing
- *  afterwards, so this is not the visible resolution. */
-const CELL = 0.25;
-/** Beyond this many sigmas a point contributes nothing, which bounds the
- *  neighbour search. */
-const REACH_SIGMAS = 2.2;
-/** AQI at which the field reaches full strength. Clean air still paints (at
- *  MIN_ALPHA) because a continuous field is the whole point — a plume reads as
- *  a plume only against air you can also see. */
+/** Output pixels per grid cell. The gradient is bilinear either way; this only
+ *  decides how finely it is sampled before the GPU scales the image up. */
+const SUBSAMPLE = 6;
+/** AQI at which the field reaches full strength. */
 const SEVERITY_FULL_AQI = 110;
 /** clean air is tinted, not erased: the basemap shows through it */
 const MIN_ALPHA = 0.55;
-/** Degrees of fade at the field's border, so the raster does not end on a
- *  hard rectangle where the model's box happens to stop. */
-const EDGE_FADE_DEG = 2;
+/** grid cells of fade at the field's border */
+const EDGE_FADE_CELLS = 2;
 
 export interface RasterResult {
   canvas: HTMLCanvasElement;
@@ -101,32 +80,51 @@ export interface RasterResult {
   box: FieldBox;
 }
 
+export interface GridLayer {
+  nx: number;
+  ny: number;
+  step: number;
+  /** scaled integers: µg/m³ × 10 or m/s × 10; null where unknown */
+  values: (number | null)[];
+}
+
+export interface AirGridData {
+  bbox: [number, number, number, number];
+  pm25: GridLayer;
+  u: GridLayer;
+  v: GridLayer;
+  maxSpeed: number;
+  validAt: string | null;
+  attribution: string;
+}
+
 /**
- * Gaussian inverse-distance interpolation of both point populations into one
- * RGBA raster. Each point carries its own sigma, so the sharp district
- * readings win near themselves while the broad regional grid fills everywhere
- * else — including across the border, which is the point: haze does not stop
- * at a coastline.
+ * Rasterise the PM2.5 grid straight into an RGBA image, bilinearly between
+ * nodes. No scattered-point interpolation any more: the grid IS the field, and
+ * treating it as a cloud of points was what produced circular blobs.
  *
- * Alpha is severity, not confidence: the regional grid covers the whole box, so
- * there IS a modelled value everywhere in it. Clean air is painted only a
- * little lighter than a plume — enough that labels and coastlines read through
- * it, not so little that the field breaks into disconnected blobs. It fades
- * out again at the box's own edge so the layer does not end on a rectangle.
+ * Alpha is severity, not confidence — the grid covers the whole box, so there
+ * is a modelled value everywhere in it. Clean air paints a little lighter than
+ * a plume: enough that labels and coastlines read through, not so little that
+ * the field breaks into disconnected islands. It fades at the box edge so the
+ * layer does not end on a hard rectangle.
  *
- * Longitude convergence is ignored. The box reaches 25° N where the cosine
- * factor is 0.91, which shifts a blob's apparent width by under half a cell —
- * below the resolution of a 2.5° model.
+ * Longitude convergence is ignored. The box reaches 22° N where the cosine
+ * factor is 0.93, shifting apparent width by well under one 1° cell.
  */
-export function rasterisePm25(
-  points: AirPoint[],
+export function rasteriseGrid(
+  pm: GridLayer,
   box: FieldBox,
   aqiOf: (pm25: number) => number,
 ): RasterResult | null {
-  if (points.length === 0) return null;
+  if (pm.values.length === 0) return null;
 
-  const w = Math.round((box.east - box.west) / CELL);
-  const h = Math.round((box.north - box.south) / CELL);
+  // one output pixel per SUBSAMPLE fraction of a grid cell: enough to carry the
+  // interpolated gradient, small enough to build in a single frame
+  const w = (pm.nx - 1) * SUBSAMPLE;
+  const h = (pm.ny - 1) * SUBSAMPLE;
+  if (w <= 0 || h <= 0) return null;
+
   const canvas = document.createElement("canvas");
   canvas.width = w;
   canvas.height = h;
@@ -134,69 +132,42 @@ export function rasterisePm25(
   if (!ctx) return null;
   const img = ctx.createImageData(w, h);
 
-  // bucket by whole degree so each cell only weighs plausible neighbours
-  const buckets = new Map<string, AirPoint[]>();
-  const key = (lon: number, lat: number) =>
-    `${Math.floor(lon)}|${Math.floor(lat)}`;
-  let maxSigma = 0;
-  for (const p of points) {
-    const k = key(p.lon, p.lat);
-    const b = buckets.get(k);
-    if (b) b.push(p);
-    else buckets.set(k, [p]);
-    if (p.sigma > maxSigma) maxSigma = p.sigma;
-  }
-  const reach = Math.ceil(maxSigma * REACH_SIGMAS);
+  const at = (x: number, y: number): number | null => {
+    if (x < 0 || y < 0 || x >= pm.nx || y >= pm.ny) return null;
+    const v = pm.values[y * pm.nx + x];
+    return v == null ? null : v / 10;
+  };
 
-  for (let y = 0; y < h; y++) {
-    // canvas rows run top-down (north first); the box runs south-up
-    const lat = box.north - (y + 0.5) * CELL;
-    for (let x = 0; x < w; x++) {
-      const lon = box.west + (x + 0.5) * CELL;
+  for (let py = 0; py < h; py++) {
+    // canvas rows run top-down (north first); the grid runs south-up
+    const gy = (h - 1 - py) / SUBSAMPLE;
+    const y0 = Math.min(pm.ny - 2, Math.floor(gy));
+    const ty = gy - y0;
+    for (let px = 0; px < w; px++) {
+      const gx = px / SUBSAMPLE;
+      const x0 = Math.min(pm.nx - 2, Math.floor(gx));
+      const tx = gx - x0;
 
-      let wsum = 0;
-      let vsum = 0;
-      for (let dx = -reach; dx <= reach; dx++) {
-        for (let dy = -reach; dy <= reach; dy++) {
-          const b = buckets.get(key(lon + dx, lat + dy));
-          if (!b) continue;
-          for (const p of b) {
-            const ddx = p.lon - lon;
-            const ddy = p.lat - lat;
-            const d2 = ddx * ddx + ddy * ddy;
-            const cut = p.sigma * REACH_SIGMAS;
-            if (d2 > cut * cut) continue;
-            // 1/sigma keeps a sharp local point from being drowned out by the
-            // many broad grid nodes around it
-            const wt = Math.exp(-d2 / (2 * p.sigma * p.sigma)) / p.sigma;
-            wsum += wt;
-            vsum += wt * p.pm25;
-          }
-        }
-      }
-
-      const o = (y * w + x) * 4;
-      if (wsum === 0) {
+      const c00 = at(x0, y0);
+      const c10 = at(x0 + 1, y0);
+      const c01 = at(x0, y0 + 1);
+      const c11 = at(x0 + 1, y0 + 1);
+      const o = (py * w + px) * 4;
+      if (c00 == null || c10 == null || c01 == null || c11 == null) {
         img.data[o + 3] = 0;
         continue;
       }
-      const aqi = aqiOf(vsum / wsum);
+      const lerp = (a: number, b: number, t: number) => a + t * (b - a);
+      const value = lerp(lerp(c00, c10, tx), lerp(c01, c11, tx), ty);
+
+      const aqi = aqiOf(value);
       const [r, g, bl] = aqiColor(aqi);
-      // Opacity rises with severity. Clean air is the normal state over most of
-      // the region, and painting it in solid colour makes an ordinary day look
-      // like an emergency; letting the basemap through where there is nothing
-      // to report is both easier to read and more honest about what matters.
       const sev = Math.min(1, Math.max(0, aqi / SEVERITY_FULL_AQI));
       // soften the rectangle the model's own box ends on
-      const edge = Math.min(
-        lon - box.west,
-        box.east - lon,
-        lat - box.south,
-        box.north - lat,
-      );
-      const a =
-        (MIN_ALPHA + (1 - MIN_ALPHA) * Math.pow(sev, 0.75)) *
-        Math.max(0, Math.min(1, edge / EDGE_FADE_DEG));
+      const edgeCells = Math.min(px, w - 1 - px, py, h - 1 - py) / SUBSAMPLE;
+      const edge = Math.max(0, Math.min(1, edgeCells / EDGE_FADE_CELLS));
+      const a = (MIN_ALPHA + (1 - MIN_ALPHA) * Math.pow(sev, 0.75)) * edge;
+
       img.data[o] = r;
       img.data[o + 1] = g;
       img.data[o + 2] = bl;
@@ -205,40 +176,6 @@ export function rasterisePm25(
   }
   ctx.putImageData(img, 0, 0);
   return { canvas, box };
-}
-
-// ---------------------------------------------------------------------------
-
-export interface AirGridData {
-  bbox: [number, number, number, number];
-  nx: number;
-  ny: number;
-  step: number;
-  u: (number | null)[];
-  v: (number | null)[];
-  pm25: (number | null)[];
-  maxSpeed: number;
-  validAt: string | null;
-  attribution: string;
-}
-
-/** The grid's PM2.5 nodes as interpolation points, forming the regional
- *  backdrop under the finer district readings. */
-export function gridPoints(data: AirGridData, sigma: number): AirPoint[] {
-  const out: AirPoint[] = [];
-  for (let y = 0; y < data.ny; y++) {
-    for (let x = 0; x < data.nx; x++) {
-      const p = data.pm25[y * data.nx + x];
-      if (p == null) continue;
-      out.push({
-        lon: data.bbox[0] + x * data.step,
-        lat: data.bbox[1] + y * data.step,
-        pm25: p / 10,
-        sigma,
-      });
-    }
-  }
-  return out;
 }
 
 /**
@@ -250,10 +187,16 @@ export function gridPoints(data: AirGridData, sigma: number): AirPoint[] {
 export class WindSampler {
   private readonly west: number;
   private readonly south: number;
+  private readonly nx: number;
+  private readonly ny: number;
+  private readonly step: number;
 
   constructor(private readonly data: AirGridData) {
     this.west = data.bbox[0];
     this.south = data.bbox[1];
+    this.nx = data.u.nx;
+    this.ny = data.u.ny;
+    this.step = data.u.step;
   }
 
   get maxSpeed(): number {
@@ -261,19 +204,17 @@ export class WindSampler {
   }
 
   private at(x: number, y: number): [number, number] | null {
-    const { nx, ny, u, v } = this.data;
-    if (x < 0 || y < 0 || x >= nx || y >= ny) return null;
-    const i = y * nx + x;
-    const uu = u[i];
-    const vv = v[i];
+    if (x < 0 || y < 0 || x >= this.nx || y >= this.ny) return null;
+    const i = y * this.nx + x;
+    const uu = this.data.u.values[i];
+    const vv = this.data.v.values[i];
     if (uu == null || vv == null) return null;
     return [uu / 10, vv / 10];
   }
 
   sample(lon: number, lat: number): [number, number] | null {
-    const { step } = this.data;
-    const fx = (lon - this.west) / step;
-    const fy = (lat - this.south) / step;
+    const fx = (lon - this.west) / this.step;
+    const fy = (lat - this.south) / this.step;
     const x0 = Math.floor(fx);
     const y0 = Math.floor(fy);
     const tx = fx - x0;

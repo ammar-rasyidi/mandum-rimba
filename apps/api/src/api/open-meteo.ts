@@ -70,7 +70,12 @@ export interface OpenMeteoRow {
     wind_speed_10m?: number | null;
     wind_direction_10m?: number | null;
   };
-  hourly?: { time?: string[]; pm2_5?: (number | null)[] };
+  hourly?: {
+    time?: string[];
+    pm2_5?: (number | null)[];
+    wind_speed_10m?: (number | null)[];
+    wind_direction_10m?: (number | null)[];
+  };
 }
 
 /** Trim "94.0" to "94": shorter coordinates mean more locations per request. */
@@ -109,9 +114,20 @@ export async function fetchPoints(
         }));
         break;
       } catch (err) {
-        const status = (err as { response?: { status?: number } }).response
-          ?.status;
-        if (status !== 429 || attempt >= 2) throw err;
+        const res = (
+          err as {
+            response?: { status?: number; data?: { reason?: string } };
+          }
+        ).response;
+        if (res?.status !== 429 || attempt >= 2) throw err;
+        // A 429 is two different failures wearing one status code. The minutely
+        // one clears by waiting; the DAILY one does not clear until tomorrow,
+        // and retrying it just hammers a service that already said no. Read the
+        // reason and give up immediately on the daily variant.
+        const reason = res.data?.reason ?? "";
+        if (/dail|hourl|month/i.test(reason)) {
+          throw new Error(`Open-Meteo quota exhausted: ${reason}`);
+        }
         // reset our own accounting too: the server disagrees with it
         spent = [];
         await new Promise((r) => setTimeout(r, WINDOW_MS + 2000));

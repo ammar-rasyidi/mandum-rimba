@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Controller,
   Get,
+  Logger,
   Query,
   Res,
   UseInterceptors,
@@ -16,7 +17,7 @@ import {
   usAqiFromPm25,
   type AirQualityPoint,
 } from "@mandumrimba/shared";
-import { buildWindField, type WindField } from "./air-field";
+import { buildAirGrid, type AirGrid } from "./air-field";
 import { AIR_QUALITY_BASE, fetchPoints, type OpenMeteoRow } from "./open-meteo";
 import { Region, RegionDocument } from "../common/schemas";
 import { CacheHeaderInterceptor } from "./cache.interceptor";
@@ -55,8 +56,14 @@ import { CacheHeaderInterceptor } from "./cache.interceptor";
  * 12.048 and silently started failing. See open-meteo.ts.
  */
 const TTL_MS = 6 * 60 * 60 * 1000;
-/** Wind refreshes hourly: 275 locations a time is cheap (6.600/day). */
-const FIELD_TTL_MS = 60 * 60 * 1000;
+/**
+ * Four hours. The regional grid costs 432 locations twice over (wind + PM2.5),
+ * so hourly would be 20.736 a day against a 10.000 ceiling; at four it is
+ * 5.184, and nothing is lost — GFS publishes every 6 h, CAMS every 12.
+ */
+const FIELD_TTL_MS = 4 * 60 * 60 * 1000;
+/** cooldown after a failed grid build, so retries do not thrash the upstream */
+const FIELD_RETRY_MS = 2 * 60 * 1000;
 
 const ATTRIBUTION =
   "Copernicus Atmosphere Monitoring Service (CAMS) via Open-Meteo. " +
@@ -97,6 +104,7 @@ interface Site {
 
 @Controller("air")
 export class AirController {
+  private readonly logger = new Logger(AirController.name);
   /** kabupaten sample points: derived once, boundaries change ~never */
   private sites: Site[] | null = null;
   /** raw upstream series, NOT the rendered collection: the current hour is
@@ -104,9 +112,10 @@ export class AirController {
   private cache: { at: number; rows: (OpenMeteoRow | undefined)[] } | null =
     null;
   private inFlight: Promise<void> | null = null;
-  private fieldCache: { at: number; data: WindField } | null = null;
+  private fieldCache: { at: number; data: AirGrid } | null = null;
   /** de-dupes concurrent cold builds; one fetch, many waiters */
-  private fieldInFlight: Promise<WindField | null> | null = null;
+  private fieldInFlight: Promise<AirGrid | null> | null = null;
+  private fieldFailedAt = 0;
 
   constructor(
     @InjectModel(Region.name) private regionModel: Model<RegionDocument>,
@@ -169,8 +178,11 @@ export class AirController {
       .then((rows) => {
         this.cache = { at: Date.now(), rows };
       })
-      .catch(() => {
+      .catch((err) => {
         // keep the previous series; a blank map is worse than an old one
+        this.logger.error(
+          `air series refresh failed: ${err instanceof Error ? err.message : err}`,
+        );
       })
       .finally(() => {
         this.inFlight = null;
@@ -179,34 +191,56 @@ export class AirController {
   }
 
   /**
-   * GET /v1/air/field — the 10 m wind field the particle animation advects.
-   * Wind only and 2°, because the quota is counted per location; the PM2.5
-   * colour field is interpolated on the client from /v1/air. One upstream
-   * request, refreshed hourly. See air-field.ts.
+   * GET /v1/air/field — the regional grid the animation runs on: 10 m wind for
+   * the particles, plus PM2.5 as the colour backdrop across Southeast Asia, so
+   * haze crossing borders stays visible. Finer Indonesian detail comes from the
+   * district points in /v1/air, which the client blends over this. See
+   * air-field.ts for the resolution and cadence.
    */
   @Get("field")
-  @UseInterceptors(CacheHeaderInterceptor)
-  async field(): Promise<WindField | null> {
+  async field(
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<AirGrid | { warming: true } | null> {
     const fresh =
       this.fieldCache && Date.now() - this.fieldCache.at < FIELD_TTL_MS;
-    if (fresh) return this.fieldCache!.data;
+    if (!fresh) void this.refreshField();
 
-    if (this.fieldCache) {
-      // stale-but-usable: hand it over now, refresh behind the request
-      void this.refreshField();
-      return this.fieldCache.data;
+    if (!this.fieldCache) {
+      // Same reason /v1/air never blocks: two 432-location requests are paced
+      // across a minute by the shared budget, well past the 30 s function
+      // budget. Say we are warming and let the client come back.
+      res.setHeader("Cache-Control", "no-store");
+      return { warming: true };
     }
-    return this.refreshField();
+    res.setHeader(
+      "Cache-Control",
+      "public, max-age=300, s-maxage=3600, stale-while-revalidate=86400",
+    );
+    return this.fieldCache.data;
   }
 
-  private async refreshField(): Promise<WindField | null> {
+  private async refreshField(): Promise<AirGrid | null> {
     if (this.fieldInFlight) return this.fieldInFlight;
-    this.fieldInFlight = buildWindField()
+    // Back off after a failure. Without this every request retries a build that
+    // takes a minute and spends 864 locations, so one transient upstream
+    // problem becomes a thrash loop that never converges — which is exactly how
+    // this endpoint first behaved: permanently "warming", silently.
+    if (Date.now() - this.fieldFailedAt < FIELD_RETRY_MS) {
+      return this.fieldCache?.data ?? null;
+    }
+    this.fieldInFlight = buildAirGrid()
       .then((data) => {
         this.fieldCache = { at: Date.now(), data };
+        this.fieldFailedAt = 0;
         return data;
       })
-      .catch(() => this.fieldCache?.data ?? null)
+      .catch((err) => {
+        this.fieldFailedAt = Date.now();
+        this.logger.error(
+          `air field build failed: ${err instanceof Error ? err.message : err}`,
+        );
+        return this.fieldCache?.data ?? null;
+      })
       .finally(() => {
         this.fieldInFlight = null;
       });

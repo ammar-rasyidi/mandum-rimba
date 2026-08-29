@@ -305,8 +305,14 @@
     "rptProtected": "Protected areas",
     "rptWetlands": "Peat & mangrove",
     "rptDisasters": "Recorded disasters",
-    "rptKind": { "protected": "Protected", "moratorium": "Moratorium" },
-    "regionLevel": { "kabupaten": "Regency", "province": "Province" },
+    "rptKind": {
+      "protected": "Protected",
+      "moratorium": "Moratorium"
+    },
+    "regionLevel": {
+      "kabupaten": "Regency",
+      "province": "Province"
+    },
     "fieldNameAlt": "Other name (WDPA)",
     "fieldName": "Name",
     "fieldSci": "Scientific name",
@@ -392,6 +398,7 @@
       "peatland": "Peatlands",
       "species-dist": "Wildlife Distribution",
       "forestloss": "Tree cover loss (2001–2025)",
+      "air": "Air & haze (PM2.5 + wind)",
       "karhutla-image": "Land & forest fire — true image (NASA Worldview)",
       "karhutla-hotspot": "Land & forest fire — hotspots (NASA Worldview)",
       "fires": "Hotspots (48h)",

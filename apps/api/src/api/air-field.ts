@@ -1,44 +1,51 @@
-import { fetchPoints, FORECAST_BASE, type LatLon } from "./open-meteo";
+import {
+  AIR_QUALITY_BASE,
+  fetchPoints,
+  FORECAST_BASE,
+  type LatLon,
+} from "./open-meteo";
 
 /**
- * The 10 m wind field behind the animated air map: the vectors the particle
- * layer advects, so you can see which way the smoke is actually going.
+ * The regional field behind the animated air map: 10 m wind (GFS) and surface
+ * PM2.5 (CAMS) on one grid, covering Southeast Asia rather than Indonesia
+ * alone. Haze does not stop at the border — Riau's smoke reaches Kuala Lumpur
+ * and Singapore, and Indochina's burning season blows south — so a map cropped
+ * to the coastline would hide half of what it is trying to explain.
  *
- * WIND ONLY, and 2° — both forced by the location budget (see open-meteo.ts).
- * A 25×11 grid is 275 locations, one request, ~1.4 s, and it can refresh
- * hourly all day (6.600/day) without approaching the daily ceiling. The 1°
- * grid this started as would have been 1.029 locations per variable: two
- * minutes of paced fetching per refresh and ~49.000 locations a day. Wind is
- * a smooth field, so 2° costs the animation almost nothing once the client
- * interpolates between nodes — cambecc/earth, the original of this look, runs
- * on 1° GFS.
+ * 2.5° over 85–150 E, -12.5–25 N is 432 nodes: one request per variable, and
+ * with the two variables refreshed every 4 hours it costs 5.184 locations a day
+ * against the free tier's 10.000 (see open-meteo.ts — the quota is counted per
+ * location). Hourly would be 20.736 and would fail. Nothing is lost at 4 hours:
+ * GFS publishes every 6, CAMS every 12.
  *
- * PM2.5 deliberately does NOT come from a grid here. The colour field is built
- * on the client from the 502 kabupaten points that /v1/air already returns:
- * denser than any grid we could afford over land, free in quota terms, and
- * honestly blank over open sea where we have no reason to claim a value.
+ * Both fields are smooth at continental scale, so the client's bilinear
+ * interpolation carries the resolution. cambecc/earth, the original of this
+ * look, animates 1° GFS globally. The finer PM2.5 detail over Indonesia comes
+ * from the 502 district readings in /v1/air, which the client blends on top of
+ * this backdrop.
  *
  * GFS is pinned rather than "best_match", which chooses a different model per
  * location and would put seams through a field that must be continuous.
  */
 
-/** Indonesian window on whole degrees, so nodes land on GFS grid points. */
+/** Southeast Asia: Sumatra's west coast to Papua, Java to southern China. */
 export const FIELD_BBOX = {
-  west: 94,
-  south: -12,
-  east: 142,
-  north: 8,
+  west: 85,
+  south: -12.5,
+  east: 150,
+  north: 25,
 } as const;
-export const FIELD_STEP = 2;
+export const FIELD_STEP = 2.5;
 export const FIELD_NX =
   Math.round((FIELD_BBOX.east - FIELD_BBOX.west) / FIELD_STEP) + 1;
 export const FIELD_NY =
   Math.round((FIELD_BBOX.north - FIELD_BBOX.south) / FIELD_STEP) + 1;
 
 export const FIELD_ATTRIBUTION =
-  "Angin 10 m: NOAA GFS via Open-Meteo (model, bukan pengukuran darat).";
+  "PM2.5: Copernicus CAMS. Angin 10 m: NOAA GFS. Keduanya via Open-Meteo, " +
+  "hasil model, bukan pengukuran darat.";
 
-export interface WindField {
+export interface AirGrid {
   /** [west, south, east, north] — the field's corners */
   bbox: [number, number, number, number];
   nx: number;
@@ -56,6 +63,9 @@ export interface WindField {
    */
   u: (number | null)[];
   v: (number | null)[];
+  /** surface PM2.5, µg/m³ × 10, same indexing. The regional backdrop for the
+   *  colour field; Indonesian detail comes from /v1/air's district points. */
+  pm25: (number | null)[];
   /** peak speed in the field, m/s — lets the client scale particles without
    *  a second pass over the arrays */
   maxSpeed: number;
@@ -95,34 +105,46 @@ function toUv(
   return [-speed * Math.sin(rad), -speed * Math.cos(rad)];
 }
 
-export async function buildWindField(): Promise<WindField> {
+export async function buildAirGrid(): Promise<AirGrid> {
   const grid = nodes();
-  const rows = await fetchPoints(
+
+  // two upstreams, one grid. Sequential, and the shared budget in
+  // open-meteo.ts paces them so the pair never trips the minutely limit.
+  const wind = await fetchPoints(
     FORECAST_BASE,
     "current=wind_speed_10m,wind_direction_10m&models=gfs_global" +
       "&wind_speed_unit=ms&forecast_days=1&timezone=Asia%2FJakarta",
     grid,
-    // 275 nodes fit one request comfortably under both the URI and the budget
+    grid.length, // 432 nodes fit one request under the 8 kB URI limit
+  );
+  const air = await fetchPoints(
+    AIR_QUALITY_BASE,
+    "current=pm2_5&domains=cams_global&forecast_days=1&timezone=Asia%2FJakarta",
+    grid,
     grid.length,
   );
 
   const u: (number | null)[] = [];
   const v: (number | null)[] = [];
+  const pm25: (number | null)[] = [];
   let validAt: string | null = null;
   let maxSpeed = 0;
 
   for (let i = 0; i < grid.length; i++) {
-    const c = rows[i]?.current;
-    validAt ??= c?.time ?? null;
-    const [uu, vv] = toUv(c?.wind_speed_10m, c?.wind_direction_10m);
+    const w = wind[i]?.current;
+    validAt ??= w?.time ?? null;
+    const [uu, vv] = toUv(w?.wind_speed_10m, w?.wind_direction_10m);
     if (uu === null || vv === null) {
       u.push(null);
       v.push(null);
-      continue;
+    } else {
+      maxSpeed = Math.max(maxSpeed, Math.hypot(uu, vv));
+      u.push(Math.round(uu * 10));
+      v.push(Math.round(vv * 10));
     }
-    maxSpeed = Math.max(maxSpeed, Math.hypot(uu, vv));
-    u.push(Math.round(uu * 10));
-    v.push(Math.round(vv * 10));
+
+    const p = air[i]?.current?.pm2_5;
+    pm25.push(p != null && Number.isFinite(p) ? Math.round(p * 10) : null);
   }
 
   return {
@@ -140,6 +162,7 @@ export async function buildWindField(): Promise<WindField> {
     attribution: FIELD_ATTRIBUTION,
     u,
     v,
+    pm25,
     maxSpeed: Math.round(maxSpeed * 10) / 10,
   };
 }

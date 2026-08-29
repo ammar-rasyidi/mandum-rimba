@@ -305,8 +305,14 @@
     "rptProtected": "Kawasan lindung",
     "rptWetlands": "Gambut & mangrove",
     "rptDisasters": "Bencana tercatat",
-    "rptKind": { "protected": "Kawasan lindung", "moratorium": "Moratorium" },
-    "regionLevel": { "kabupaten": "Kabupaten", "province": "Provinsi" },
+    "rptKind": {
+      "protected": "Kawasan lindung",
+      "moratorium": "Moratorium"
+    },
+    "regionLevel": {
+      "kabupaten": "Kabupaten",
+      "province": "Provinsi"
+    },
     "fieldNameAlt": "Nama lain (WDPA)",
     "fieldName": "Nama",
     "fieldSci": "Nama ilmiah",
@@ -392,6 +398,7 @@
       "peatland": "Gambut",
       "species-dist": "Peta Sebaran Satwa",
       "forestloss": "Tutupan pohon hilang (2001–2025)",
+      "air": "Udara & asap (PM2.5 + angin)",
       "karhutla-image": "Citra satelit (NASA Worldview)",
       "karhutla-hotspot": "Hotspot (NASA Worldview)",
       "fires": "Hotspot (48 jam)",

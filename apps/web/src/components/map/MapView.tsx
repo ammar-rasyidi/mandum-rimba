@@ -17,6 +17,7 @@ import MobilePanelSheet, {
   SHEET_PEEK,
   type SheetSnap,
 } from "./MobilePanelSheet";
+import AirField from "./AirField";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import DetailDrawer, { type SelectedFeature } from "./DetailDrawer";
 import SpeciesInfo from "./SpeciesInfo";
@@ -161,10 +162,13 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
   // /biodiversitas must not create their sources, request their tiles, or carry
   // their state in its URL.
   const hasGibs = groupLayers.some((l) => l.gibs);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const searchMarkerRef = useRef<maplibregl.Marker | null>(null);
   const [ready, setReady] = useState(false);
+  /** the map's positioned div, as state rather than a ref so AirField
+   *  re-renders once it exists (a ref would not trigger one) */
+  const [mapHost, setMapHost] = useState<HTMLDivElement | null>(null);
   const [availableTiles, setAvailableTiles] = useState<string[]>([]);
   const [filters, setFilters] = useState<MapFilters>(
     () => readUrlState().filters,
@@ -661,7 +665,7 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
       const tileNames = [
         ...new Set(
           groupLayers
-            .filter((l) => !l.geojson && l.kind !== "raster")
+            .filter((l) => !l.geojson && l.kind !== "raster" && !l.custom)
             .map((l) => l.tile),
         ),
       ];
@@ -735,12 +739,16 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
       });
       avail.add("forestloss"); // live GFW raster, always available in the legend
 
+      // custom layers (air) are not tilesets, so the probe above never sees
+      // them; they are available whenever their endpoint is
+      for (const def of groupLayers) if (def.custom) avail.add(def.tile);
+
       const added = new Set<string>();
       for (const def of groupLayers) {
         // forest-loss is the GFW raster added above, not a vector tileset —
         // skip the generic builder for it. Same for the two GIBS rasters, which
         // are added by hand around this loop so they land at the right depth.
-        if (def.id === "forestloss" || def.gibs) continue;
+        if (def.id === "forestloss" || def.gibs || def.custom) continue;
         // local GeoJSON layers (distribution areas) load from the bundled file, not R2
         if (def.geojson) {
           const sourceId = `src-${def.id}`;
@@ -1687,7 +1695,20 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
           transparent above the horizon, so this theme-aware colour (sky blue in
           light, night black in dark) shows there instead of the page bleeding
           through. Hidden under the opaque basemap in the flat view. */}
-      <div ref={containerRef} className="relative flex-1 bg-[var(--map-sky)]" />
+      <div
+        ref={(el) => {
+          containerRef.current = el;
+          setMapHost(el);
+        }}
+        className="relative flex-1 bg-[var(--map-sky)]"
+      />
+      {ready && (
+        <AirField
+          map={mapRef.current}
+          container={mapHost}
+          visible={filters.layers.includes("air")}
+        />
+      )}
       {/* while a cinematic story plays, hide the map chrome for immersion */}
       {!storyId && (
         <MapControls

@@ -46,6 +46,10 @@ export interface LayerDef {
    *  mangrove tiles ship no properties at all) fall back to that clipped
    *  geometry, which is fine for the small polygons they hold. */
   idProp?: string;
+  /** rendered by its own React component, not by buildLayer: the layer owns a
+   *  generated ImageSource and/or a canvas overlay, so the generic vector/tile
+   *  path does not apply. Currently only `air` (see components/map/AirField). */
+  custom?: true;
   /** NASA Worldview / GIBS raster layer (no PMTiles, no ingest — see lib/gibs.ts).
    *  "imagery" paints UNDER the data layers (it is a basemap for the chosen day);
    *  "hotspot" paints OVER them. Both are driven by the karhutla date picker. */
@@ -54,6 +58,23 @@ export interface LayerDef {
 
 export const LAYERS: LayerDef[] = [
   // ---- fills (drawn first, under the points) ----
+  {
+    // Udara & asap: the PM2.5 colour field with the 10 m wind blown through it
+    // as moving particles. Neither half is a tileset — the field is rasterised
+    // in the browser from /v1/air's 502 district readings, the wind comes from
+    // /v1/air/field. Both are models, not ground measurements; the field goes
+    // transparent where no district is near enough to justify a colour.
+    id: "air",
+    tile: "air",
+    kind: "raster",
+    custom: true,
+    color: "#cc0033", // red 'unhealthy' step of the AQI ramp, as the legend swatch
+    defaultOn: false,
+    sourceName: "Copernicus CAMS (PM2.5) + NOAA GFS (angin), via Open-Meteo",
+    sourceUrl:
+      "https://ads.atmosphere.copernicus.eu/datasets/cams-global-atmospheric-composition-forecasts",
+    dataYear: "per jam",
+  },
   {
     // Karhutla, real imagery: the NASA Worldview true-colour mosaic for ONE
     // chosen day. Smoke plumes and burn scars are visible directly, so a hotspot

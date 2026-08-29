@@ -97,10 +97,26 @@ export async function fetchPoints(
     const url =
       `${base}?latitude=${batch.map((p) => short(p.lat)).join(",")}` +
       `&longitude=${batch.map((p) => short(p.lon)).join(",")}&${query}`;
-    const { data } = await axios.get<OpenMeteoRow | OpenMeteoRow[]>(url, {
-      timeout: 60_000,
-      headers: { "User-Agent": UA },
-    });
+    // A 429 means someone drained the minutely budget first (the accounting
+    // above is ours, not the server's). Wait the window out and retry rather
+    // than failing a whole grid over a few seconds of contention.
+    let data: OpenMeteoRow | OpenMeteoRow[] | undefined;
+    for (let attempt = 0; ; attempt++) {
+      try {
+        ({ data } = await axios.get<OpenMeteoRow | OpenMeteoRow[]>(url, {
+          timeout: 60_000,
+          headers: { "User-Agent": UA },
+        }));
+        break;
+      } catch (err) {
+        const status = (err as { response?: { status?: number } }).response
+          ?.status;
+        if (status !== 429 || attempt >= 2) throw err;
+        // reset our own accounting too: the server disagrees with it
+        spent = [];
+        await new Promise((r) => setTimeout(r, WINDOW_MS + 2000));
+      }
+    }
     // single-location requests return an object, multi-location an array
     const rows = Array.isArray(data) ? data : [data];
     for (let j = 0; j < batch.length; j++) out.push(rows[j]);

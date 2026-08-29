@@ -185,17 +185,19 @@ export const DATA_CATALOG: DatasetEntry[] = [
       id: "Udara & asap: PM2.5 model (Copernicus CAMS)",
       en: "Air & haze: modelled PM2.5 (Copernicus CAMS)",
     },
-    org: "Copernicus Atmosphere Monitoring Service (ECMWF), via Open-Meteo",
+    org: "Copernicus CAMS (PM2.5) + NOAA GFS (angin), via Open-Meteo",
     url: "https://ads.atmosphere.copernicus.eu/datasets/cams-global-atmospheric-composition-forecasts",
-    license: "Copernicus, bebas dengan atribusi / free with attribution",
-    updated: "Tiap jam, prakiraan 5 hari / Hourly, 5-day forecast",
+    license:
+      "Copernicus & NOAA, bebas dengan atribusi / free with attribution",
+    updated:
+      "PM2.5 per kabupaten tiap 6 jam; field kawasan tiap 4 jam / District PM2.5 every 6 h; regional field every 4 h",
     coverage: {
-      id: "Seluruh Indonesia, resolusi model ~45 km (titik per kabupaten/kota)",
-      en: "All Indonesia, ~45 km model resolution (one point per district)",
+      id: "Asia Tenggara (85–150°BT, 12,5°LS–25°LU) untuk field & angin; 502 titik kabupaten/kota untuk detail Indonesia",
+      en: "Southeast Asia (85–150°E, 12.5°S–25°N) for the field & wind; 502 district points for Indonesian detail",
     },
     description: {
-      id: "Konsentrasi PM2.5 permukaan hasil MODEL atmosfer global CAMS, bukan hasil ukur alat di darat. Dipakai karena hampir tidak ada alat ukur di pedalaman Riau, Jambi, dan Kalimantan Tengah, justru tempat asap paling pekat, sehingga semua sumber berbasis stasiun kosong persis di titik yang penting. Konsekuensinya: sel 45 km meratakan puncak lokal, jadi angka ini cenderung LEBIH RENDAH daripada udara tepat di sebelah lahan yang terbakar. Indeks AQI di sisinya kami hitung sendiri dari angka PM2.5 ini memakai breakpoint resmi US EPA (revisi 6 Mei 2024); kami tidak mengambil AQI siap pakai dari pihak mana pun. Nilai di atas AQI 500 adalah perpanjangan garis segmen Berbahaya oleh kami, di luar rentang yang didefinisikan EPA, dan selalu ditandai. Angka yang bisa dipertanggungjawabkan adalah µg/m³; AQI hanyalah terjemahannya.",
-      en: "Surface PM2.5 from the CAMS global atmospheric MODEL, not ground measurements. Used because inland Riau, Jambi, and Central Kalimantan have almost no monitors — exactly where the smoke is thickest — so every station-based source is blank where it matters most. The trade-off: a 45 km cell smooths local peaks, so these values run LOWER than the air beside a burning block. The AQI shown alongside is computed by us from this PM2.5 using the official US EPA breakpoints (6 May 2024 revision); we do not take anyone's ready-made AQI. Values above AQI 500 are our own extension of the Hazardous segment, outside the range EPA defines, and are always flagged. The defensible number is µg/m³; the AQI is only its translation.",
+      id: "Konsentrasi PM2.5 permukaan hasil MODEL atmosfer global CAMS, bukan hasil ukur alat di darat. Ditampilkan sebagai field warna se-Asia Tenggara dengan partikel angin 10 m (NOAA GFS) yang bergerak menembusnya, karena asap tidak berhenti di batas negara: kabut Riau sampai ke Kuala Lumpur dan Singapura. Latar kawasannya grid 2,5°; detail halus di Indonesia berasal dari 502 bacaan kabupaten/kota yang dipadukan di atasnya, sehingga bacaan lokal menang di dekat dirinya sendiri. Kepekatan warna mengikuti tingkat bahaya, jadi udara bersih sengaja dibiarkan tembus pandang. Dipakai karena hampir tidak ada alat ukur di pedalaman Riau, Jambi, dan Kalimantan Tengah, justru tempat asap paling pekat, sehingga semua sumber berbasis stasiun kosong persis di titik yang penting. Konsekuensinya: sel 45 km meratakan puncak lokal, jadi angka ini cenderung LEBIH RENDAH daripada udara tepat di sebelah lahan yang terbakar. Indeks AQI di sisinya kami hitung sendiri dari angka PM2.5 ini memakai breakpoint resmi US EPA (revisi 6 Mei 2024); kami tidak mengambil AQI siap pakai dari pihak mana pun. Nilai di atas AQI 500 adalah perpanjangan garis segmen Berbahaya oleh kami, di luar rentang yang didefinisikan EPA, dan selalu ditandai. Angka yang bisa dipertanggungjawabkan adalah µg/m³; AQI hanyalah terjemahannya.",
+      en: "Surface PM2.5 from the CAMS global atmospheric MODEL, not ground measurements. Shown as a colour field across Southeast Asia with 10 m wind particles (NOAA GFS) moving through it, because haze does not stop at borders: Riau's smoke reaches Kuala Lumpur and Singapore. The regional backdrop is a 2.5° grid; finer Indonesian detail comes from 502 district readings blended over it, so a local reading wins near itself. Opacity follows severity, so clean air is deliberately left transparent. Used because inland Riau, Jambi, and Central Kalimantan have almost no monitors — exactly where the smoke is thickest — so every station-based source is blank where it matters most. The trade-off: a 45 km cell smooths local peaks, so these values run LOWER than the air beside a burning block. The AQI shown alongside is computed by us from this PM2.5 using the official US EPA breakpoints (6 May 2024 revision); we do not take anyone's ready-made AQI. Values above AQI 500 are our own extension of the Hazardous segment, outside the range EPA defines, and are always flagged. The defensible number is µg/m³; the AQI is only its translation.",
     },
     status: "active",
   },

@@ -3,11 +3,12 @@ import {
   Controller,
   Get,
   Query,
+  Res,
   UseInterceptors,
 } from "@nestjs/common";
+import type { Response } from "express";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
-import axios from "axios";
 import * as turf from "@turf/turf";
 import type { Feature, MultiPolygon, Polygon } from "geojson";
 import {
@@ -15,6 +16,8 @@ import {
   usAqiFromPm25,
   type AirQualityPoint,
 } from "@mandumrimba/shared";
+import { buildWindField, type WindField } from "./air-field";
+import { AIR_QUALITY_BASE, fetchPoints, type OpenMeteoRow } from "./open-meteo";
 import { Region, RegionDocument } from "../common/schemas";
 import { CacheHeaderInterceptor } from "./cache.interceptor";
 
@@ -43,25 +46,22 @@ import { CacheHeaderInterceptor } from "./cache.interceptor";
  * exists only so a self-hosted or commercial endpoint can be swapped in.
  */
 
-const DEFAULT_BASE = "https://air-quality-api.open-meteo.com/v1/air-quality";
-/** Open-Meteo accepts 600+ comma-separated points, but the URL gets long;
- *  200 keeps us at ~3 kB per request, well under any proxy's limit. */
-const BATCH = 200;
-const TTL_MS = 60 * 60 * 1000; // CAMS publishes hourly
-const UA =
-  "MandumRimba/0.1 (public-interest environmental observatory, Indonesia)";
+/**
+ * Six hours, not one. We hold a 96-hour hourly SERIES per district and read the
+ * current hour out of it on every request, so the served value is always the
+ * right hour even when the fetch is hours old. CAMS publishes two cycles a day,
+ * so refreshing four times a day loses nothing — and it costs 2.008 locations a
+ * day against the 10.000 free ceiling, where hourly refetching would have cost
+ * 12.048 and silently started failing. See open-meteo.ts.
+ */
+const TTL_MS = 6 * 60 * 60 * 1000;
+/** Wind refreshes hourly: 275 locations a time is cheap (6.600/day). */
+const FIELD_TTL_MS = 60 * 60 * 1000;
 
 const ATTRIBUTION =
   "Copernicus Atmosphere Monitoring Service (CAMS) via Open-Meteo. " +
   "PM2.5 dimodelkan, bukan diukur di darat. Indeks AQI dihitung sendiri " +
   "dengan breakpoint US EPA (revisi 2024).";
-
-interface OpenMeteoPoint {
-  latitude: number;
-  longitude: number;
-  current?: { time?: string; pm2_5?: number | null };
-  hourly?: { time?: string[]; pm2_5?: (number | null)[] };
-}
 
 interface AirFeature {
   type: "Feature";
@@ -71,6 +71,9 @@ interface AirFeature {
 
 interface AirCollection {
   type: "FeatureCollection";
+  /** true while the first upstream series is still being fetched: the map
+   *  should show "memuat", not "udara bersih", and retry shortly */
+  warming?: boolean;
   generatedAt: string;
   attribution: string;
   model: string;
@@ -93,11 +96,17 @@ interface Site {
 }
 
 @Controller("air")
-@UseInterceptors(CacheHeaderInterceptor)
 export class AirController {
   /** kabupaten sample points: derived once, boundaries change ~never */
   private sites: Site[] | null = null;
-  private cache: { at: number; data: AirCollection } | null = null;
+  /** raw upstream series, NOT the rendered collection: the current hour is
+   *  read out of it per request, so a 6-hour-old fetch still serves this hour */
+  private cache: { at: number; rows: (OpenMeteoRow | undefined)[] } | null =
+    null;
+  private inFlight: Promise<void> | null = null;
+  private fieldCache: { at: number; data: WindField } | null = null;
+  /** de-dupes concurrent cold builds; one fetch, many waiters */
+  private fieldInFlight: Promise<WindField | null> | null = null;
 
   constructor(
     @InjectModel(Region.name) private regionModel: Model<RegionDocument>,
@@ -109,28 +118,99 @@ export class AirController {
    * unseeded or the upstream is down, so the map layer degrades gracefully.
    */
   @Get()
-  async list(): Promise<AirCollection> {
-    if (this.cache && Date.now() - this.cache.at < TTL_MS) {
-      return this.cache.data;
-    }
+  async list(
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<AirCollection> {
     const sites = await this.loadSites();
-    if (sites.length === 0) return this.cache?.data ?? EMPTY();
-
-    try {
-      const readings = await this.fetchBatched(sites);
-      const data: AirCollection = {
-        ...EMPTY(),
-        features: sites.flatMap((site, i) => {
-          const f = this.toFeature(site, readings[i]);
-          return f ? [f] : [];
-        }),
-      };
-      this.cache = { at: Date.now(), data };
-      return data;
-    } catch {
-      // last good payload beats a blank map during an upstream blip
-      return this.cache?.data ?? EMPTY();
+    if (sites.length === 0) {
+      res.setHeader("Cache-Control", "no-store");
+      return EMPTY();
     }
+
+    if (!this.cache || Date.now() - this.cache.at >= TTL_MS) {
+      // Never block on a cold fetch. 502 districts is most of a minute's
+      // location budget, so a build can be paced out over 60 s — longer than
+      // the Vercel function budget. Start it, say so, and let the client come
+      // back; a stale-but-real series is served meanwhile.
+      void this.refresh(sites);
+    }
+
+    const rows = this.cache?.rows;
+    if (!rows) {
+      // warming: must not be cached, or the CDN pins an empty map for an hour
+      res.setHeader("Cache-Control", "no-store");
+      return { ...EMPTY(), warming: true };
+    }
+
+    res.setHeader(
+      "Cache-Control",
+      "public, max-age=300, s-maxage=3600, stale-while-revalidate=86400",
+    );
+    return {
+      ...EMPTY(),
+      features: sites.flatMap((site, i) => {
+        const f = this.toFeature(site, rows[i]);
+        return f ? [f] : [];
+      }),
+    };
+  }
+
+  private async refresh(sites: Site[]): Promise<void> {
+    if (this.inFlight) return this.inFlight;
+    this.inFlight = fetchPoints(
+      AIR_QUALITY_BASE,
+      // one series per district: yesterday for the NowCast window, three days
+      // forward so "worst hour in the next 24 h" stays in range for a full
+      // cache lifetime
+      "current=pm2_5&hourly=pm2_5&domains=cams_global" +
+        "&past_days=1&forecast_days=3&timezone=Asia%2FJakarta",
+      sites.map((s) => ({ lat: s.lat, lon: s.lon })),
+    )
+      .then((rows) => {
+        this.cache = { at: Date.now(), rows };
+      })
+      .catch(() => {
+        // keep the previous series; a blank map is worse than an old one
+      })
+      .finally(() => {
+        this.inFlight = null;
+      });
+    return this.inFlight;
+  }
+
+  /**
+   * GET /v1/air/field — the 10 m wind field the particle animation advects.
+   * Wind only and 2°, because the quota is counted per location; the PM2.5
+   * colour field is interpolated on the client from /v1/air. One upstream
+   * request, refreshed hourly. See air-field.ts.
+   */
+  @Get("field")
+  @UseInterceptors(CacheHeaderInterceptor)
+  async field(): Promise<WindField | null> {
+    const fresh =
+      this.fieldCache && Date.now() - this.fieldCache.at < FIELD_TTL_MS;
+    if (fresh) return this.fieldCache!.data;
+
+    if (this.fieldCache) {
+      // stale-but-usable: hand it over now, refresh behind the request
+      void this.refreshField();
+      return this.fieldCache.data;
+    }
+    return this.refreshField();
+  }
+
+  private async refreshField(): Promise<WindField | null> {
+    if (this.fieldInFlight) return this.fieldInFlight;
+    this.fieldInFlight = buildWindField()
+      .then((data) => {
+        this.fieldCache = { at: Date.now(), data };
+        return data;
+      })
+      .catch(() => this.fieldCache?.data ?? null)
+      .finally(() => {
+        this.fieldInFlight = null;
+      });
+    return this.fieldInFlight;
   }
 
   /**
@@ -140,6 +220,7 @@ export class AirController {
    * places with no kabupaten centroid near them.
    */
   @Get("point")
+  @UseInterceptors(CacheHeaderInterceptor)
   async point(@Query("lat") latRaw?: string, @Query("lon") lonRaw?: string) {
     const lat = Number(latRaw);
     const lon = Number(lonRaw);
@@ -154,10 +235,12 @@ export class AirController {
       throw new BadRequestException("lat and lon are required, in degrees");
     }
 
-    const [reading] = await this.fetch([{ lat, lon }], {
-      pastDays: 1,
-      forecastDays: 5,
-    });
+    const [reading] = await fetchPoints(
+      AIR_QUALITY_BASE,
+      "current=pm2_5&hourly=pm2_5&domains=cams_global" +
+        "&past_days=1&forecast_days=5&timezone=Asia%2FJakarta",
+      [{ lat, lon }],
+    );
     const hourly = reading?.hourly;
     const times = hourly?.time ?? [];
     const values = hourly?.pm2_5 ?? [];
@@ -229,45 +312,6 @@ export class AirController {
     return sites;
   }
 
-  private async fetchBatched(
-    sites: Site[],
-  ): Promise<(OpenMeteoPoint | undefined)[]> {
-    const out: (OpenMeteoPoint | undefined)[] = [];
-    for (let i = 0; i < sites.length; i += BATCH) {
-      const batch = sites.slice(i, i + BATCH);
-      const res = await this.fetch(batch, { pastDays: 1, forecastDays: 2 });
-      // Open-Meteo returns results positionally; pad if it ever returns fewer
-      for (let j = 0; j < batch.length; j++) out.push(res[j]);
-    }
-    return out;
-  }
-
-  private async fetch(
-    points: { lat: number; lon: number }[],
-    opts: { pastDays: number; forecastDays: number },
-  ): Promise<OpenMeteoPoint[]> {
-    const base = process.env.OPEN_METEO_AIR_URL ?? DEFAULT_BASE;
-    const params = new URLSearchParams({
-      latitude: points.map((p) => p.lat).join(","),
-      longitude: points.map((p) => p.lon).join(","),
-      current: "pm2_5",
-      hourly: "pm2_5",
-      // cams_global explicitly: `auto` would silently prefer the European
-      // 11 km domain elsewhere, and we want one documented model everywhere.
-      domains: "cams_global",
-      past_days: String(opts.pastDays),
-      forecast_days: String(opts.forecastDays),
-      timezone: "Asia/Jakarta",
-    });
-
-    const { data } = await axios.get<OpenMeteoPoint | OpenMeteoPoint[]>(
-      `${base}?${params}`,
-      { timeout: 30_000, headers: { "User-Agent": UA } },
-    );
-    // single-location requests return an object, multi-location an array
-    return Array.isArray(data) ? data : [data];
-  }
-
   /** Index of the current hour in the hourly series; falls back to the last
    *  hour that is not in the future. */
   private currentIndex(times: string[], currentTime?: string): number {
@@ -282,7 +326,7 @@ export class AirController {
     return 0;
   }
 
-  private toFeature(site: Site, r?: OpenMeteoPoint): AirFeature | null {
+  private toFeature(site: Site, r?: OpenMeteoRow): AirFeature | null {
     if (!r) return null;
     const times = r.hourly?.time ?? [];
     const values = r.hourly?.pm2_5 ?? [];

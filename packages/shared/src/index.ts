@@ -6,6 +6,10 @@ import type { MultiPolygon, Point, Polygon } from "geojson";
 // UI can render a citation in ≤ 2 clicks (editorial principle #2).
 // ---------------------------------------------------------------------------
 
+// US EPA PM2.5 → AQI conversion, derived by us from a cited concentration.
+export * from "./aqi.js";
+import type { AqiCategory } from "./aqi.js";
+
 export interface SourceMeta {
   sourceId: string;
   sourceUrl: string;
@@ -143,4 +147,29 @@ export interface RegionSummary {
   alertCount90d: number;
   disasterCount: number;
   concessionCount: number;
+}
+
+/**
+ * One modelled air-quality reading (GET /v1/air feature properties). Nothing
+ * here is measured on the ground: CAMS is a ~45 km global model, so this is
+ * what the atmosphere is calculated to be doing over a district, not what a
+ * sensor in it recorded. `pm25` is the citable number; the AQI fields are
+ * derived locally by usAqiFromPm25 (see aqi.ts).
+ */
+export interface AirQualityPoint {
+  /** kabupaten/kota slug, matching Region.slug */
+  slug: string;
+  name: string;
+  /** hourly PM2.5 µg/m³ for the current hour */
+  pm25: number | null;
+  /** EPA 12-hour NowCast µg/m³ — null when too few recent hours are valid */
+  pm25Nowcast: number | null;
+  /** US AQI from the hourly value; > 500 means extrapolated (see aqiExtrapolated) */
+  aqi: number | null;
+  aqiCategory: AqiCategory | null;
+  aqiExtrapolated: boolean;
+  /** worst hourly PM2.5 modelled in the next 24 h, and when (ISO 8601, WIB) */
+  pm25Max24h: number | null;
+  pm25Max24hAt: string | null;
+  aqiMax24h: number | null;
 }

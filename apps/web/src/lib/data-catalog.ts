@@ -180,6 +180,26 @@ export const DATA_CATALOG: DatasetEntry[] = [
     status: "active",
   },
   {
+    layer: "air",
+    name: {
+      id: "Udara & asap: PM2.5 model (Copernicus CAMS)",
+      en: "Air & haze: modelled PM2.5 (Copernicus CAMS)",
+    },
+    org: "Copernicus Atmosphere Monitoring Service (ECMWF), via Open-Meteo",
+    url: "https://ads.atmosphere.copernicus.eu/datasets/cams-global-atmospheric-composition-forecasts",
+    license: "Copernicus, bebas dengan atribusi / free with attribution",
+    updated: "Tiap jam, prakiraan 5 hari / Hourly, 5-day forecast",
+    coverage: {
+      id: "Seluruh Indonesia, resolusi model ~45 km (titik per kabupaten/kota)",
+      en: "All Indonesia, ~45 km model resolution (one point per district)",
+    },
+    description: {
+      id: "Konsentrasi PM2.5 permukaan hasil MODEL atmosfer global CAMS, bukan hasil ukur alat di darat. Dipakai karena hampir tidak ada alat ukur di pedalaman Riau, Jambi, dan Kalimantan Tengah, justru tempat asap paling pekat, sehingga semua sumber berbasis stasiun kosong persis di titik yang penting. Konsekuensinya: sel 45 km meratakan puncak lokal, jadi angka ini cenderung LEBIH RENDAH daripada udara tepat di sebelah lahan yang terbakar. Indeks AQI di sisinya kami hitung sendiri dari angka PM2.5 ini memakai breakpoint resmi US EPA (revisi 6 Mei 2024); kami tidak mengambil AQI siap pakai dari pihak mana pun. Nilai di atas AQI 500 adalah perpanjangan garis segmen Berbahaya oleh kami, di luar rentang yang didefinisikan EPA, dan selalu ditandai. Angka yang bisa dipertanggungjawabkan adalah µg/m³; AQI hanyalah terjemahannya.",
+      en: "Surface PM2.5 from the CAMS global atmospheric MODEL, not ground measurements. Used because inland Riau, Jambi, and Central Kalimantan have almost no monitors — exactly where the smoke is thickest — so every station-based source is blank where it matters most. The trade-off: a 45 km cell smooths local peaks, so these values run LOWER than the air beside a burning block. The AQI shown alongside is computed by us from this PM2.5 using the official US EPA breakpoints (6 May 2024 revision); we do not take anyone's ready-made AQI. Values above AQI 500 are our own extension of the Hazardous segment, outside the range EPA defines, and are always flagged. The defensible number is µg/m³; the AQI is only its translation.",
+    },
+    status: "active",
+  },
+  {
     layer: "karhutla-image",
     name: {
       id: "Citra asli harian (NASA Worldview / GIBS, True Color)",
@@ -266,6 +286,26 @@ export const DATA_GAPS: DatasetEntry[] = [
     description: {
       id: "MOMI memuat 10.338 IUP resmi, namun layanan petanya terkunci login (hanya blok lelang yang publik); GFW tidak punya baris tambang Indonesia, dan Global Energy Monitor hanya batu bara via formulir. Maka batas konsesi tambang tidak bisa kami sajikan. Sebagai gantinya, JEJAK lahan tambang (Maus, semua mineral) sudah ditampilkan. Bila Anda memperoleh GeoJSON IUP yang kredibel, dapat dimuat lewat MINING_IUP_GEOJSON_URL.",
       en: "MOMI holds 10,338 official IUPs but its map service is login-locked (only auction blocks are public); GFW has no Indonesian mining rows, and Global Energy Monitor is coal-only behind a form. So concession boundaries cannot be served. Instead, the mining land FOOTPRINT (Maus, all minerals) is already shown. If you obtain a credible IUP GeoJSON, it can be loaded via MINING_IUP_GEOJSON_URL.",
+    },
+    status: "gap",
+  },
+  {
+    layer: null,
+    name: {
+      id: "Pengukuran udara di darat (ISPU / IQAir / WAQI / OpenAQ)",
+      en: "Ground air-quality measurements (ISPU / IQAir / WAQI / OpenAQ)",
+    },
+    org: "KLHK (ISPU), IQAir, World Air Quality Index, OpenAQ",
+    url: "https://ispu.menlhk.go.id",
+    license: "Beragam, sebagian membatasi penayangan ulang / Mixed, some restrict republication",
+    updated: "-",
+    coverage: {
+      id: "Kota besar saja; pedalaman Sumatera & Kalimantan hampir tanpa alat ukur",
+      en: "Major cities only; inland Sumatra & Kalimantan have almost no monitors",
+    },
+    description: {
+      id: "Angka hasil ukur alat akan melengkapi model CAMS, tapi belum bisa kami sajikan. ISPU KLHK resmi namun tidak punya endpoint mesin yang stabil (masalah yang sama dengan BNPB DIBI). Ketentuan IQAir melarang konten mereka diagregasi, ditayangkan ulang, atau didistribusikan tanpa izin tertulis, sedangkan seluruh data di situs ini memang ditayangkan ulang secara publik. WAQI mewajibkan pemberitahuan tertulis lebih dulu bagi organisasi nirlaba dan membatasi arsip. OpenAQ lisensinya paling bersih (CC BY 4.0) tetapi cakupan Indonesianya tipis. Yang lebih menentukan daripada lisensi: jaringan alat ukur nyaris tidak ada di Riau, Jambi, dan Kalimantan Tengah, sehingga sumber berbasis stasiun kosong tepat di tempat asap paling pekat. Karena itu lapisan udara memakai model, dengan keterbatasannya dinyatakan terbuka.",
+      en: "Instrument readings would complement the CAMS model, but we cannot serve them yet. KLHK's ISPU is official but has no stable machine endpoint (the same problem as BNPB DIBI). IQAir's terms forbid their content being aggregated, republished, or distributed without written permission, and everything on this site is by definition republished publicly. WAQI requires prior written notice from non-profits and restricts archiving. OpenAQ has the cleanest licence (CC BY 4.0) but thin Indonesian coverage. More decisive than licensing: the monitoring network barely exists in Riau, Jambi, and Central Kalimantan, so station-based sources are blank exactly where the smoke is thickest. Hence a model, with its limits stated openly.",
     },
     status: "gap",
   },

@@ -5,6 +5,7 @@ import { AlertsController } from "./alerts.controller";
 import { ConcessionsController } from "./concessions.controller";
 import { DisastersController } from "./disasters.controller";
 import { FiresController } from "./fires.controller";
+import { AirController } from "./air.controller";
 import { AreaReportController } from "./area-report.controller";
 import { ShareController } from "./share.controller";
 import { ProtectedController } from "./protected.controller";
@@ -22,6 +23,7 @@ import { AdminController } from "./admin.controller";
     ConcessionsController,
     DisastersController,
     FiresController,
+    AirController,
     AreaReportController,
     ShareController,
     ProtectedController,

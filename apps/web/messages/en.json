@@ -418,7 +418,19 @@
     "airValidAt": "Data valid for:",
     "airNoTime": "loading…",
     "airBlended": "Our interpolation of model steps",
-    "airRun": "CAMS run:"
+    "airRun": "CAMS run:",
+    "aqiCategory": {
+      "good": "Good",
+      "moderate": "Moderate",
+      "sensitive": "Unhealthy for sensitive groups",
+      "unhealthy": "Unhealthy",
+      "very_unhealthy": "Very unhealthy",
+      "hazardous": "Hazardous"
+    },
+    "aqiBeyondScale": "beyond the EPA scale",
+    "windLabel": "Wind",
+    "windFrom": "from",
+    "popupNote": "CAMS model at ~0.4° (~44 km) — a cell average, not a reading from an instrument here."
   },
   "region": {
     "lossPerYear": "Tree cover loss per year (ha)",

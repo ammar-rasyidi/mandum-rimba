@@ -4,7 +4,14 @@ import { useEffect, useRef, useState } from "react";
 import type maplibregl from "maplibre-gl";
 import { usAqiFromPm25 } from "@mandumrimba/shared";
 import { API_BASE } from "@/lib/api";
-import { rasteriseGrid, WindSampler, type AirGridData } from "@/lib/air-field";
+import {
+  rasteriseGrid,
+  sampleLayer,
+  WindSampler,
+  type AirGridData,
+} from "@/lib/air-field";
+import { useTranslations } from "next-intl";
+import maplibre from "maplibre-gl";
 
 /**
  * Udara & asap, the animated layer: a PM2.5 colour field with the 10 m wind
@@ -130,6 +137,15 @@ function labelAnchor(
   }
 }
 
+/** compass point for a bearing the wind blows FROM, in Indonesian short form */
+const COMPASS = ["U", "TL", "T", "TG", "S", "BD", "B", "BL"];
+function fromDirection(u: number, v: number): string {
+  // u,v point where the wind is going; people name where it comes from
+  const deg = (Math.atan2(-u, -v) * 180) / Math.PI;
+  const idx = Math.round(((deg + 360) % 360) / 45) % 8;
+  return COMPASS[idx];
+}
+
 export default function AirField({
   map,
   container,
@@ -137,6 +153,7 @@ export default function AirField({
   beforeId,
   onStatus,
 }: AirFieldProps) {
+  const t = useTranslations("map");
   const [grid, setGrid] = useState<AirGridData | null>(null);
   const [prov, setProv] = useState<{
     between: [string, string] | null;
@@ -552,6 +569,57 @@ export default function AirField({
       canvasRef.current = null;
     };
   }, [map, container, grid, visible]);
+
+  // ---- click to read the field at a point -------------------------------
+
+  useEffect(() => {
+    if (!map || !grid || !visible) return;
+
+    const onClick = (e: maplibregl.MapMouseEvent) => {
+      const { lng, lat } = e.lngLat;
+      const pm = sampleLayer(grid.pm25, grid.bbox, lng, lat);
+      if (pm == null) return; // outside the modelled box: say nothing
+
+      const a = usAqiFromPm25(pm);
+      const u = sampleLayer(grid.u, grid.bbox, lng, lat);
+      const v = sampleLayer(grid.v, grid.bbox, lng, lat);
+      const speed = u != null && v != null ? Math.hypot(u, v) : null;
+
+      const rows: string[] = [
+        `<div style="font-size:1.35rem;line-height:1.1;font-weight:600">${
+          a ? a.aqi : "—"
+        }<span style="font-size:.7rem;font-weight:400;opacity:.7"> AQI</span></div>`,
+        `<div style="font-weight:600;margin-bottom:.35rem">${
+          a ? t(`aqiCategory.${a.category}`) : ""
+        }${a?.extrapolated ? ` <span style="opacity:.65;font-weight:400">(${t("aqiBeyondScale")})</span>` : ""}</div>`,
+        `<div>PM2.5 <strong>${pm.toFixed(1)}</strong> µg/m³</div>`,
+      ];
+      if (speed != null && u != null && v != null) {
+        rows.push(
+          `<div>${t("windLabel")} <strong>${speed.toFixed(1)}</strong> m/s ${t(
+            "windFrom",
+          )} ${fromDirection(u, v)}</div>`,
+        );
+      }
+      rows.push(
+        `<div style="opacity:.7;margin-top:.35rem">${lat.toFixed(3)}°, ${lng.toFixed(3)}°</div>`,
+        // never let a reading be mistaken for a measurement
+        `<div style="opacity:.7;margin-top:.3rem;max-width:15rem">${t("popupNote")}</div>`,
+      );
+
+      new maplibre.Popup({ closeButton: true, maxWidth: "17rem" })
+        .setLngLat(e.lngLat)
+        .setHTML(
+          `<div style="font-size:.78rem;line-height:1.4">${rows.join("")}</div>`,
+        )
+        .addTo(map);
+    };
+
+    map.on("click", onClick);
+    return () => {
+      map.off("click", onClick);
+    };
+  }, [map, grid, visible, t]);
 
   return null;
 }

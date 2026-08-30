@@ -258,6 +258,37 @@ export function rasteriseGrid(
 }
 
 /**
+ * Bilinear sample of any GridLayer at a lon/lat, in the layer's own units
+ * (µg/m³ or m/s). Returns null outside the box or over a gap — a hole in the
+ * model is not a zero.
+ */
+export function sampleLayer(
+  layer: GridLayer,
+  bbox: [number, number, number, number],
+  lon: number,
+  lat: number,
+): number | null {
+  const fx = (lon - bbox[0]) / layer.step;
+  const fy = (lat - bbox[1]) / layer.step;
+  const x0 = Math.floor(fx);
+  const y0 = Math.floor(fy);
+  const tx = fx - x0;
+  const ty = fy - y0;
+  const at = (x: number, y: number): number | null => {
+    if (x < 0 || y < 0 || x >= layer.nx || y >= layer.ny) return null;
+    const v = layer.values[y * layer.nx + x];
+    return v == null ? null : v / 10;
+  };
+  const c00 = at(x0, y0);
+  const c10 = at(x0 + 1, y0);
+  const c01 = at(x0, y0 + 1);
+  const c11 = at(x0 + 1, y0 + 1);
+  if (c00 == null || c10 == null || c01 == null || c11 == null) return null;
+  const lerp = (a: number, b: number, t: number) => a + t * (b - a);
+  return lerp(lerp(c00, c10, tx), lerp(c01, c11, tx), ty);
+}
+
+/**
  * Bilinear sampling of the wind grid. Returns metres per second in the
  * direction the wind blows, or null outside the grid / over a gap — the caller
  * must respawn a particle rather than treat null as calm, or particles pile up

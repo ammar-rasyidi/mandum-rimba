@@ -418,7 +418,19 @@
     "airValidAt": "Data berlaku:",
     "airNoTime": "memuat…",
     "airBlended": "Interpolasi kami dari langkah model",
-    "airRun": "Run CAMS:"
+    "airRun": "Run CAMS:",
+    "aqiCategory": {
+      "good": "Baik",
+      "moderate": "Sedang",
+      "sensitive": "Tidak sehat bagi kelompok sensitif",
+      "unhealthy": "Tidak sehat",
+      "very_unhealthy": "Sangat tidak sehat",
+      "hazardous": "Berbahaya"
+    },
+    "aqiBeyondScale": "di luar skala EPA",
+    "windLabel": "Angin",
+    "windFrom": "dari",
+    "popupNote": "Model CAMS ~0,4° (~44 km) — nilai rata-rata satu sel, bukan bacaan alat di lokasi ini."
   },
   "region": {
     "lossPerYear": "Kehilangan tutupan pohon per tahun (ha)",

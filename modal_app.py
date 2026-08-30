@@ -75,7 +75,14 @@ image = (
     )
     .run_commands(
         "cd /repo && pnpm install --frozen-lockfile=false",
-        "cd /repo && pnpm --filter @mandumrimba/api build",
+        # `turbo run` (not a bare `pnpm --filter`) so the workspace dependency
+        # is built first: turbo.json declares dependsOn ["^build"], and the API
+        # imports @mandumrimba/shared. A bare filtered build compiles only the
+        # API and fails on the missing types — and only in this image, because
+        # a local checkout usually has packages/shared/dist lying around from a
+        # previous build while the image copy ignores **/dist. vercel.json has
+        # always used turbo for the same reason; this now matches it.
+        "cd /repo && pnpm turbo run build --filter=@mandumrimba/api",
     )
     .workdir("/repo/apps/api")
     # the in-process @nestjs/schedule crons must stay inert; Modal schedules us

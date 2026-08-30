@@ -15,10 +15,12 @@ Env: R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET.
      ADS_API_KEY (optional; without it PM2.5 falls back to Open-Meteo at 1°).
 """
 
+import argparse
 import gzip
 import json
 import math
 import os
+import pathlib
 import sys
 import tempfile
 import time
@@ -85,7 +87,7 @@ def scaled(v):
 
 
 # ── PM2.5 from Copernicus ADS (the whole grid, one request) ─────────────────
-def pm25_from_ads(run_times):
+def pm25_from_ads(run_times, run_lead):
     """
     Returns (step, nx, ny, {iso_time: [values]}) or None if ADS is unavailable.
 
@@ -120,7 +122,7 @@ def pm25_from_ads(run_times):
                 "variable": ["particulate_matter_2.5um"],
                 "date": f"{date}/{date}",
                 "time": [cycle],
-                "leadtime_hour": [str(h) for h in LEAD_HOURS],
+                "leadtime_hour": [str(h) for h in run_lead],
                 "type": ["forecast"],
                 "data_format": "netcdf",
                 # ADS wants [north, west, south, east]
@@ -300,6 +302,20 @@ def pm25_from_open_meteo(run_times):
 
 
 # ── R2 ──────────────────────────────────────────────────────────────────────
+class LocalSink:
+    """Writes the same keys to a directory instead of R2, so the whole build can
+    be exercised locally with no credentials and nothing published. Files land
+    UNCOMPRESSED so you can read them; R2 gets gzip."""
+
+    def __init__(self, root):
+        self.root = pathlib.Path(root)
+
+    def put_object(self, **kw):
+        path = self.root / kw["Key"]
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(gzip.decompress(kw["Body"]))
+
+
 def r2_client():
     return boto3.client(
         "s3",
@@ -326,14 +342,31 @@ def put_json(s3, bucket, key, obj, max_age):
 
 
 def main():
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument(
+        "--out",
+        metavar="DIR",
+        help="write to this directory instead of R2 (no credentials needed)",
+    )
+    ap.add_argument(
+        "--steps",
+        type=int,
+        default=len(LEAD_HOURS),
+        help="how many 3-hourly steps to build; fewer costs less upstream "
+        "when the PM2.5 fallback is in use (default: all)",
+    )
+    args = ap.parse_args()
+
+    lead = LEAD_HOURS[: max(1, args.steps)]
+
     # Time axis in UTC, aligned to the 3-hourly steps both sources can serve.
     now = datetime.now(timezone.utc).replace(minute=0, second=0, microsecond=0)
     base = now - timedelta(hours=now.hour % 3)
     run_times = [
-        (base + timedelta(hours=h)).strftime("%Y-%m-%dT%H:%M") for h in LEAD_HOURS
+        (base + timedelta(hours=h)).strftime("%Y-%m-%dT%H:%M") for h in lead
     ]
 
-    pm = pm25_from_ads(run_times) or pm25_from_open_meteo(run_times)
+    pm = pm25_from_ads(run_times, lead) or pm25_from_open_meteo(run_times)
     pm_step, pm_nx, pm_ny, pm_frames = pm
     wind_nx, wind_ny, wind_frames = wind_from_open_meteo(run_times)
 
@@ -344,8 +377,13 @@ def main():
         print("[air] no complete time steps, refusing to publish", flush=True)
         sys.exit(1)
 
-    s3 = r2_client()
-    bucket = os.environ["R2_BUCKET"]
+    if args.out:
+        s3 = LocalSink(args.out)
+        bucket = "(local)"
+        print(f"[air] dry run, writing to {args.out}", flush=True)
+    else:
+        s3 = r2_client()
+        bucket = os.environ["R2_BUCKET"]
     total = 0
     for iso in times:
         u_row, v_row = wind_frames[iso]

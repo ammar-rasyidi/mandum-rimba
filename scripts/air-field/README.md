@@ -51,6 +51,20 @@ small request per step rather than a megabyte up front.
 
 ## Local run
 
+Dry run — no credentials, nothing published, files written where you can read
+them. `--steps 2` keeps the Open-Meteo fallback cheap while testing (each step
+is charged per location; the CAMS path costs the same whatever you ask for):
+
     pip install -r requirements.txt
-    export $(grep -v '^#' ../../apps/api/.env | xargs)   # R2 creds
+    python build_air_field.py --out /tmp/airfield --steps 2
+    ls -R /tmp/airfield          # air/index.json + air/t/<iso>.json
+
+Serve those to a local web build to see them on the map:
+
+    python -m http.server 4002 -d /tmp/airfield        # in one shell
+    TILES_ORIGIN=http://localhost:4002 pnpm --filter @mandumrimba/web dev
+
+For real (publishes to R2):
+
+    export $(grep -v '^#' ../../apps/api/.env | xargs)   # R2 creds [+ ADS_API_KEY]
     python build_air_field.py

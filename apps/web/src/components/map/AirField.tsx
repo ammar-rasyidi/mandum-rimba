@@ -59,6 +59,10 @@ interface AirIndex {
   times: string[];
   /** immutable path prefix holding this build's step files */
   steps?: string;
+  /** the CAMS run these steps came from, UTC */
+  runAt?: string | null;
+  /** hours between published steps */
+  stepHours?: number;
   attribution: string;
 }
 
@@ -83,7 +87,15 @@ export interface AirFieldProps {
   /** paint the layer under this one, so points and polygons stay on top */
   beforeId?: string;
   onStatus?: (
-    s: { validAt: string | null; attribution: string } | null,
+    s: {
+      /** the hour shown, which for a blend is not a model step */
+      validAt: string | null;
+      /** the two published steps it was blended from, UTC */
+      between: [string, string] | null;
+      /** the CAMS run those steps came from, UTC */
+      runAt: string | null;
+      attribution: string;
+    } | null,
   ) => void;
 }
 
@@ -126,6 +138,10 @@ export default function AirField({
   onStatus,
 }: AirFieldProps) {
   const [grid, setGrid] = useState<AirGridData | null>(null);
+  const [prov, setProv] = useState<{
+    between: [string, string] | null;
+    runAt: string | null;
+  }>({ between: null, runAt: null });
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const rafRef = useRef<number | null>(null);
 
@@ -219,6 +235,10 @@ export default function AirField({
 
       // the hour the blend actually represents: now, to the minute
       const validNow = new Date(now).toISOString().slice(0, 16);
+      setProv({
+        between: bStep ? [before, after] : [before, before],
+        runAt: idx.runAt ?? null,
+      });
 
       const expected = idx.pm.nx * idx.pm.ny;
       if (step.pm25?.length !== expected) {
@@ -275,10 +295,15 @@ export default function AirField({
   useEffect(() => {
     onStatus?.(
       visible && grid
-        ? { validAt: grid.validAt, attribution: grid.attribution }
+        ? {
+            validAt: grid.validAt,
+            between: prov.between,
+            runAt: prov.runAt,
+            attribution: grid.attribution,
+          }
         : null,
     );
-  }, [visible, grid, onStatus]);
+  }, [visible, grid, prov, onStatus]);
 
   // ---- PM2.5 colour field, as a MapLibre ImageSource ----------------------
 

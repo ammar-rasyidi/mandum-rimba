@@ -416,7 +416,9 @@
     "airHazardous": "Hazardous",
     "airNote": "CAMS model at ~0.4°, not ground measurements. Top row AQI, bottom µg/m³.",
     "airValidAt": "Data valid for:",
-    "airNoTime": "loading…"
+    "airNoTime": "loading…",
+    "airBlended": "Our interpolation of model steps",
+    "airRun": "CAMS run:"
   },
   "region": {
     "lossPerYear": "Tree cover loss per year (ha)",

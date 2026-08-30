@@ -38,7 +38,12 @@ interface Props {
   /** tile names that actually exist on R2; others render disabled */
   availableTiles: string[];
   /** the hour the air field is showing, so its legend can say so */
-  airStatus?: { validAt: string | null; attribution: string } | null;
+  airStatus?: {
+    validAt: string | null;
+    between: [string, string] | null;
+    runAt: string | null;
+    attribution: string;
+  } | null;
   filters: MapFilters;
   onChange: (next: MapFilters) => void;
   onReset: () => void;
@@ -527,6 +532,8 @@ export default function LayerPanel({
                 {active && def.id === "air" && (
                   <AirLegend
                     validAt={airStatus?.validAt ?? null}
+                    between={airStatus?.between ?? null}
+                    runAt={airStatus?.runAt ?? null}
                     labels={{
                       scale: t("airScale"),
                       good: t("airGood"),
@@ -534,6 +541,8 @@ export default function LayerPanel({
                       note: t("airNote"),
                       validPrefix: t("airValidAt"),
                       noTime: t("airNoTime"),
+                      blended: t("airBlended"),
+                      run: t("airRun"),
                     }}
                   />
                 )}

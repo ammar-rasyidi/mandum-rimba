@@ -169,6 +169,8 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
   /** which hour the air field currently shows, for the legend */
   const [airStatus, setAirStatus] = useState<{
     validAt: string | null;
+    between: [string, string] | null;
+    runAt: string | null;
     attribution: string;
   } | null>(null);
   const [availableTiles, setAvailableTiles] = useState<string[]>([]);

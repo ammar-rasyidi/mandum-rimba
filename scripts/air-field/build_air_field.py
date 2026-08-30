@@ -123,49 +123,56 @@ def pm25_from_ads(run_lead):
         print(f"[air] ADS deps missing ({exc}), falling back", flush=True)
         return None
 
-    # CAMS runs at 00 and 12 UTC and publishes some hours later; ask for the
-    # most recent run that is plausibly complete rather than "today", which
-    # fails for the first hours of every UTC day.
-    run = datetime.now(timezone.utc) - timedelta(hours=8)
-    date = run.strftime("%Y-%m-%d")
-    cycle = "12:00" if run.hour >= 12 else "00:00"
-
+    # CAMS runs at 00 and 12 UTC and is published some hours later — how many
+    # varies. Guessing one offset and hoping fails with a bare 400 the moment
+    # the guess is early, which is how this fell back to the coarse source on
+    # its own. Walk backwards through the recent cycles instead and take the
+    # first that actually exists.
     out = os.path.join(tempfile.gettempdir(), "cams_pm25.nc")
-    try:
-        client = cdsapi.Client(url=ADS_URL, key=key)
-        client.retrieve(
-            ADS_DATASET,
-            {
-                "variable": ["particulate_matter_2.5um"],
-                "date": f"{date}/{date}",
-                "time": [cycle],
-                "leadtime_hour": [str(h) for h in run_lead],
-                "type": ["forecast"],
-                "data_format": "netcdf",
-                # ADS wants [north, west, south, east]
-                "area": [NORTH, WEST, SOUTH, EAST],
-            },
-            out,
-        )
-    except Exception as exc:  # noqa: BLE001 — any ADS failure must not lose the run
-        msg = str(exc)
-        if "licence" in msg.lower() or "license" in msg.lower():
-            # Not a transient failure and not something a retry fixes: the token
-            # is valid (this is a 403, not a 401) but the dataset's licence has
-            # not been accepted yet. It is one click, and it is the single most
-            # common way this setup stalls — so say exactly that, loudly, rather
-            # than quietly serving the coarser fallback forever.
-            print(
-                "[air] ADS REFUSED: the dataset licence has not been accepted.\n"
-                "      The API key itself is fine. Accept it once here:\n"
-                f"      https://ads.atmosphere.copernicus.eu/datasets/{ADS_DATASET}"
-                "?tab=download#manage-licences\n"
-                "      Until then PM2.5 comes from the coarser Open-Meteo fallback.",
-                flush=True,
+    now = datetime.now(timezone.utc)
+    candidates = []
+    probe = now.replace(minute=0, second=0, microsecond=0)
+    probe = probe.replace(hour=12 if probe.hour >= 12 else 0)
+    for _ in range(4):  # ~2 days back, plenty
+        candidates.append(probe)
+        probe -= timedelta(hours=12)
+
+    client = cdsapi.Client(url=ADS_URL, key=key, quiet=True)
+    got = None
+    for run in candidates:
+        try:
+            client.retrieve(
+                ADS_DATASET,
+                {
+                    "variable": ["particulate_matter_2.5um"],
+                    "date": f"{run:%Y-%m-%d}/{run:%Y-%m-%d}",
+                    "time": [f"{run:%H:%M}"],
+                    "leadtime_hour": [str(h) for h in run_lead],
+                    "type": ["forecast"],
+                    "data_format": "netcdf",
+                    # ADS wants [north, west, south, east]
+                    "area": [NORTH, WEST, SOUTH, EAST],
+                },
+                out,
             )
-        else:
-            print(f"[air] ADS retrieve failed ({exc}), falling back", flush=True)
+            got = run
+            break
+        except Exception as exc:  # noqa: BLE001
+            msg = str(exc)
+            if "licence" in msg.lower() or "license" in msg.lower():
+                print(
+                    "[air] ADS REFUSED: the dataset licence has not been accepted.\n"
+                    "      The API key itself is fine. Accept it once here:\n"
+                    f"      https://ads.atmosphere.copernicus.eu/datasets/{ADS_DATASET}"
+                    "?tab=download#manage-licences",
+                    flush=True,
+                )
+                return None
+            print(f"[air] CAMS run {run:%Y-%m-%d %H:%M}Z unavailable, trying older", flush=True)
+    if got is None:
+        print("[air] no recent CAMS run available, falling back", flush=True)
         return None
+    print(f"[air] CAMS run {got:%Y-%m-%d %H:%M}Z", flush=True)
 
     try:
         ds = xr.open_dataset(out)
@@ -213,6 +220,10 @@ def pm25_from_ads(run_lead):
         # yesterday's lead-0 analysis — a razor-sharp emission spike that has
         # not dispersed yet — while claiming it was current.
         valid = ds["valid_time"].values.ravel()
+        # the run these frames came from — the thing a reader would look up to
+        # check us, and the only honest answer to "when was this produced"
+        ref = ds["forecast_reference_time"].values.ravel()[0]
+        run_at = np.datetime_as_string(ref, unit="m")
         lead_dim = next(
             (d for d in da.dims if d not in (lat_name, lon_name)),
             None,
@@ -230,7 +241,7 @@ def pm25_from_ads(run_lead):
             f"({box[0]}..{box[2]}E, {box[1]}..{box[3]}N), {len(frames)} steps",
             flush=True,
         )
-        return step, nx, ny, frames, box
+        return step, nx, ny, frames, box, run_at
     except ModuleNotFoundError as exc:
         # A missing dependency here is a deployment error, not a data problem,
         # and it surfaces only AFTER the download has already succeeded — which
@@ -383,7 +394,7 @@ def pm25_from_open_meteo(run_times):
         f"[air] PM2.5 (fallback): {nx}×{ny} @ {PM_STEP_FALLBACK}°, {len(frames)} steps",
         flush=True,
     )
-    return PM_STEP_FALLBACK, nx, ny, frames, (WEST, SOUTH, EAST, NORTH)
+    return PM_STEP_FALLBACK, nx, ny, frames, (WEST, SOUTH, EAST, NORTH), None
 
 
 # ── R2 ──────────────────────────────────────────────────────────────────────
@@ -399,6 +410,56 @@ class LocalSink:
         path = self.root / kw["Key"]
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(gzip.decompress(kw["Body"]))
+
+
+
+def previous_wind(s3, bucket, times, nx, ny):
+    """
+    Wind from the last published build, for when Open-Meteo is unavailable.
+
+    PM2.5 is the expensive half and the one that matters; losing a whole run
+    because the wind quota ran out means publishing nothing rather than
+    publishing a current pollution field with slightly older streamlines. Wind
+    at 2.5 degrees changes slowly enough that hours-old vectors are honest —
+    and a map with no field at all is not.
+
+    Returns {time: (u, v)} for whatever it can match, nearest hour wins.
+    """
+    try:
+        idx = json.loads(
+            gzip.decompress(
+                s3.get_object(Bucket=bucket, Key=f"{PREFIX}/index.json")["Body"].read()
+            )
+        )
+    except Exception as exc:  # noqa: BLE001
+        print(f"[air] no previous build to borrow wind from ({exc})", flush=True)
+        return {}
+    if idx.get("wind", {}).get("nx") != nx or idx.get("wind", {}).get("ny") != ny:
+        print("[air] previous wind grid differs, not reusing", flush=True)
+        return {}
+
+    prefix = idx.get("steps") or f"{PREFIX}/t"
+    have = {}
+    for t in idx.get("times", []):
+        try:
+            body = s3.get_object(Bucket=bucket, Key=f"{prefix}/{t}.json")["Body"].read()
+            step = json.loads(gzip.decompress(body))
+            have[t] = (step["u"], step["v"])
+        except Exception:  # noqa: BLE001, S112
+            continue
+    if not have:
+        return {}
+
+    out = {}
+    keys = sorted(have)
+    for t in times:
+        nearest = min(keys, key=lambda k: abs(_parse(k) - _parse(t)))
+        out[t] = have[nearest]
+    print(
+        f"[air] reusing wind from the previous build ({len(have)} steps available)",
+        flush=True,
+    )
+    return out
 
 
 def r2_client():
@@ -452,8 +513,9 @@ def main():
     # we must not pretend otherwise. Wind is then fetched for exactly those
     # hours. The fallback has no run offset, so it gets an axis built from now.
     pm = pm25_from_ads(lead)
+    run_at = None
     if pm:
-        pm_step, pm_nx, pm_ny, pm_frames, box = pm
+        pm_step, pm_nx, pm_ny, pm_frames, box, run_at = pm
         times = sorted(
             t
             for t in pm_frames
@@ -469,22 +531,13 @@ def main():
             for h in LEAD_HOURS[: max(1, args.steps)]
             if base + timedelta(hours=h) <= horizon
         ]
-        pm_step, pm_nx, pm_ny, pm_frames, box = pm25_from_open_meteo(times)
+        pm_step, pm_nx, pm_ny, pm_frames, box, run_at = pm25_from_open_meteo(times)
 
     print(
         f"[air] time axis: {len(times)} steps, {times[0]} -> {times[-1]} "
         f"(now {now:%Y-%m-%dT%H:%M})",
         flush=True,
     )
-    wind_nx, wind_ny, wind_step, wind_frames = wind_from_open_meteo(times, box)
-
-    # only publish steps where BOTH fields exist: a frame with wind and no
-    # colour (or the reverse) renders as a bug, not as missing data
-    times = [t for t in times if t in pm_frames and t in wind_frames]
-    if not times:
-        print("[air] no complete time steps, refusing to publish", flush=True)
-        sys.exit(1)
-
     if args.out:
         s3 = LocalSink(args.out)
         bucket = "(local)"
@@ -492,6 +545,26 @@ def main():
     else:
         s3 = r2_client()
         bucket = os.environ["R2_BUCKET"]
+
+    try:
+        wind_nx, wind_ny, wind_step, wind_frames = wind_from_open_meteo(times, box)
+    except Exception as exc:  # noqa: BLE001
+        print(f"[air] wind fetch failed ({exc})", flush=True)
+        w, s_, e, n = box
+        wind_nx = max(2, round((e - w) / WIND_STEP) + 1)
+        wind_ny = max(2, round((n - s_) / WIND_STEP) + 1)
+        wind_step = (e - w) / (wind_nx - 1)
+        wind_frames = previous_wind(s3, bucket, times, wind_nx, wind_ny)
+        if not wind_frames:
+            print("[air] no wind at all, refusing to publish", flush=True)
+            sys.exit(1)
+
+    # only publish steps where BOTH fields exist: a frame with wind and no
+    # colour (or the reverse) renders as a bug, not as missing data
+    times = [t for t in times if t in pm_frames and t in wind_frames]
+    if not times:
+        print("[air] no complete time steps, refusing to publish", flush=True)
+        sys.exit(1)
 
     # Step files are IMMUTABLE, and their path says so.
     #
@@ -542,6 +615,11 @@ def main():
         # where the step files for THIS build live
         "steps": step_prefix,
         "source": "cams-ads" if pm_step != PM_STEP_FALLBACK else "open-meteo",
+        # model run these steps come from (UTC), so the display can say where
+        # its numbers came from instead of only when they are meant to apply
+        "runAt": run_at,
+        # hours between published steps; anything shown between them is ours
+        "stepHours": 3,
         "attribution": ATTRIBUTION,
         "generatedAt": datetime.now(timezone.utc).isoformat(),
     }

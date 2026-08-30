@@ -66,6 +66,17 @@ const gradient = `linear-gradient(to right, ${Array.from(
  * and ECMWF viewers — are all in UTC, so dropping it would make this field
  * impossible to check against them.
  */
+/** just the WIB clock time, for naming a model step compactly */
+function hourOnly(iso: string): string {
+  const ms = Date.parse(`${iso}:00Z`);
+  if (Number.isNaN(ms)) return iso;
+  return new Intl.DateTimeFormat("id-ID", {
+    timeZone: "Asia/Jakarta",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(ms));
+}
+
 function formatValid(iso: string): string | null {
   const ms = Date.parse(`${iso}:00Z`);
   if (Number.isNaN(ms)) return null;
@@ -88,6 +99,8 @@ function formatValid(iso: string): string | null {
 export default function AirLegend({
   labels,
   validAt,
+  between,
+  runAt,
 }: {
   /** i18n strings, so the component stays free of translation wiring */
   labels: {
@@ -97,11 +110,29 @@ export default function AirLegend({
     note: string;
     validPrefix: string;
     noTime: string;
+    blended: string;
+    run: string;
   };
-  /** the hour the field on screen is valid for, UTC, or null while loading */
+  /** the hour shown. For a blend this is NOT a model step — see below. */
   validAt: string | null;
+  /** the two published steps it was blended from */
+  between: [string, string] | null;
+  /** the CAMS run those steps came from */
+  runAt: string | null;
 }) {
   const when = validAt ? formatValid(validAt) : null;
+  // Naming the shown hour alone overstates what exists. CAMS publishes every
+  // three hours; a value for 15.58 was computed by us from the steps either
+  // side of it, and a reader checking against the CAMS viewer will find those
+  // steps, not ours. So say which ones, and say the run they came from.
+  const isBlend = !!between && between[0] !== between[1];
+  const stepsLabel =
+    between &&
+    (isBlend
+      ? `${hourOnly(between[0])}–${hourOnly(between[1])}`
+      : hourOnly(between[0]));
+  const runLabel = runAt ? formatValid(runAt) : null;
+
   return (
     <div className="pl-[1.7rem] pt-[0.5rem]">
       <p className="m-0 mb-[0.3rem] text-[0.72rem] text-muted">
@@ -163,6 +194,20 @@ export default function AirLegend({
         {labels.validPrefix}{" "}
         <strong className="font-medium">{when ?? labels.noTime}</strong>
       </p>
+
+      {/* What was actually retrieved, as opposed to what is being shown. The
+          shown hour is ours; these two lines are the model's, and they are what
+          someone checking us against the CAMS viewer needs. */}
+      {stepsLabel && (
+        <p className="m-0 text-[0.62rem] leading-[1.35] text-muted">
+          {isBlend ? labels.blended : labels.validPrefix} {stepsLabel} WIB
+        </p>
+      )}
+      {runLabel && (
+        <p className="m-0 text-[0.62rem] leading-[1.35] text-muted">
+          {labels.run} {runLabel}
+        </p>
+      )}
 
       <p className="m-0 mt-[0.2rem] text-[0.62rem] leading-[1.35] text-muted">
         {labels.note}

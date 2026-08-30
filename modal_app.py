@@ -46,6 +46,11 @@ image = (
     .pip_install(
         "xarray>=2024.6.0",
         "h5netcdf>=1.3.0",
+        # h5netcdf no longer depends on h5py itself; without it xarray fails to
+        # open the CAMS NetCDF *after* downloading it
+        "h5py>=3.11",
+        # xarray's .interp() regrids CAMS onto our axes and needs scipy
+        "scipy>=1.13",
         "numpy>=1.26",
         "cdsapi>=0.7.2",
         "boto3>=1.34",

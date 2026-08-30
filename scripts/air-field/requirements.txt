@@ -3,6 +3,13 @@
 # PM2.5 comes from ADS rather than a GRIB product.
 xarray>=2024.6.0
 h5netcdf>=1.3.0
+# h5netcdf does NOT pull this in on its own in recent versions: without it
+# xarray reports "backend not available" only AFTER the CAMS file has
+# already been downloaded, which reads like a data problem and is not.
+h5py>=3.11
+# xarray's .interp() needs scipy. Like h5py above, its absence only shows
+# up AFTER the CAMS download has succeeded, so it reads as a data problem.
+scipy>=1.13
 numpy>=1.26
 cdsapi>=0.7.2
 boto3>=1.34

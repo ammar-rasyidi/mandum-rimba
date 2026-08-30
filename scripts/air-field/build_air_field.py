@@ -194,6 +194,17 @@ def pm25_from_ads(run_times, run_lead):
         ds.close()
         print(f"[air] CAMS: {nx}×{ny} @ {PM_STEP}°, {len(frames)} steps", flush=True)
         return PM_STEP, nx, ny, frames
+    except ModuleNotFoundError as exc:
+        # A missing dependency here is a deployment error, not a data problem,
+        # and it surfaces only AFTER the download has already succeeded — which
+        # makes it read like bad data. Name it for what it is.
+        print(
+            f"[air] CAMS parse failed: missing dependency {exc.name!r}. "
+            "This is an environment problem, not an ADS one — "
+            "pip install -r scripts/air-field/requirements.txt",
+            flush=True,
+        )
+        return None
     except Exception as exc:  # noqa: BLE001
         print(f"[air] CAMS parse failed ({exc}), falling back", flush=True)
         return None

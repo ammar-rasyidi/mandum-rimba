@@ -33,17 +33,23 @@ const PARTICLE_COUNT = 5200;
  * the streaks collapse to dots when you zoom out, because a degree becomes a
  * fraction of a pixel. Speed has to be expressed in what the eye measures.
  *
- * Under 1 px/frame is a deliberate crawl: this is weather, and a field that
- * races across the screen reads as an effect rather than as air moving. Streak
- * LENGTH is set by FADE (roughly speed ÷ fade pixels), so the strands stay
- * long even though they travel slowly.
+ * Kept slow enough to read as weather rather than as an effect, but not so slow
+ * that streak length has to be bought with a long fade — see FADE.
  */
-const TARGET_PX_PER_FRAME = 0.95;
+const TARGET_PX_PER_FRAME = 1.6;
 /** frames before a particle is recycled, so the field keeps reseeding */
-const MAX_AGE = 300;
-/** alpha of the wash that erases old frames: lower = longer streamlines. Paired
- *  with the speed above, this keeps ~60 px strands at a walking pace. */
-const FADE = 0.016;
+const MAX_AGE = 140;
+/**
+ * Alpha of the wash that erases old frames. It sets two things at once, and the
+ * second is easy to miss: streak LENGTH is roughly speed ÷ fade, but so is how
+ * long a strand lingers after the thing that drew it has moved on.
+ *
+ * At 0.016 a trail was still 5% visible ~190 frames later — about three
+ * seconds — so the picture kept drifting under its own residue and the field's
+ * apparent colour shifted as white built up over it. 0.06 clears in well under
+ * a second; the speed above is raised to keep strands a similar length.
+ */
+const FADE = 0.06;
 
 interface AirIndex {
   bbox: [number, number, number, number];

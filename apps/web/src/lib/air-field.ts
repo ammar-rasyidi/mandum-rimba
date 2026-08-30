@@ -64,9 +64,11 @@ export interface FieldBox {
   north: number;
 }
 
-/** Output pixels per grid cell. The gradient is bilinear either way; this only
- *  decides how finely it is sampled before the GPU scales the image up. */
-const SUBSAMPLE = 6;
+/** Output pixels per grid cell. The interpolation is bicubic either way; this
+ *  only decides how finely it is sampled before the GPU scales the image up.
+ *  10 keeps a 1° grid's raster at 550×350 — cheap to build, fine enough that
+ *  the GPU's own upscale adds nothing. */
+const SUBSAMPLE = 10;
 /** AQI at which the field reaches full strength. */
 const SEVERITY_FULL_AQI = 110;
 /** clean air is tinted, not erased: the basemap shows through it */
@@ -99,7 +101,7 @@ export interface AirGridData {
 }
 
 /**
- * Rasterise the PM2.5 grid straight into an RGBA image, bilinearly between
+ * Rasterise the PM2.5 grid straight into an RGBA image, bicubically between
  * nodes. No scattered-point interpolation any more: the grid IS the field, and
  * treating it as a cloud of points was what produced circular blobs.
  *
@@ -112,15 +114,72 @@ export interface AirGridData {
  * Longitude convergence is ignored. The box reaches 22° N where the cosine
  * factor is 0.93, shifting apparent width by well under one 1° cell.
  */
+/** Catmull-Rom through four samples; t is the position between p1 and p2. */
+function cubic(p0: number, p1: number, p2: number, p3: number, t: number) {
+  const a = 2 * p1;
+  const b = p2 - p0;
+  const c = 2 * p0 - 5 * p1 + 4 * p2 - p3;
+  const d = -p0 + 3 * p1 - 3 * p2 + p3;
+  return 0.5 * (a + b * t + c * t * t + d * t * t * t);
+}
+
+/**
+ * Bicubic sample of the grid.
+ *
+ * Bilinear was the obvious choice and it is the wrong one here: it is
+ * continuous but its SLOPE jumps at every cell boundary, so a steep colour ramp
+ * turns those joins into visible facets — the stair-stepped plume edges this
+ * replaced. Catmull-Rom is smooth across boundaries, which costs 16 lookups
+ * instead of 4 and buys an organic edge.
+ *
+ * It can overshoot near a sharp gradient, so the result is clamped at zero: a
+ * negative concentration is meaningless and would render as the cleanest
+ * possible air right beside a plume.
+ *
+ * Falls back to bilinear when the 4×4 neighbourhood has a gap, and to
+ * transparent when even the inner 2×2 does — a hole in the model is not clean air.
+ */
+function sampleBicubic(
+  at: (x: number, y: number) => number | null,
+  x0: number,
+  y0: number,
+  tx: number,
+  ty: number,
+): number | null {
+  const rows: number[] = [];
+  let complete = true;
+  for (let j = -1; j <= 2 && complete; j++) {
+    const p: number[] = [];
+    for (let i = -1; i <= 2; i++) {
+      const v = at(x0 + i, y0 + j);
+      if (v == null) {
+        complete = false;
+        break;
+      }
+      p.push(v);
+    }
+    if (complete) rows.push(cubic(p[0], p[1], p[2], p[3], tx));
+  }
+  if (complete && rows.length === 4) {
+    return Math.max(0, cubic(rows[0], rows[1], rows[2], rows[3], ty));
+  }
+
+  const c00 = at(x0, y0);
+  const c10 = at(x0 + 1, y0);
+  const c01 = at(x0, y0 + 1);
+  const c11 = at(x0 + 1, y0 + 1);
+  if (c00 == null || c10 == null || c01 == null || c11 == null) return null;
+  const lerp = (a: number, b: number, t: number) => a + t * (b - a);
+  return lerp(lerp(c00, c10, tx), lerp(c01, c11, tx), ty);
+}
+
 export function rasteriseGrid(
   pm: GridLayer,
   box: FieldBox,
   aqiOf: (pm25: number) => number,
 ): RasterResult | null {
-  if (pm.values.length === 0) return null;
+  if (pm.values.length === 0 || pm.nx < 2 || pm.ny < 2) return null;
 
-  // one output pixel per SUBSAMPLE fraction of a grid cell: enough to carry the
-  // interpolated gradient, small enough to build in a single frame
   const w = (pm.nx - 1) * SUBSAMPLE;
   const h = (pm.ny - 1) * SUBSAMPLE;
   if (w <= 0 || h <= 0) return null;
@@ -132,33 +191,32 @@ export function rasteriseGrid(
   if (!ctx) return null;
   const img = ctx.createImageData(w, h);
 
+  /** grid value, clamped at the edges so the cubic kernel always has 4 samples */
   const at = (x: number, y: number): number | null => {
-    if (x < 0 || y < 0 || x >= pm.nx || y >= pm.ny) return null;
-    const v = pm.values[y * pm.nx + x];
+    const cx = Math.min(pm.nx - 1, Math.max(0, x));
+    const cy = Math.min(pm.ny - 1, Math.max(0, y));
+    const v = pm.values[cy * pm.nx + cx];
     return v == null ? null : v / 10;
   };
 
   for (let py = 0; py < h; py++) {
-    // canvas rows run top-down (north first); the grid runs south-up
-    const gy = (h - 1 - py) / SUBSAMPLE;
+    // canvas rows run top-down (north first); the grid runs south-up. Map the
+    // full pixel span onto the full cell span, so the last row/column is not
+    // quietly dropped the way `py / SUBSAMPLE` does.
+    const gy = ((h - 1 - py) / (h - 1)) * (pm.ny - 1);
     const y0 = Math.min(pm.ny - 2, Math.floor(gy));
     const ty = gy - y0;
     for (let px = 0; px < w; px++) {
-      const gx = px / SUBSAMPLE;
+      const gx = (px / (w - 1)) * (pm.nx - 1);
       const x0 = Math.min(pm.nx - 2, Math.floor(gx));
       const tx = gx - x0;
 
-      const c00 = at(x0, y0);
-      const c10 = at(x0 + 1, y0);
-      const c01 = at(x0, y0 + 1);
-      const c11 = at(x0 + 1, y0 + 1);
       const o = (py * w + px) * 4;
-      if (c00 == null || c10 == null || c01 == null || c11 == null) {
+      const value = sampleBicubic(at, x0, y0, tx, ty);
+      if (value == null) {
         img.data[o + 3] = 0;
         continue;
       }
-      const lerp = (a: number, b: number, t: number) => a + t * (b - a);
-      const value = lerp(lerp(c00, c10, tx), lerp(c01, c11, tx), ty);
 
       const aqi = aqiOf(value);
       const [r, g, bl] = aqiColor(aqi);

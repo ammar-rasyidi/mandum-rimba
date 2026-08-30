@@ -60,12 +60,48 @@ const gradient = `linear-gradient(to right, ${Array.from(
   },
 ).join(", ")})`;
 
+/**
+ * "2026-08-30T06:00" (UTC, no suffix) rendered in WIB with the UTC hour kept
+ * alongside. The audience reads local time; the comparison sources — the CAMS
+ * and ECMWF viewers — are all in UTC, so dropping it would make this field
+ * impossible to check against them.
+ */
+function formatValid(iso: string): string | null {
+  const ms = Date.parse(`${iso}:00Z`);
+  if (Number.isNaN(ms)) return null;
+  const d = new Date(ms);
+  const wib = new Intl.DateTimeFormat("id-ID", {
+    timeZone: "Asia/Jakarta",
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(d);
+  const utc = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "UTC",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(d);
+  return `${wib} WIB (${utc} UTC)`;
+}
+
 export default function AirLegend({
   labels,
+  validAt,
 }: {
   /** i18n strings, so the component stays free of translation wiring */
-  labels: { scale: string; good: string; hazardous: string; note: string };
+  labels: {
+    scale: string;
+    good: string;
+    hazardous: string;
+    note: string;
+    validPrefix: string;
+    noTime: string;
+  };
+  /** the hour the field on screen is valid for, UTC, or null while loading */
+  validAt: string | null;
 }) {
+  const when = validAt ? formatValid(validAt) : null;
   return (
     <div className="pl-[1.7rem] pt-[0.5rem]">
       <p className="m-0 mb-[0.3rem] text-[0.72rem] text-muted">
@@ -120,7 +156,15 @@ export default function AirLegend({
         <span>{labels.hazardous}</span>
       </div>
 
-      <p className="m-0 mt-[0.35rem] text-[0.62rem] leading-[1.35] text-muted">
+      {/* Which hour is on screen. The field is a 3-hourly series and the client
+          picks the step nearest to now, so without this a reader cannot tell
+          what they are looking at — or line it up against the CAMS viewer. */}
+      <p className="m-0 mt-[0.35rem] text-[0.66rem] leading-[1.35] text-fg">
+        {labels.validPrefix}{" "}
+        <strong className="font-medium">{when ?? labels.noTime}</strong>
+      </p>
+
+      <p className="m-0 mt-[0.2rem] text-[0.62rem] leading-[1.35] text-muted">
         {labels.note}
       </p>
     </div>

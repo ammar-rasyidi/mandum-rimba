@@ -5,11 +5,7 @@ import { useLocale } from "next-intl";
 import maplibregl from "maplibre-gl";
 import { Protocol } from "pmtiles";
 import { LAYERS, colorExpression, type LayerDef } from "@/lib/layers";
-import {
-  formatDistance,
-  geodesicAreaHa,
-  pathLengthM,
-} from "@/lib/geo-area";
+import { formatDistance, geodesicAreaHa, pathLengthM } from "@/lib/geo-area";
 import { TILES_BASE } from "@/lib/api";
 import LayerPanel from "./LayerPanel";
 import MobilePanelSheet, {
@@ -25,13 +21,13 @@ import RealmCaption from "./RealmCaption";
 import MapControls from "./MapControls";
 import ShareModal from "./ShareModal";
 import PlaceStory from "./PlaceStory";
-import { PLACE_STORIES, type PlaceStory as PlaceStoryDef } from "./placeStories";
+import {
+  PLACE_STORIES,
+  type PlaceStory as PlaceStoryDef,
+} from "./placeStories";
 import ForestLossTimeline from "./ForestLossTimeline";
 import { LOSS_ATTRIBUTION, LOSS_YEARS } from "@/lib/forest-loss";
-import {
-  registerGfwLossProtocol,
-  gfwLossTiles,
-} from "@/lib/gfw-loss-protocol";
+import { registerGfwLossProtocol, gfwLossTiles } from "@/lib/gfw-loss-protocol";
 import {
   GIBS_ATTRIBUTION,
   GIBS_REFERENCE_MAXZOOM,
@@ -44,11 +40,7 @@ import {
   gibsReferenceTiles,
   GIBS_REFERENCE,
 } from "@/lib/gibs";
-import {
-  BASEMAP_DARK,
-  BASEMAP_LABELS,
-  BASEMAP_LIGHT,
-} from "@/lib/basemaps";
+import { BASEMAP_DARK, BASEMAP_LABELS, BASEMAP_LIGHT } from "@/lib/basemaps";
 import mountainsData from "@/data/mountains.json";
 import {
   getSpecies,
@@ -138,7 +130,12 @@ function fitIndonesia(map: maplibregl.Map) {
     ],
     {
       padding: mobile
-        ? { top: 80, right: 16, bottom: Math.round(window.innerHeight * 0.4), left: 16 }
+        ? {
+            top: 80,
+            right: 16,
+            bottom: Math.round(window.innerHeight * 0.4),
+            left: 16,
+          }
         : { top: 90, right: 360, bottom: 40, left: 32 },
       animate: false,
     },
@@ -169,6 +166,11 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
   /** the map's positioned div, as state rather than a ref so AirField
    *  re-renders once it exists (a ref would not trigger one) */
   const [mapHost, setMapHost] = useState<HTMLDivElement | null>(null);
+  /** which hour the air field currently shows, for the legend */
+  const [airStatus, setAirStatus] = useState<{
+    validAt: string | null;
+    attribution: string;
+  } | null>(null);
   const [availableTiles, setAvailableTiles] = useState<string[]>([]);
   const [filters, setFilters] = useState<MapFilters>(
     () => readUrlState().filters,
@@ -193,7 +195,9 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
   // biodiversity map: the currently-searched species and its loaded distribution
   const [speciesKey, setSpeciesKey] = useState<number | null>(null);
   const [speciesLabel, setSpeciesLabel] = useState<string>("");
-  const [speciesData, setSpeciesData] = useState<SpeciesProfileData | null>(null);
+  const [speciesData, setSpeciesData] = useState<SpeciesProfileData | null>(
+    null,
+  );
   const popupRef = useRef<maplibregl.Popup | null>(null);
   // biodiversity "diversity view": all flora points coloured by family, + filter
   const [families, setFamilies] = useState<FamilyStat[]>([]);
@@ -203,7 +207,13 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
   // (full geometry, when the layer has an idProp) or the clipped geometry we got
   // back from the click (small polygons only). Cleared whenever `selected` is.
   const [highlight, setHighlight] = useState<
-    | { kind: "filter"; sourceId: string; sourceLayer: string; prop: string; value: string | number }
+    | {
+        kind: "filter";
+        sourceId: string;
+        sourceLayer: string;
+        prop: string;
+        value: string | number;
+      }
     | { kind: "geometry"; geometry: GeoJSON.Geometry }
     | null
   >(null);
@@ -293,7 +303,9 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
   }, [ready, storyId]);
 
   // remember the map mode before a story takes over, so we can restore it on exit
-  const preStoryView = useRef<Pick<MapFilters, "viewMode" | "basemap"> | null>(null);
+  const preStoryView = useRef<Pick<MapFilters, "viewMode" | "basemap"> | null>(
+    null,
+  );
   const startStory = (s: PlaceStoryDef) => {
     setPromptStory(null);
     setFilters((f) => {
@@ -339,7 +351,8 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
   const storyLayers = (ids: string[]) =>
     setFilters((f) => {
       const same =
-        f.layers.length === ids.length && ids.every((id) => f.layers.includes(id));
+        f.layers.length === ids.length &&
+        ids.every((id) => f.layers.includes(id));
       return same ? f : { ...f, layers: [...ids] };
     });
   // a beat can play the tree-cover-loss year animation (2001 → now)
@@ -365,7 +378,12 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
         ],
         {
           padding: mobile
-            ? { top: 96, right: 16, bottom: Math.round(window.innerHeight * 0.4), left: 16 }
+            ? {
+                top: 96,
+                right: 16,
+                bottom: Math.round(window.innerHeight * 0.4),
+                left: 16,
+              }
             : { top: 96, right: 360, bottom: 40, left: 32 },
           maxZoom: 13,
           duration: 900,
@@ -399,7 +417,9 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
     const realm = REALMS.find((r) => r.id === id);
     if (!map || !realm) return;
     // ensure a 3D view; the flyTo below takes over the camera either way
-    setFilters((f) => (f.viewMode === "flat" ? { ...f, viewMode: "globe" } : f));
+    setFilters((f) =>
+      f.viewMode === "flat" ? { ...f, viewMode: "globe" } : f,
+    );
     map.flyTo({
       center: realm.center,
       zoom: realm.zoom,
@@ -420,36 +440,39 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
   useEffect(() => stopTour, [stopTour]); // clear timers on unmount
 
   // every view is shareable: state lives in the URL
-  const syncUrl = useCallback((f: MapFilters) => {
-    const p = new URLSearchParams(window.location.search);
-    // position is no longer persisted; drop leftovers from older sessions
-    p.delete("lng");
-    p.delete("lat");
-    p.delete("z");
-    p.set("base", f.basemap);
-    if (f.viewMode === "flat") p.delete("view");
-    else p.set("view", f.viewMode);
-    p.set("layers", f.layers.join(","));
-    p.set("days", String(f.days));
-    p.set("sys", f.systems.join(","));
-    p.set("dis", f.disasterTypes.join(","));
-    p.set("con", f.concessionTypes.join(","));
-    p.set("pro", f.protectedCategories.join(","));
-    p.set("cls", f.speciesClasses.join(","));
-    p.set("fire", f.fireConfidence.join(","));
-    if (hasGibs) {
-      if (f.karhutlaDate) p.set("kdate", f.karhutlaDate);
-      p.set("kimg", f.karhutlaImagery);
-      p.set("khot", f.karhutlaHotspot);
-    } else {
-      // /biodiversitas has no GIBS layers: drop any karhutla keys a pasted URL
-      // carried in, rather than leaving dead state in the address bar
-      p.delete("kdate");
-      p.delete("kimg");
-      p.delete("khot");
-    }
-    window.history.replaceState(null, "", `?${p.toString()}`);
-  }, [hasGibs]);
+  const syncUrl = useCallback(
+    (f: MapFilters) => {
+      const p = new URLSearchParams(window.location.search);
+      // position is no longer persisted; drop leftovers from older sessions
+      p.delete("lng");
+      p.delete("lat");
+      p.delete("z");
+      p.set("base", f.basemap);
+      if (f.viewMode === "flat") p.delete("view");
+      else p.set("view", f.viewMode);
+      p.set("layers", f.layers.join(","));
+      p.set("days", String(f.days));
+      p.set("sys", f.systems.join(","));
+      p.set("dis", f.disasterTypes.join(","));
+      p.set("con", f.concessionTypes.join(","));
+      p.set("pro", f.protectedCategories.join(","));
+      p.set("cls", f.speciesClasses.join(","));
+      p.set("fire", f.fireConfidence.join(","));
+      if (hasGibs) {
+        if (f.karhutlaDate) p.set("kdate", f.karhutlaDate);
+        p.set("kimg", f.karhutlaImagery);
+        p.set("khot", f.karhutlaHotspot);
+      } else {
+        // /biodiversitas has no GIBS layers: drop any karhutla keys a pasted URL
+        // carried in, rather than leaving dead state in the address bar
+        p.delete("kdate");
+        p.delete("kimg");
+        p.delete("khot");
+      }
+      window.history.replaceState(null, "", `?${p.toString()}`);
+    },
+    [hasGibs],
+  );
 
   // ---------- GFW tree-cover-loss timeline ----------
   // re-point the raster tiles at the chosen end year; the gfwloss:// protocol
@@ -458,8 +481,7 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
     const map = mapRef.current;
     if (!map || !ready) return;
     const src = map.getSource("src-gfw-loss") as
-      | maplibregl.RasterTileSource
-      | undefined;
+      maplibregl.RasterTileSource | undefined;
     src?.setTiles([gfwLossTiles(LOSS_YEARS[lossYearIdx])]);
   }, [ready, lossYearIdx]);
 
@@ -473,8 +495,7 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
     // and refetches, and the day resolves to the same value on mount
     const retile = (sourceId: string, url: string) => {
       const src = map.getSource(sourceId) as
-        | maplibregl.RasterTileSource
-        | undefined;
+        maplibregl.RasterTileSource | undefined;
       if (!src || src.tiles?.[0] === url) return;
       src.setTiles([url]);
     };
@@ -486,8 +507,7 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
     const imgUrl = gibsImageryTiles(filters.karhutlaImagery, karhutlaDate);
     const imgMax = gibsImageryMaxZoom(filters.karhutlaImagery);
     const imgSrc = map.getSource("src-gibs-image") as
-      | maplibregl.RasterTileSource
-      | undefined;
+      maplibregl.RasterTileSource | undefined;
     if (imgSrc && imgSrc.maxzoom !== imgMax) {
       const arr = map.getStyle().layers;
       const beforeId =
@@ -990,9 +1010,7 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
           let sp: string[][] = [];
           try {
             const raw =
-              typeof p.species === "string"
-                ? JSON.parse(p.species)
-                : p.species;
+              typeof p.species === "string" ? JSON.parse(p.species) : p.species;
             if (Array.isArray(raw)) sp = raw as string[][];
           } catch {
             /* ignore malformed */
@@ -1097,8 +1115,7 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
       );
       if (street) {
         const src = map.getSource("basemap-labels") as
-          | maplibregl.RasterTileSource
-          | undefined;
+          maplibregl.RasterTileSource | undefined;
         const want =
           theme === "light" ? BASEMAP_LABELS.light : BASEMAP_LABELS.dark;
         if (want && src && src.tiles?.[0] !== want) src.setTiles([want]);
@@ -1221,7 +1238,9 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
     // I stop dragging" jump, and it scales with elevation × exaggeration. Keeping
     // exaggeration at 1.0 keeps that jump to the natural minimum while still
     // showing real relief. (>1 amplifies the folds but also the jump.)
-    map.setTerrain(mode === "terrain" ? { source: DEM, exaggeration: 1.0 } : null);
+    map.setTerrain(
+      mode === "terrain" ? { source: DEM, exaggeration: 1.0 } : null,
+    );
     // tilt so relief reads as 3D in terrain mode; flatten for the other two.
     // In terrain view the pitch pushes the subject low in the frame, so add
     // bottom padding to lift the globe up the screen; reset it otherwise.
@@ -1348,7 +1367,12 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
           ],
           {
             padding: mobile
-              ? { top: 96, right: 16, bottom: Math.round(window.innerHeight * 0.4), left: 16 }
+              ? {
+                  top: 96,
+                  right: 16,
+                  bottom: Math.round(window.innerHeight * 0.4),
+                  left: 16,
+                }
               : { top: 96, right: 360, bottom: 40, left: 32 },
             // don't zoom in tight on sensitive taxa — the coords are coarse
             maxZoom: sensitive ? 7 : 9,
@@ -1380,7 +1404,10 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
       if (map.getSource("src-flora-all")) map.removeSource("src-flora-all");
       // points load straight from R2 (static GeoJSON); props use short keys
       // f=family, k=speciesKey, c=canonical
-      map.addSource("src-flora-all", { type: "geojson", data: FLORA_POINTS_URL });
+      map.addSource("src-flora-all", {
+        type: "geojson",
+        data: FLORA_POINTS_URL,
+      });
       const match: unknown[] = ["match", ["get", "f"]];
       for (const [fam, col] of Object.entries(colors)) match.push(fam, col);
       match.push(FAMILY_OTHER_COLOR);
@@ -1404,11 +1431,26 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
             10,
             ["case", ["==", ["get", "x"], 1], 44, 4],
           ] as unknown as number,
-          "circle-opacity": ["case", ["==", ["get", "x"], 1], 0.16, 0.78] as unknown as number,
-          "circle-blur": ["case", ["==", ["get", "x"], 1], 1, 0] as unknown as number,
+          "circle-opacity": [
+            "case",
+            ["==", ["get", "x"], 1],
+            0.16,
+            0.78,
+          ] as unknown as number,
+          "circle-blur": [
+            "case",
+            ["==", ["get", "x"], 1],
+            1,
+            0,
+          ] as unknown as number,
           "circle-stroke-color": "#12232a",
           // no hard edge on sensitive blobs — keep them fuzzy/area-like
-          "circle-stroke-width": ["case", ["==", ["get", "x"], 1], 0, 0.3] as unknown as number,
+          "circle-stroke-width": [
+            "case",
+            ["==", ["get", "x"], 1],
+            0,
+            0.3,
+          ] as unknown as number,
         },
       });
     })();
@@ -1499,7 +1541,12 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
         ],
         {
           padding: mobile
-            ? { top: 96, right: 16, bottom: Math.round(window.innerHeight * 0.4), left: 16 }
+            ? {
+                top: 96,
+                right: 16,
+                bottom: Math.round(window.innerHeight * 0.4),
+                left: 16,
+              }
             : { top: 96, right: 360, bottom: 40, left: 32 },
           maxZoom: 15,
           duration: 900,
@@ -1707,6 +1754,7 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
           map={mapRef.current}
           container={mapHost}
           visible={filters.layers.includes("air")}
+          onStatus={setAirStatus}
         />
       )}
       {/* while a cinematic story plays, hide the map chrome for immersion */}
@@ -1719,67 +1767,66 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
         />
       )}
       {!storyId && (
-      <LayerPanelHost
-        isMobile={isMobile}
-        sheetSnap={sheetSnap}
-        onSheetSnap={setSheetSnap}
-        sheetTitle="Layers"
-        layers={groupLayers}
-        availableTiles={availableTiles}
-        filters={filters}
-        onChange={setFilters}
-        onShare={() => setShareOpen(true)}
-        onReset={() => {
-          setFilters({ ...DEFAULT_FILTERS });
-          setMeasuring(false);
-          setMeasurePoints([]);
-          setSelected(null);
-          setHighlight(null);
-          setSelectedFamilies([]);
-          setSpeciesKey(null);
-          setSpeciesLabel("");
-        }}
-        onGoTo={flyToBounds}
-        onSpeciesSelect={
-          group === "biodiversity"
-            ? (key, label) => {
-                setSpeciesLabel(label);
-                setSpeciesKey(key);
-              }
-            : undefined
-        }
-        speciesLabel={speciesLabel}
-        families={group === "biodiversity" ? families : undefined}
-        familyColors={familyColors}
-        selectedFamilies={selectedFamilies}
-        onToggleFamily={(fam) =>
-          setSelectedFamilies((cur) =>
-            cur.includes(fam)
-              ? cur.filter((f) => f !== fam)
-              : [...cur, fam],
-          )
-        }
-        onClearFamilies={() => setSelectedFamilies([])}
-        onBoundaryLoaded={
-          group === "biodiversity"
-            ? undefined
-            : (r: ImportResult, name: string) =>
-                setBoundary({ geojson: r.geojson, name })
-        }
-        boundaryName={boundary?.name}
-        onClearBoundary={() => setBoundary(null)}
-        onFlyToRealm={flyToRealm}
-        onPlayTour={playTour}
-        karhutlaDate={karhutlaDate}
-        measuring={measuring}
-        measurePoints={measurePoints.length}
-        measureTotalM={pathLengthM(measurePoints)}
-        onMeasureToggle={() => setMeasuring((m) => !m)}
-        onMeasureUndo={() => setMeasurePoints((p) => p.slice(0, -1))}
-        onMeasureClear={() => setMeasurePoints([])}
-        minimized={layerMinimized}
-        onMinimizedChange={setLayerMinimized}
-      />
+        <LayerPanelHost
+          isMobile={isMobile}
+          sheetSnap={sheetSnap}
+          onSheetSnap={setSheetSnap}
+          sheetTitle="Layers"
+          layers={groupLayers}
+          availableTiles={availableTiles}
+          airStatus={airStatus}
+          filters={filters}
+          onChange={setFilters}
+          onShare={() => setShareOpen(true)}
+          onReset={() => {
+            setFilters({ ...DEFAULT_FILTERS });
+            setMeasuring(false);
+            setMeasurePoints([]);
+            setSelected(null);
+            setHighlight(null);
+            setSelectedFamilies([]);
+            setSpeciesKey(null);
+            setSpeciesLabel("");
+          }}
+          onGoTo={flyToBounds}
+          onSpeciesSelect={
+            group === "biodiversity"
+              ? (key, label) => {
+                  setSpeciesLabel(label);
+                  setSpeciesKey(key);
+                }
+              : undefined
+          }
+          speciesLabel={speciesLabel}
+          families={group === "biodiversity" ? families : undefined}
+          familyColors={familyColors}
+          selectedFamilies={selectedFamilies}
+          onToggleFamily={(fam) =>
+            setSelectedFamilies((cur) =>
+              cur.includes(fam) ? cur.filter((f) => f !== fam) : [...cur, fam],
+            )
+          }
+          onClearFamilies={() => setSelectedFamilies([])}
+          onBoundaryLoaded={
+            group === "biodiversity"
+              ? undefined
+              : (r: ImportResult, name: string) =>
+                  setBoundary({ geojson: r.geojson, name })
+          }
+          boundaryName={boundary?.name}
+          onClearBoundary={() => setBoundary(null)}
+          onFlyToRealm={flyToRealm}
+          onPlayTour={playTour}
+          karhutlaDate={karhutlaDate}
+          measuring={measuring}
+          measurePoints={measurePoints.length}
+          measureTotalM={pathLengthM(measurePoints)}
+          onMeasureToggle={() => setMeasuring((m) => !m)}
+          onMeasureUndo={() => setMeasurePoints((p) => p.slice(0, -1))}
+          onMeasureClear={() => setMeasurePoints([])}
+          minimized={layerMinimized}
+          onMinimizedChange={setLayerMinimized}
+        />
       )}
       {/* guided-tour caption: realm name + one line on the wildlife it holds */}
       {tourRealm && (
@@ -1866,19 +1913,22 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
       {/* gate on `ready` (false on the server and the first client render) so
           showLoss — which derives from URL-seeded filters — can't mismatch
           during hydration when the URL has forestloss on */}
-      {ready && showLoss && !storyId && !(isMobile && sheetSnap === SHEET_FULL) && (
-        <ForestLossTimeline
-          years={LOSS_YEARS}
-          idx={lossYearIdx}
-          onIdx={(i) => {
-            setLossPlaying(false);
-            setLossYearIdx(i);
-          }}
-          playing={lossPlaying}
-          onPlayToggle={toggleLossPlay}
-          mobile={isMobile}
-        />
-      )}
+      {ready &&
+        showLoss &&
+        !storyId &&
+        !(isMobile && sheetSnap === SHEET_FULL) && (
+          <ForestLossTimeline
+            years={LOSS_YEARS}
+            idx={lossYearIdx}
+            onIdx={(i) => {
+              setLossPlaying(false);
+              setLossYearIdx(i);
+            }}
+            playing={lossPlaying}
+            onPlayToggle={toggleLossPlay}
+            mobile={isMobile}
+          />
+        )}
     </div>
   );
 }
@@ -1984,16 +2034,11 @@ function buildLayer(
         type: "circle",
         paint: {
           // species: colour by IUCN status (CR→LC ramp); others flat
-          "circle-color": colorExpression(def.id, def.color) as unknown as string,
-          "circle-radius": [
-            "interpolate",
-            ["linear"],
-            ["zoom"],
-            4,
-            1.5,
-            12,
-            5,
-          ],
+          "circle-color": colorExpression(
+            def.id,
+            def.color,
+          ) as unknown as string,
+          "circle-radius": ["interpolate", ["linear"], ["zoom"], 4, 1.5, 12, 5],
           "circle-opacity": 0.9,
           // halo keeps points legible over satellite imagery
           "circle-stroke-color": def.strokeColor ?? "#263238",
@@ -2036,7 +2081,11 @@ function LayerPanelHost({
 } & React.ComponentProps<typeof LayerPanel>) {
   if (!isMobile) return <LayerPanel {...panelProps} />;
   return (
-    <MobilePanelSheet snap={sheetSnap} onSnapChange={onSheetSnap} title={sheetTitle}>
+    <MobilePanelSheet
+      snap={sheetSnap}
+      onSnapChange={onSheetSnap}
+      title={sheetTitle}
+    >
       <LayerPanel
         {...panelProps}
         variant="sheet"

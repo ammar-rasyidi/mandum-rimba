@@ -37,6 +37,8 @@ interface Props {
   layers: LayerDef[];
   /** tile names that actually exist on R2; others render disabled */
   availableTiles: string[];
+  /** the hour the air field is showing, so its legend can say so */
+  airStatus?: { validAt: string | null; attribution: string } | null;
   filters: MapFilters;
   onChange: (next: MapFilters) => void;
   onReset: () => void;
@@ -123,6 +125,7 @@ const HIDDEN_LAYERS = new Set(["alerts", "disasters"]);
 export default function LayerPanel({
   layers,
   availableTiles,
+  airStatus,
   filters,
   onChange,
   onReset,
@@ -523,11 +526,14 @@ export default function LayerPanel({
                 without having to guess what a shade of red stands for */}
                 {active && def.id === "air" && (
                   <AirLegend
+                    validAt={airStatus?.validAt ?? null}
                     labels={{
                       scale: t("airScale"),
                       good: t("airGood"),
                       hazardous: t("airHazardous"),
                       note: t("airNote"),
+                      validPrefix: t("airValidAt"),
+                      noTime: t("airNoTime"),
                     }}
                   />
                 )}

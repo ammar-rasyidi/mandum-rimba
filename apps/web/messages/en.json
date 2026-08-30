@@ -414,7 +414,9 @@
     "airScale": "AQI scale (US EPA) / PM2.5 µg/m³",
     "airGood": "Good",
     "airHazardous": "Hazardous",
-    "airNote": "CAMS model at ~0.4°, not ground measurements. Top row AQI, bottom µg/m³."
+    "airNote": "CAMS model at ~0.4°, not ground measurements. Top row AQI, bottom µg/m³.",
+    "airValidAt": "Data valid for:",
+    "airNoTime": "loading…"
   },
   "region": {
     "lossPerYear": "Tree cover loss per year (ha)",

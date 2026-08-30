@@ -103,8 +103,8 @@ def scaled(v):
 # ── PM2.5 from Copernicus ADS (the whole grid, one request) ─────────────────
 def pm25_from_ads(run_lead):
     """
-    Returns (step, nx, ny, {valid_time_iso: [values]}) or None if ADS is
-    unavailable. The keys are the file's own valid times, in UTC.
+    Returns (step, nx, ny, frames, bbox) on CAMS's OWN grid, or None if ADS is
+    unavailable. Keys of `frames` are the file's valid times, in UTC.
 
     A missing key is a normal, expected state — the fallback below still
     produces a usable field — so this logs and returns None rather than raising.
@@ -176,12 +176,32 @@ def pm25_from_ads(run_lead):
             var = list(ds.data_vars)[0]
         da = ds[var]
 
-        nx, ny, lons, lats = axis(PM_STEP)
-        # CAMS latitudes run north→south; interp puts both axes on our grid and
-        # our order in one step, so nothing downstream has to know the difference
+        # Use CAMS's OWN grid. Do not regrid.
+        #
+        # Resampling 0.4° onto our 0.5° axes was producing a visible lattice of
+        # blobs every 2°, and it was arithmetic, not data: interpolation error
+        # is zero wherever a target node coincides with a source node and
+        # largest halfway between, and 0.4 and 0.5 coincide exactly every 2°.
+        # That beat, amplified by a steep colour ramp, is what looked like
+        # stripes. A model grid should be shown as delivered.
         lat_name = "latitude" if "latitude" in da.dims else "lat"
         lon_name = "longitude" if "longitude" in da.dims else "lon"
-        da = da.interp({lat_name: lats, lon_name: lons})
+        src_lat = ds[lat_name].values
+        src_lon = ds[lon_name].values
+        # CAMS runs north→south; the payload is ordered south→north
+        flip = bool(src_lat[0] > src_lat[-1])
+        if flip:
+            da = da.isel({lat_name: slice(None, None, -1)})
+            src_lat = src_lat[::-1]
+
+        nx, ny = len(src_lon), len(src_lat)
+        step = round(float(abs(src_lon[1] - src_lon[0])), 4)
+        box = (
+            float(src_lon[0]),
+            float(src_lat[0]),
+            float(src_lon[-1]),
+            float(src_lat[-1]),
+        )
 
         # CAMS PM2.5 is kg/m³; the map speaks µg/m³
         unit = str(ds[var].attrs.get("units", "")).lower()
@@ -204,8 +224,12 @@ def pm25_from_ads(run_lead):
             plane = da.isel({lead_dim: i}) if lead_dim else da
             vals = plane.values.reshape(-1)
             frames[iso] = [scaled(v * factor) for v in vals]
-        print(f"[air] CAMS: {nx}×{ny} @ {PM_STEP}°, {len(frames)} steps", flush=True)
-        return PM_STEP, nx, ny, frames
+        print(
+            f"[air] CAMS native grid: {nx}×{ny} @ {step}° "
+            f"({box[0]}..{box[2]}E, {box[1]}..{box[3]}N), {len(frames)} steps",
+            flush=True,
+        )
+        return step, nx, ny, frames, box
     except ModuleNotFoundError as exc:
         # A missing dependency here is a deployment error, not a data problem,
         # and it surfaces only AFTER the download has already succeeded — which
@@ -281,8 +305,20 @@ def grid_points(step):
     return nx, ny, plat, plon
 
 
-def wind_from_open_meteo(run_times):
-    nx, ny, plat, plon = grid_points(WIND_STEP)
+def wind_from_open_meteo(run_times, box):
+    # Built on the SAME box PM2.5 defined, with a step chosen to span it
+    # exactly. If the two grids disagreed about where the field starts, the
+    # particles would drift relative to the colour they are meant to explain.
+    w, s_, e, n = box
+    nx = max(2, round((e - w) / WIND_STEP) + 1)
+    ny = max(2, round((n - s_) / WIND_STEP) + 1)
+    sx = (e - w) / (nx - 1)
+    sy = (n - s_) / (ny - 1)
+    plat, plon = [], []
+    for j in range(ny):
+        for i in range(nx):
+            plat.append(round(s_ + j * sy, 4))
+            plon.append(round(w + i * sx, 4))
     rows = fetch_points(
         OPEN_METEO_WX,
         "hourly=wind_speed_10m,wind_direction_10m&models=gfs_global"
@@ -315,8 +351,11 @@ def wind_from_open_meteo(run_times):
             u_row.append(scaled(-s * math.sin(rad)))
             v_row.append(scaled(-s * math.cos(rad)))
         frames[iso] = (u_row, v_row)
-    print(f"[air] wind: {nx}×{ny} @ {WIND_STEP}°, {len(frames)} steps", flush=True)
-    return nx, ny, frames
+    print(
+        f"[air] wind: {nx}×{ny} @ {sx:.3f}×{sy:.3f}°, {len(frames)} steps",
+        flush=True,
+    )
+    return nx, ny, sx, frames
 
 
 def pm25_from_open_meteo(run_times):
@@ -343,7 +382,7 @@ def pm25_from_open_meteo(run_times):
         f"[air] PM2.5 (fallback): {nx}×{ny} @ {PM_STEP_FALLBACK}°, {len(frames)} steps",
         flush=True,
     )
-    return PM_STEP_FALLBACK, nx, ny, frames
+    return PM_STEP_FALLBACK, nx, ny, frames, (WEST, SOUTH, EAST, NORTH)
 
 
 # ── R2 ──────────────────────────────────────────────────────────────────────
@@ -413,7 +452,7 @@ def main():
     # hours. The fallback has no run offset, so it gets an axis built from now.
     pm = pm25_from_ads(lead)
     if pm:
-        pm_step, pm_nx, pm_ny, pm_frames = pm
+        pm_step, pm_nx, pm_ny, pm_frames, box = pm
         times = sorted(
             t
             for t in pm_frames
@@ -429,14 +468,14 @@ def main():
             for h in LEAD_HOURS[: max(1, args.steps)]
             if base + timedelta(hours=h) <= horizon
         ]
-        pm_step, pm_nx, pm_ny, pm_frames = pm25_from_open_meteo(times)
+        pm_step, pm_nx, pm_ny, pm_frames, box = pm25_from_open_meteo(times)
 
     print(
         f"[air] time axis: {len(times)} steps, {times[0]} -> {times[-1]} "
         f"(now {now:%Y-%m-%dT%H:%M})",
         flush=True,
     )
-    wind_nx, wind_ny, wind_frames = wind_from_open_meteo(times)
+    wind_nx, wind_ny, wind_step, wind_frames = wind_from_open_meteo(times, box)
 
     # only publish steps where BOTH fields exist: a frame with wind and no
     # colour (or the reverse) renders as a bug, not as missing data
@@ -475,11 +514,11 @@ def main():
         )
 
     index = {
-        "bbox": [WEST, SOUTH, EAST, NORTH],
+        "bbox": list(box),
         "pm": {"nx": pm_nx, "ny": pm_ny, "step": pm_step},
-        "wind": {"nx": wind_nx, "ny": wind_ny, "step": WIND_STEP},
+        "wind": {"nx": wind_nx, "ny": wind_ny, "step": round(wind_step, 4)},
         "times": times,
-        "source": "cams-ads" if pm_step == PM_STEP else "open-meteo",
+        "source": "cams-ads" if pm_step != PM_STEP_FALLBACK else "open-meteo",
         "attribution": ATTRIBUTION,
         "generatedAt": datetime.now(timezone.utc).isoformat(),
     }

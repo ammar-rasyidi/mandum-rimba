@@ -21,6 +21,8 @@ const nextConfig = {
     return [
       { source: "/tiles/:path*", destination: `${r2}/tiles/:path*` },
       { source: "/species/:path*", destination: `${r2}/species/:path*` },
+      // the air field, rebuilt twice a day by Modal (scripts/air-field)
+      { source: "/air/:path*", destination: `${r2}/air/:path*` },
       // user-generated "share this view" images (OG unfurl for social)
       { source: "/share/:path*", destination: `${r2}/share/:path*` },
     ];

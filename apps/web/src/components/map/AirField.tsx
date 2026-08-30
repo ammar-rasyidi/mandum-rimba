@@ -45,6 +45,22 @@ const MAX_AGE = 300;
  *  with the speed above, this keeps ~60 px strands at a walking pace. */
 const FADE = 0.016;
 
+interface AirIndex {
+  bbox: [number, number, number, number];
+  pm: { nx: number; ny: number; step: number };
+  wind: { nx: number; ny: number; step: number };
+  /** UTC wall-clock hours, e.g. "2026-08-30T09:00" */
+  times: string[];
+  attribution: string;
+}
+
+interface AirStep {
+  pm25: (number | null)[];
+  u: (number | null)[];
+  v: (number | null)[];
+  maxSpeed: number;
+}
+
 interface Particle {
   lon: number;
   lat: number;
@@ -81,14 +97,65 @@ export default function AirField({
     let cancelled = false;
     let gridRetry: ReturnType<typeof setTimeout> | undefined;
 
+    /**
+     * The field is a static file on R2, rebuilt twice a day by Modal
+     * (scripts/air-field) and served through the same-origin /air/* rewrite —
+     * so a page load costs two small CDN requests and never touches a weather
+     * API. The index lists the published time steps; we pull only the one
+     * nearest to now, which keeps the payload at tens of kB rather than the
+     * megabyte a full time cube would cost.
+     *
+     * The old /v1/air/field endpoint stays as a fallback for the window before
+     * the first Modal run has published anything.
+     */
+    const loadFromCdn = async (): Promise<boolean> => {
+      const idxRes = await fetch("/air/index.json", { cache: "no-cache" });
+      if (!idxRes.ok) return false;
+      const idx = (await idxRes.json()) as AirIndex;
+      if (!idx?.times?.length) return false;
+
+      // times are UTC wall-clock without a zone suffix
+      const now = Date.now();
+      let best = idx.times[0];
+      let bestGap = Infinity;
+      for (const t of idx.times) {
+        const gap = Math.abs(Date.parse(`${t}:00Z`) - now);
+        if (gap < bestGap) {
+          bestGap = gap;
+          best = t;
+        }
+      }
+
+      const stepRes = await fetch(`/air/t/${encodeURIComponent(best)}.json`);
+      if (!stepRes.ok) return false;
+      const step = (await stepRes.json()) as AirStep;
+      if (cancelled) return true;
+
+      setGrid({
+        bbox: idx.bbox,
+        pm25: { ...idx.pm, values: step.pm25 },
+        u: { ...idx.wind, values: step.u },
+        v: { ...idx.wind, values: step.v },
+        maxSpeed: step.maxSpeed,
+        validAt: best,
+        attribution: idx.attribution,
+      });
+      return true;
+    };
+
     const loadGrid = async () => {
+      try {
+        if (await loadFromCdn()) return;
+      } catch {
+        // fall through to the API
+      }
       try {
         const res = await fetch(`${API_BASE}/v1/air/field`);
         const json = (await res.json()) as
           (AirGridData & { warming?: boolean }) | null;
         if (cancelled) return;
-        // cold backend: the grid is two paced upstream requests, so it answers
-        // `warming` rather than holding the connection open. Come back for it.
+        // a cold backend answers `warming` rather than holding the connection
+        // open past the function timeout; come back for it
         if (!json || json.warming) {
           gridRetry = setTimeout(loadGrid, 8000);
           return;

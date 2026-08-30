@@ -28,3 +28,6 @@ out/
 coverage/
 CLAUDE.md
 DEPLOY.md
+# Python bytecode (scripts/*)
+__pycache__/
+*.pyc

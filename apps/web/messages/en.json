@@ -410,7 +410,11 @@
     },
     "sensitiveNote": "Location coarsened to protect this collection-sensitive species.",
     "loadingPhoto": "Loading photo…",
-    "loadingInfo": "Loading species info…"
+    "loadingInfo": "Loading species info…",
+    "airScale": "AQI scale (US EPA) / PM2.5 µg/m³",
+    "airGood": "Good",
+    "airHazardous": "Hazardous",
+    "airNote": "CAMS model at ~0.4°, not ground measurements. Top row AQI, bottom µg/m³."
   },
   "region": {
     "lossPerYear": "Tree cover loss per year (ha)",

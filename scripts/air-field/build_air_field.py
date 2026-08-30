@@ -49,9 +49,12 @@ PM_STEP_FALLBACK = 0.75
 # between nodes, so finer would cost quota and buy nothing visible.
 WIND_STEP = 2.5
 
-# 3-hourly out to 48 h: enough for "where is the smoke heading tomorrow"
-# without shipping a megabyte of hours nobody scrubs to.
-LEAD_HOURS = list(range(0, 49, 3))
+# 3-hourly out to 48 h from NOW — which is not the same as 48 h of lead time.
+# A CAMS run is published hours after its reference time, so by the time we can
+# fetch it the run is already 8-20 h old and lead 0 is yesterday. Ask far enough
+# ahead that "now" is inside the window, then keep only the steps that are.
+LEAD_HOURS = list(range(0, 73, 3))
+
 
 PREFIX = "air"
 UA = "MandumRimba/0.1 (public-interest environmental observatory, Indonesia)"
@@ -81,6 +84,11 @@ def axis(step):
     return nx, ny, lons, lats
 
 
+def _parse(iso):
+    """'2026-08-30T09:00' (UTC, no suffix) -> aware datetime."""
+    return datetime.fromisoformat(iso).replace(tzinfo=timezone.utc)
+
+
 def scaled(v):
     """Payload values are integers ×10; None means unknown, never zero."""
     if v is None:
@@ -93,9 +101,10 @@ def scaled(v):
 
 
 # ── PM2.5 from Copernicus ADS (the whole grid, one request) ─────────────────
-def pm25_from_ads(run_times, run_lead):
+def pm25_from_ads(run_lead):
     """
-    Returns (step, nx, ny, {iso_time: [values]}) or None if ADS is unavailable.
+    Returns (step, nx, ny, {valid_time_iso: [values]}) or None if ADS is
+    unavailable. The keys are the file's own valid times, in UTC.
 
     A missing key is a normal, expected state — the fallback below still
     produces a usable field — so this logs and returns None rather than raising.
@@ -107,6 +116,7 @@ def pm25_from_ads(run_times, run_lead):
 
     try:
         import cdsapi
+        import numpy as np
         import xarray as xr
     except ImportError as exc:
         print(f"[air] ADS deps missing ({exc}), falling back", flush=True)
@@ -177,21 +187,23 @@ def pm25_from_ads(run_times, run_lead):
         unit = str(ds[var].attrs.get("units", "")).lower()
         factor = 1e9 if unit.startswith("kg") else 1.0
 
+        # The frame's time comes from the FILE, never from the clock. Labelling
+        # CAMS frames with "now" was the bug that made this layer show
+        # yesterday's lead-0 analysis — a razor-sharp emission spike that has
+        # not dispersed yet — while claiming it was current.
+        valid = ds["valid_time"].values.ravel()
         lead_dim = next(
             (d for d in da.dims if d not in (lat_name, lon_name)),
             None,
         )
+        n = da.sizes[lead_dim] if lead_dim else 1
+
         frames = {}
-        for i, iso in enumerate(run_times):
-            if lead_dim is None:
-                plane = da
-            elif i >= da.sizes[lead_dim]:
-                break
-            else:
-                plane = da.isel({lead_dim: i})
+        for i in range(min(n, len(valid))):
+            iso = np.datetime_as_string(valid[i], unit="m")  # "YYYY-MM-DDTHH:MM"
+            plane = da.isel({lead_dim: i}) if lead_dim else da
             vals = plane.values.reshape(-1)
             frames[iso] = [scaled(v * factor) for v in vals]
-        ds.close()
         print(f"[air] CAMS: {nx}×{ny} @ {PM_STEP}°, {len(frames)} steps", flush=True)
         return PM_STEP, nx, ny, frames
     except ModuleNotFoundError as exc:
@@ -274,7 +286,7 @@ def wind_from_open_meteo(run_times):
     rows = fetch_points(
         OPEN_METEO_WX,
         "hourly=wind_speed_10m,wind_direction_10m&models=gfs_global"
-        "&wind_speed_unit=ms&forecast_days=3&timezone=UTC",
+        "&wind_speed_unit=ms&forecast_days=4&timezone=UTC",
         plat,
         plon,
     )
@@ -311,7 +323,7 @@ def pm25_from_open_meteo(run_times):
     nx, ny, plat, plon = grid_points(PM_STEP_FALLBACK)
     rows = fetch_points(
         OPEN_METEO_AIR,
-        "hourly=pm2_5&domains=cams_global&forecast_days=3&timezone=UTC",
+        "hourly=pm2_5&domains=cams_global&forecast_days=4&timezone=UTC",
         plat,
         plon,
     )
@@ -391,22 +403,44 @@ def main():
     )
     args = ap.parse_args()
 
-    lead = LEAD_HOURS[: max(1, args.steps)]
+    lead = LEAD_HOURS
 
-    # Time axis in UTC, aligned to the 3-hourly steps both sources can serve.
     now = datetime.now(timezone.utc).replace(minute=0, second=0, microsecond=0)
-    base = now - timedelta(hours=now.hour % 3)
-    run_times = [
-        (base + timedelta(hours=h)).strftime("%Y-%m-%dT%H:%M") for h in lead
-    ]
+    horizon = now + timedelta(hours=48)
 
-    pm = pm25_from_ads(run_times, lead) or pm25_from_open_meteo(run_times)
-    pm_step, pm_nx, pm_ny, pm_frames = pm
-    wind_nx, wind_ny, wind_frames = wind_from_open_meteo(run_times)
+    # PM2.5 defines the time axis, because CAMS decides its own valid times and
+    # we must not pretend otherwise. Wind is then fetched for exactly those
+    # hours. The fallback has no run offset, so it gets an axis built from now.
+    pm = pm25_from_ads(lead)
+    if pm:
+        pm_step, pm_nx, pm_ny, pm_frames = pm
+        times = sorted(
+            t
+            for t in pm_frames
+            if now - timedelta(hours=2) <= _parse(t) <= horizon
+        )[: max(1, args.steps)]
+        if not times:
+            print("[air] CAMS returned no steps covering now, falling back", flush=True)
+            pm = None
+    if not pm:
+        base = now - timedelta(hours=now.hour % 3)
+        times = [
+            (base + timedelta(hours=h)).strftime("%Y-%m-%dT%H:%M")
+            for h in LEAD_HOURS[: max(1, args.steps)]
+            if base + timedelta(hours=h) <= horizon
+        ]
+        pm_step, pm_nx, pm_ny, pm_frames = pm25_from_open_meteo(times)
+
+    print(
+        f"[air] time axis: {len(times)} steps, {times[0]} -> {times[-1]} "
+        f"(now {now:%Y-%m-%dT%H:%M})",
+        flush=True,
+    )
+    wind_nx, wind_ny, wind_frames = wind_from_open_meteo(times)
 
     # only publish steps where BOTH fields exist: a frame with wind and no
     # colour (or the reverse) renders as a bug, not as missing data
-    times = [t for t in run_times if t in pm_frames and t in wind_frames]
+    times = [t for t in times if t in pm_frames and t in wind_frames]
     if not times:
         print("[air] no complete time steps, refusing to publish", flush=True)
         sys.exit(1)

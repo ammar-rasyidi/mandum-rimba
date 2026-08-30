@@ -31,7 +31,7 @@
 export const AQI_RAMP: { aqi: number; rgb: [number, number, number] }[] = [
   { aqi: 0, rgb: [45, 90, 190] }, // blue — cleaner than the EPA scale bothers to
   { aqi: 25, rgb: [0, 153, 102] }, // green, well inside "Baik"
-  { aqi: 50, rgb: [128, 190, 70] }, // top of Baik, still green
+  { aqi: 80, rgb: [128, 190, 70] }, // green holds through most of "Sedang"
   { aqi: 100, rgb: [255, 222, 51] }, // top of Sedang: yellow
   { aqi: 150, rgb: [255, 140, 40] }, // top of Tidak Sehat bagi kel. sensitif
   { aqi: 200, rgb: [204, 0, 51] }, // top of Tidak Sehat: red
@@ -70,27 +70,25 @@ export interface FieldBox {
  *  the GPU's own upscale adds nothing. */
 const SUBSAMPLE = 10;
 /**
- * Opacity is severity, and it is capped well below solid.
+ * Opacity: rich, the way the reference wind maps render this, and it can be
+ * rich *because* the field now sits beneath `basemap-labels` (see
+ * AirField.tsx). Place names and administrative boundaries are drawn over it,
+ * so colour strength and map legibility no longer compete — which is what made
+ * an earlier, much fainter version necessary.
  *
- * The field is pollution hanging OVER a map, not a recolouring of it: the
- * coastline, the terrain and the island outlines have to stay readable through
- * the worst of a plume. So even AQI 600 tops out translucent, and ordinary air
- * — which is most of the region, most of the time — is barely a tint.
- *
- * The exponent above 1 matters as much as the cap. A linear (or concave) ramp
- * makes the 50–100 band, i.e. the background over all of Southeast Asia, come
- * up fast enough to read as a coloured map rather than as clean air. Rising
- * slowly at the bottom keeps ordinary days quiet and lets a real plume be the
- * only thing that asserts itself.
+ * It still rises with concentration rather than being flat: ordinary air reads
+ * as a calm wash, a plume as something dense. The gamma below 1 brings the
+ * middle of the range up quickly, so haze is visible well before it is
+ * hazardous.
  */
-/** AQI at which opacity reaches its ceiling — the top of "Sangat Tidak Sehat". */
-const SEVERITY_FULL_AQI = 300;
-/** clean air: present, but barely — the map reads as a map */
-const MIN_ALPHA = 0.05;
-/** the worst air still shows the coastline through it. Never raise to 1. */
-const MAX_ALPHA = 0.45;
-/** >1 keeps the low-to-middle range subtle instead of flooding the region */
-const SEVERITY_GAMMA = 1.25;
+/** AQI at which opacity reaches its ceiling — the top of "Tidak Sehat". */
+const SEVERITY_FULL_AQI = 200;
+/** clean air still carries its colour; the basemap reads through it */
+const MIN_ALPHA = 0.7;
+/** never quite 1: the terrain under the worst plume stays faintly present */
+const MAX_ALPHA = 0.95;
+/** <1 so the mid range comes up fast, matching the reference's saturation */
+const SEVERITY_GAMMA = 0.7;
 /** grid cells of fade at the field's border */
 const EDGE_FADE_CELLS = 2;
 

@@ -410,7 +410,11 @@
     },
     "sensitiveNote": "Lokasi dikaburkan untuk melindungi spesies yang rawan diburu/dikoleksi.",
     "loadingPhoto": "Memuat foto…",
-    "loadingInfo": "Memuat info spesies…"
+    "loadingInfo": "Memuat info spesies…",
+    "airScale": "Skala AQI (US EPA) / PM2.5 µg/m³",
+    "airGood": "Baik",
+    "airHazardous": "Berbahaya",
+    "airNote": "Model CAMS ~0,4°, bukan pengukuran alat di darat. Angka atas AQI, bawah µg/m³."
   },
   "region": {
     "lossPerYear": "Kehilangan tutupan pohon per tahun (ha)",

@@ -1,12 +1,12 @@
 "use client";
 
-
 import { useTranslations } from "next-intl";
 import { LAYER_SUBCOLORS, swatchColor, type LayerDef } from "@/lib/layers";
 import PlaceSearch from "./PlaceSearch";
 import SpeciesSearch from "./SpeciesSearch";
 import BoundaryUpload from "./BoundaryUpload";
 import GibsProductSelect from "./GibsProductSelect";
+import AirLegend from "./AirLegend";
 import MeasureTool from "./MeasureTool";
 import type { FamilyStat } from "@/lib/species";
 import type { ImportResult } from "@/lib/geo-import";
@@ -254,7 +254,13 @@ export default function LayerPanel({
               aria-label={t("shareView")}
               title={t("shareView")}
             >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden>
+              <svg
+                width="13"
+                height="13"
+                viewBox="0 0 24 24"
+                fill="none"
+                aria-hidden
+              >
                 <path
                   d="M12 3v12M12 3 8 7M12 3l4 4M5 13v6a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-6"
                   stroke="currentColor"
@@ -373,7 +379,7 @@ export default function LayerPanel({
       </div>
 
       {/* guided globe tour of the three biogeographic realms */}
-      {SHOW_REALM_TOUR &&  onFlyToRealm && (
+      {SHOW_REALM_TOUR && onFlyToRealm && (
         <div className="mb-3 shrink-0">
           <div className="mb-[0.4rem] flex items-center justify-between">
             <span className="text-[0.78rem] text-muted">{t("realmTour")}</span>
@@ -406,224 +412,245 @@ export default function LayerPanel({
           the filter list gets long (negative margin lets the scrollbar sit at
           the panel edge while content keeps its padding) */}
       <div className="-mx-[0.9rem] flex-1 overflow-y-auto px-[0.9rem] [scrollbar-width:thin] max-[720px]:mx-0 max-[720px]:flex-none max-[720px]:overflow-visible max-[720px]:px-0">
-      {families && families.length > 0 && (
-        <section className="border-t border-border pb-[0.6rem] pt-2">
-          <div className="flex items-center justify-between">
-            <span className="text-[0.82rem] font-medium">
-              {t("floraDiversity")}
-            </span>
-            {selectedFamilies && selectedFamilies.length > 0 && (
-              <button className={panelBtn} onClick={onClearFamilies}>
-                {t("reset")}
-              </button>
-            )}
-          </div>
-          <p className="mb-[0.5rem] mt-[0.15rem] text-[0.72rem] text-muted">
-            {t("floraDiversityStat", {
-              species: families.reduce((a, f) => a + f.species, 0),
-              families: families.length,
-            })}
-          </p>
-          <div className="flex flex-wrap gap-[0.35rem]">
-            {families.map((f) => {
-              const on =
-                !selectedFamilies?.length || selectedFamilies.includes(f.family);
-              const color = familyColors?.[f.family] ?? "#90a4ae";
-              return (
-                <button
-                  key={f.family}
-                  onClick={() => onToggleFamily?.(f.family)}
-                  className={`inline-flex cursor-pointer select-none items-center gap-[0.3rem] rounded-full border px-[0.55rem] py-[0.16rem] text-[0.74rem] transition-[color,border-color,opacity] ${
-                    on
-                      ? "border-[var(--glass-border)] text-foreground"
-                      : "border-transparent text-muted opacity-50"
-                  }`}
-                  title={`${f.species} spesies · ${f.records} catatan`}
-                >
-                  <span
-                    className="h-2 w-2 shrink-0 rounded-full"
-                    style={{ background: color }}
-                  />
-                  {f.family}
-                  <span className="text-muted">{f.species}</span>
+        {families && families.length > 0 && (
+          <section className="border-t border-border pb-[0.6rem] pt-2">
+            <div className="flex items-center justify-between">
+              <span className="text-[0.82rem] font-medium">
+                {t("floraDiversity")}
+              </span>
+              {selectedFamilies && selectedFamilies.length > 0 && (
+                <button className={panelBtn} onClick={onClearFamilies}>
+                  {t("reset")}
                 </button>
-              );
-            })}
-          </div>
-        </section>
-      )}
-      {layers.filter((def) => !HIDDEN_LAYERS.has(def.id)).map((def) => {
-        const available = availableTiles.includes(def.tile);
-        const active = available && filters.layers.includes(def.id);
-        const sub = SUB_FILTERS[def.id];
-        return (
-          <section
-            className={`border-t border-border pb-[0.55rem] pt-2 ${
-              available ? "" : "opacity-[0.45]"
-            }`}
-            key={def.id}
-          >
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id={`layer-${def.id}`}
-                checked={active}
-                disabled={!available}
-                onChange={() => toggleLayer(def)}
-              />
-              <span
-                className="h-3 w-3 shrink-0 rounded-[3px]"
-                style={{ background: def.color }}
-              />
-              <label
-                className="flex-1 cursor-pointer"
-                htmlFor={`layer-${def.id}`}
-              >
-                {t(`layerNames.${def.id}`)}
-                {!available && <>, {t("noData")}</>}
-              </label>
+              )}
             </div>
-
-            {active && sub && (
-              <div className={subFilters}>
-                {sub.options.map((opt) => (
-                  <label className={chip} key={opt}>
-                    <input
-                      type="checkbox"
-                      checked={(filters[sub.key] as string[]).includes(opt)}
-                      onChange={() =>
-                        set(sub.key, toggleIn(filters[sub.key] as string[], opt))
-                      }
+            <p className="mb-[0.5rem] mt-[0.15rem] text-[0.72rem] text-muted">
+              {t("floraDiversityStat", {
+                species: families.reduce((a, f) => a + f.species, 0),
+                families: families.length,
+              })}
+            </p>
+            <div className="flex flex-wrap gap-[0.35rem]">
+              {families.map((f) => {
+                const on =
+                  !selectedFamilies?.length ||
+                  selectedFamilies.includes(f.family);
+                const color = familyColors?.[f.family] ?? "#90a4ae";
+                return (
+                  <button
+                    key={f.family}
+                    onClick={() => onToggleFamily?.(f.family)}
+                    className={`inline-flex cursor-pointer select-none items-center gap-[0.3rem] rounded-full border px-[0.55rem] py-[0.16rem] text-[0.74rem] transition-[color,border-color,opacity] ${
+                      on
+                        ? "border-[var(--glass-border)] text-foreground"
+                        : "border-transparent text-muted opacity-50"
+                    }`}
+                    title={`${f.species} spesies · ${f.records} catatan`}
+                  >
+                    <span
+                      className="h-2 w-2 shrink-0 rounded-full"
+                      style={{ background: color }}
                     />
-                    {LAYER_SUBCOLORS[def.id] && (
-                      <span
-                        className="h-2 w-2 shrink-0 rounded-full"
-                        style={{ background: swatchColor(def.id, opt) }}
-                      />
-                    )}
-                    <span>{t(`filterValues.${opt}`)}</span>
+                    {f.family}
+                    <span className="text-muted">{f.species}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        )}
+        {layers
+          .filter((def) => !HIDDEN_LAYERS.has(def.id))
+          .map((def) => {
+            const available = availableTiles.includes(def.tile);
+            const active = available && filters.layers.includes(def.id);
+            const sub = SUB_FILTERS[def.id];
+            return (
+              <section
+                className={`border-t border-border pb-[0.55rem] pt-2 ${
+                  available ? "" : "opacity-[0.45]"
+                }`}
+                key={def.id}
+              >
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id={`layer-${def.id}`}
+                    checked={active}
+                    disabled={!available}
+                    onChange={() => toggleLayer(def)}
+                  />
+                  <span
+                    className="h-3 w-3 shrink-0 rounded-[3px]"
+                    style={{ background: def.color }}
+                  />
+                  <label
+                    className="flex-1 cursor-pointer"
+                    htmlFor={`layer-${def.id}`}
+                  >
+                    {t(`layerNames.${def.id}`)}
+                    {!available && <>, {t("noData")}</>}
                   </label>
-                ))}
-              </div>
-            )}
+                </div>
 
-            {/* karhutla: pick the Worldview product, then scrub the day. The
+                {active && sub && (
+                  <div className={subFilters}>
+                    {sub.options.map((opt) => (
+                      <label className={chip} key={opt}>
+                        <input
+                          type="checkbox"
+                          checked={(filters[sub.key] as string[]).includes(opt)}
+                          onChange={() =>
+                            set(
+                              sub.key,
+                              toggleIn(filters[sub.key] as string[], opt),
+                            )
+                          }
+                        />
+                        {LAYER_SUBCOLORS[def.id] && (
+                          <span
+                            className="h-2 w-2 shrink-0 rounded-full"
+                            style={{ background: swatchColor(def.id, opt) }}
+                          />
+                        )}
+                        <span>{t(`filterValues.${opt}`)}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+
+                {/* the air layer's colour scale, so the field means something
+                without having to guess what a shade of red stands for */}
+                {active && def.id === "air" && (
+                  <AirLegend
+                    labels={{
+                      scale: t("airScale"),
+                      good: t("airGood"),
+                      hazardous: t("airHazardous"),
+                      note: t("airNote"),
+                    }}
+                  />
+                )}
+
+                {/* karhutla: pick the Worldview product, then scrub the day. The
                 product is shown by its exact NASA Worldview / GIBS layer name,
                 so it can be pasted into Worldview and checked pixel-for-pixel. */}
-            {active && def.gibs && (
-              <div className="pl-[1.7rem] pt-[0.5rem]">
-                <p className="m-0 mb-[0.25rem] text-[0.72rem] text-muted">
-                  {t("karhutlaProduct")}
-                </p>
-                {/* the exact Worldview layer name + its platform/archive, two
-                    lines per option — see GibsProductSelect on why not <select> */}
-                <GibsProductSelect
-                  products={def.gibs === "imagery" ? GIBS_IMAGERY : GIBS_HOTSPOT}
-                  value={gibsProductOf(def.id)}
-                  onChange={(id) => setKarhutlaProduct(def.id, id)}
-                />
-
-                {dateOwner === def.id && (
-                  <>
-                    <label
-                      className="mb-[0.25rem] mt-[0.55rem] block text-[0.72rem] text-muted"
-                      htmlFor="karhutla-date"
-                    >
-                      {t("karhutlaDate")}
-                    </label>
-                    <div className="flex items-center gap-[0.3rem]">
-                      <button
-                        className={panelBtn}
-                        onClick={() =>
-                          setKarhutlaDate(
-                            gibsShiftDate(karhutlaDate, -1, karhutlaMin),
-                          )
-                        }
-                        disabled={karhutlaDate <= karhutlaMin}
-                        aria-label={t("karhutlaPrev")}
-                        title={t("karhutlaPrev")}
-                      >
-                        ◀
-                      </button>
-                      <input
-                        id="karhutla-date"
-                        type="date"
-                        value={karhutlaDate}
-                        min={karhutlaMin}
-                        max={karhutlaMax}
-                        onChange={(e) =>
-                          e.target.value && setKarhutlaDate(e.target.value)
-                        }
-                        className="min-w-0 flex-1 cursor-pointer rounded-lg border border-[var(--glass-border)] bg-[var(--glass-highlight)] px-[0.45rem] py-[0.28rem] text-[0.76rem] tabular-nums text-foreground"
-                      />
-                      <button
-                        className={panelBtn}
-                        onClick={() =>
-                          setKarhutlaDate(
-                            gibsShiftDate(karhutlaDate, 1, karhutlaMin),
-                          )
-                        }
-                        disabled={karhutlaDate >= karhutlaMax}
-                        aria-label={t("karhutlaNext")}
-                        title={t("karhutlaNext")}
-                      >
-                        ▶
-                      </button>
-                    </div>
-                    <p className="m-0 mt-[0.35rem] text-[0.68rem] leading-snug text-muted">
-                      {t("karhutlaNote")}
+                {active && def.gibs && (
+                  <div className="pl-[1.7rem] pt-[0.5rem]">
+                    <p className="m-0 mb-[0.25rem] text-[0.72rem] text-muted">
+                      {t("karhutlaProduct")}
                     </p>
-                    <a
-                      className="mt-[0.3rem] inline-block text-[0.7rem] text-accent"
-                      href={worldviewUrl(
-                        filters.karhutlaImagery,
-                        filters.karhutlaHotspot,
-                        karhutlaDate,
-                      )}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      {t("karhutlaOpenWorldview")} ↗
-                    </a>
-                  </>
+                    {/* the exact Worldview layer name + its platform/archive, two
+                    lines per option — see GibsProductSelect on why not <select> */}
+                    <GibsProductSelect
+                      products={
+                        def.gibs === "imagery" ? GIBS_IMAGERY : GIBS_HOTSPOT
+                      }
+                      value={gibsProductOf(def.id)}
+                      onChange={(id) => setKarhutlaProduct(def.id, id)}
+                    />
+
+                    {dateOwner === def.id && (
+                      <>
+                        <label
+                          className="mb-[0.25rem] mt-[0.55rem] block text-[0.72rem] text-muted"
+                          htmlFor="karhutla-date"
+                        >
+                          {t("karhutlaDate")}
+                        </label>
+                        <div className="flex items-center gap-[0.3rem]">
+                          <button
+                            className={panelBtn}
+                            onClick={() =>
+                              setKarhutlaDate(
+                                gibsShiftDate(karhutlaDate, -1, karhutlaMin),
+                              )
+                            }
+                            disabled={karhutlaDate <= karhutlaMin}
+                            aria-label={t("karhutlaPrev")}
+                            title={t("karhutlaPrev")}
+                          >
+                            ◀
+                          </button>
+                          <input
+                            id="karhutla-date"
+                            type="date"
+                            value={karhutlaDate}
+                            min={karhutlaMin}
+                            max={karhutlaMax}
+                            onChange={(e) =>
+                              e.target.value && setKarhutlaDate(e.target.value)
+                            }
+                            className="min-w-0 flex-1 cursor-pointer rounded-lg border border-[var(--glass-border)] bg-[var(--glass-highlight)] px-[0.45rem] py-[0.28rem] text-[0.76rem] tabular-nums text-foreground"
+                          />
+                          <button
+                            className={panelBtn}
+                            onClick={() =>
+                              setKarhutlaDate(
+                                gibsShiftDate(karhutlaDate, 1, karhutlaMin),
+                              )
+                            }
+                            disabled={karhutlaDate >= karhutlaMax}
+                            aria-label={t("karhutlaNext")}
+                            title={t("karhutlaNext")}
+                          >
+                            ▶
+                          </button>
+                        </div>
+                        <p className="m-0 mt-[0.35rem] text-[0.68rem] leading-snug text-muted">
+                          {t("karhutlaNote")}
+                        </p>
+                        <a
+                          className="mt-[0.3rem] inline-block text-[0.7rem] text-accent"
+                          href={worldviewUrl(
+                            filters.karhutlaImagery,
+                            filters.karhutlaHotspot,
+                            karhutlaDate,
+                          )}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          {t("karhutlaOpenWorldview")} ↗
+                        </a>
+                      </>
+                    )}
+                  </div>
                 )}
-              </div>
-            )}
 
-            {active && def.id === "alerts" && (
-              <div className={subFilters}>
-                <div className="w-full">
-                  <label
-                    className="mb-[0.3rem] block text-[0.78rem] text-muted"
-                    htmlFor="days-back"
-                  >
-                    {t("daysBack")}: {filters.days}
-                  </label>
-                  <input
-                    id="days-back"
-                    type="range"
-                    min={7}
-                    max={90}
-                    step={1}
-                    value={filters.days}
-                    onChange={(e) => set("days", Number(e.target.value))}
-                    className="w-full"
-                  />
-                </div>
-              </div>
-            )}
+                {active && def.id === "alerts" && (
+                  <div className={subFilters}>
+                    <div className="w-full">
+                      <label
+                        className="mb-[0.3rem] block text-[0.78rem] text-muted"
+                        htmlFor="days-back"
+                      >
+                        {t("daysBack")}: {filters.days}
+                      </label>
+                      <input
+                        id="days-back"
+                        type="range"
+                        min={7}
+                        max={90}
+                        step={1}
+                        value={filters.days}
+                        onChange={(e) => set("days", Number(e.target.value))}
+                        className="w-full"
+                      />
+                    </div>
+                  </div>
+                )}
 
-            <a
-              className="mt-1 block pl-[1.7rem] text-[0.72rem] text-muted"
-              href={def.sourceUrl}
-              target="_blank"
-              rel="noreferrer"
-            >
-              {t("source")}: {def.sourceName}
-            </a>
-          </section>
-        );
-      })}
+                <a
+                  className="mt-1 block pl-[1.7rem] text-[0.72rem] text-muted"
+                  href={def.sourceUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {t("source")}: {def.sourceName}
+                </a>
+              </section>
+            );
+          })}
       </div>
     </aside>
   );

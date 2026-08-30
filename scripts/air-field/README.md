@@ -42,10 +42,11 @@ small request per step rather than a megabyte up front.
 ## Getting an ADS key (free)
 
 1. Register at https://ads.atmosphere.copernicus.eu (name, email, country).
-2. Accept the licence on the
-   `cams-global-atmospheric-composition-forecasts` dataset page — downloads
-   fail with a licence error until this is done, which is the single most
-   common setup mistake.
+2. Accept the licence on the dataset page. This is separate from registering
+   and is the step that actually gates access — with a valid key but no
+   accepted licence the API answers `403 required licences not accepted`,
+   which is easy to misread as a broken key. One click:
+   https://ads.atmosphere.copernicus.eu/datasets/cams-global-atmospheric-composition-forecasts?tab=download#manage-licences
 3. Copy the personal access token from your ADS profile page into the
    `ADS_API_KEY` env var (and into the `mandumrimba-env` Modal secret).
 

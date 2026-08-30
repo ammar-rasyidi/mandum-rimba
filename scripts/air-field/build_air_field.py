@@ -137,7 +137,23 @@ def pm25_from_ads(run_times, run_lead):
             out,
         )
     except Exception as exc:  # noqa: BLE001 — any ADS failure must not lose the run
-        print(f"[air] ADS retrieve failed ({exc}), falling back", flush=True)
+        msg = str(exc)
+        if "licence" in msg.lower() or "license" in msg.lower():
+            # Not a transient failure and not something a retry fixes: the token
+            # is valid (this is a 403, not a 401) but the dataset's licence has
+            # not been accepted yet. It is one click, and it is the single most
+            # common way this setup stalls — so say exactly that, loudly, rather
+            # than quietly serving the coarser fallback forever.
+            print(
+                "[air] ADS REFUSED: the dataset licence has not been accepted.\n"
+                "      The API key itself is fine. Accept it once here:\n"
+                f"      https://ads.atmosphere.copernicus.eu/datasets/{ADS_DATASET}"
+                "?tab=download#manage-licences\n"
+                "      Until then PM2.5 comes from the coarser Open-Meteo fallback.",
+                flush=True,
+            )
+        else:
+            print(f"[air] ADS retrieve failed ({exc}), falling back", flush=True)
         return None
 
     try:

@@ -80,15 +80,26 @@ export interface AirFieldProps {
 }
 
 /**
- * The id of the first symbol (label) layer in the current style, so the field
- * can be inserted beneath it. Falls back to the caller's beforeId, then to
- * undefined (top of stack) if the style has no labels at all.
+ * Where to insert the field so the map stays readable underneath it.
+ *
+ * The Esri basemaps carry no text — place names arrive as a SEPARATE raster
+ * layer, `basemap-labels`, and MapView deliberately declares it with the
+ * basemaps so ordinary data layers stack above it. A full-coverage atmospheric
+ * raster is the one layer for which that is wrong: added above, it buries every
+ * city name no matter how the symbol layers are ordered. Anchoring to the first
+ * *symbol* layer does not help here, because on this path the labels are not
+ * symbols at all — they are pixels.
+ *
+ * With a CARTO key the labels are baked into the basemap tiles themselves, so
+ * there is nothing to sit under; transparency is the only lever there, which is
+ * why the alpha ramp does the real work in both cases.
  */
 function labelAnchor(
   map: maplibregl.Map,
   beforeId?: string,
 ): string | undefined {
   if (beforeId && map.getLayer(beforeId)) return beforeId;
+  if (map.getLayer("basemap-labels")) return "basemap-labels";
   try {
     const first = map
       .getStyle()
@@ -242,10 +253,10 @@ export default function AirField({
             type: "raster",
             source: FIELD_SRC,
             paint: {
-              // the raster carries its own severity-driven alpha on top of
-              // this; labels are handled by layer order, not by fading the
-              // field into uselessness
-              "raster-opacity": 0.72,
+              // ONE dial, in the alpha channel. A second global multiplier here
+              // would fight the per-pixel severity ramp and make the result
+              // impossible to reason about.
+              "raster-opacity": 1,
               "raster-fade-duration": 0,
             },
           },

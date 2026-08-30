@@ -69,12 +69,28 @@ export interface FieldBox {
  *  10 keeps a 1° grid's raster at 550×350 — cheap to build, fine enough that
  *  the GPU's own upscale adds nothing. */
 const SUBSAMPLE = 10;
-/** AQI at which the field reaches full strength. */
-const SEVERITY_FULL_AQI = 110;
-/** Clean air is tinted, not erased. Low enough that the basemap's terrain and
- *  coastline read through ordinary air, high enough that the field stays one
- *  continuous surface rather than a scatter of disconnected blobs. */
-const MIN_ALPHA = 0.42;
+/**
+ * Opacity is severity, and it is capped well below solid.
+ *
+ * The field is pollution hanging OVER a map, not a recolouring of it: the
+ * coastline, the terrain and the island outlines have to stay readable through
+ * the worst of a plume. So even AQI 600 tops out translucent, and ordinary air
+ * — which is most of the region, most of the time — is barely a tint.
+ *
+ * The exponent above 1 matters as much as the cap. A linear (or concave) ramp
+ * makes the 50–100 band, i.e. the background over all of Southeast Asia, come
+ * up fast enough to read as a coloured map rather than as clean air. Rising
+ * slowly at the bottom keeps ordinary days quiet and lets a real plume be the
+ * only thing that asserts itself.
+ */
+/** AQI at which opacity reaches its ceiling — the top of "Sangat Tidak Sehat". */
+const SEVERITY_FULL_AQI = 300;
+/** clean air: present, but barely — the map reads as a map */
+const MIN_ALPHA = 0.05;
+/** the worst air still shows the coastline through it. Never raise to 1. */
+const MAX_ALPHA = 0.45;
+/** >1 keeps the low-to-middle range subtle instead of flooding the region */
+const SEVERITY_GAMMA = 1.25;
 /** grid cells of fade at the field's border */
 const EDGE_FADE_CELLS = 2;
 
@@ -226,7 +242,9 @@ export function rasteriseGrid(
       // soften the rectangle the model's own box ends on
       const edgeCells = Math.min(px, w - 1 - px, py, h - 1 - py) / SUBSAMPLE;
       const edge = Math.max(0, Math.min(1, edgeCells / EDGE_FADE_CELLS));
-      const a = (MIN_ALPHA + (1 - MIN_ALPHA) * Math.pow(sev, 0.75)) * edge;
+      const a =
+        (MIN_ALPHA + (MAX_ALPHA - MIN_ALPHA) * Math.pow(sev, SEVERITY_GAMMA)) *
+        edge;
 
       img.data[o] = r;
       img.data[o + 1] = g;

@@ -15,6 +15,10 @@ import { pm25FromUsAqi } from "@mandumrimba/shared";
  * Both scales are labelled. AQI is the number people recognise from air-quality
  * apps; µg/m³ is the one that is actually measured and the one our data is in.
  * Showing only the index would hide the quantity behind a convention.
+ *
+ * Of the timestamps this once carried, only the model run is kept: it is the
+ * one a reader can actually look up. Clicking the map gives the values at a
+ * point when a number is wanted.
  */
 
 /**
@@ -63,20 +67,9 @@ const gradient = `linear-gradient(to right, ${Array.from(
 /**
  * "2026-08-30T06:00" (UTC, no suffix) rendered in WIB with the UTC hour kept
  * alongside. The audience reads local time; the comparison sources — the CAMS
- * and ECMWF viewers — are all in UTC, so dropping it would make this field
- * impossible to check against them.
+ * and ECMWF viewers — are all in UTC, so dropping it would leave the run
+ * impossible to look up.
  */
-/** just the WIB clock time, for naming a model step compactly */
-function hourOnly(iso: string): string {
-  const ms = Date.parse(`${iso}:00Z`);
-  if (Number.isNaN(ms)) return iso;
-  return new Intl.DateTimeFormat("id-ID", {
-    timeZone: "Asia/Jakarta",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(ms));
-}
-
 function formatValid(iso: string): string | null {
   const ms = Date.parse(`${iso}:00Z`);
   if (Number.isNaN(ms)) return null;
@@ -98,8 +91,6 @@ function formatValid(iso: string): string | null {
 
 export default function AirLegend({
   labels,
-  validAt,
-  between,
   runAt,
 }: {
   /** i18n strings, so the component stays free of translation wiring */
@@ -108,29 +99,12 @@ export default function AirLegend({
     good: string;
     hazardous: string;
     note: string;
-    validPrefix: string;
-    noTime: string;
-    blended: string;
     run: string;
   };
-  /** the hour shown. For a blend this is NOT a model step — see below. */
-  validAt: string | null;
-  /** the two published steps it was blended from */
-  between: [string, string] | null;
-  /** the CAMS run those steps came from */
+  /** the CAMS run the field came from, UTC — the one time reference kept, and
+   *  the one a reader needs to look this up at Copernicus */
   runAt: string | null;
 }) {
-  const when = validAt ? formatValid(validAt) : null;
-  // Naming the shown hour alone overstates what exists. CAMS publishes every
-  // three hours; a value for 15.58 was computed by us from the steps either
-  // side of it, and a reader checking against the CAMS viewer will find those
-  // steps, not ours. So say which ones, and say the run they came from.
-  const isBlend = !!between && between[0] !== between[1];
-  const stepsLabel =
-    between &&
-    (isBlend
-      ? `${hourOnly(between[0])}–${hourOnly(between[1])}`
-      : hourOnly(between[0]));
   const runLabel = runAt ? formatValid(runAt) : null;
 
   return (
@@ -190,21 +164,8 @@ export default function AirLegend({
       {/* Which hour is on screen. The field is a 3-hourly series and the client
           picks the step nearest to now, so without this a reader cannot tell
           what they are looking at — or line it up against the CAMS viewer. */}
-      <p className="m-0 mt-[0.35rem] text-[0.66rem] leading-[1.35] text-fg">
-        {labels.validPrefix}{" "}
-        <strong className="font-medium">{when ?? labels.noTime}</strong>
-      </p>
-
-      {/* What was actually retrieved, as opposed to what is being shown. The
-          shown hour is ours; these two lines are the model's, and they are what
-          someone checking us against the CAMS viewer needs. */}
-      {stepsLabel && (
-        <p className="m-0 text-[0.62rem] leading-[1.35] text-muted">
-          {isBlend ? labels.blended : labels.validPrefix} {stepsLabel} WIB
-        </p>
-      )}
       {runLabel && (
-        <p className="m-0 text-[0.62rem] leading-[1.35] text-muted">
+        <p className="m-0 mt-[0.35rem] text-[0.62rem] leading-[1.35] text-muted">
           {labels.run} {runLabel}
         </p>
       )}

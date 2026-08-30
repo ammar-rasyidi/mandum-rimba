@@ -531,17 +531,12 @@ export default function LayerPanel({
                 without having to guess what a shade of red stands for */}
                 {active && def.id === "air" && (
                   <AirLegend
-                    validAt={airStatus?.validAt ?? null}
-                    between={airStatus?.between ?? null}
                     runAt={airStatus?.runAt ?? null}
                     labels={{
                       scale: t("airScale"),
                       good: t("airGood"),
                       hazardous: t("airHazardous"),
                       note: t("airNote"),
-                      validPrefix: t("airValidAt"),
-                      noTime: t("airNoTime"),
-                      blended: t("airBlended"),
                       run: t("airRun"),
                     }}
                   />

@@ -415,9 +415,6 @@
     "airGood": "Baik",
     "airHazardous": "Berbahaya",
     "airNote": "Model CAMS ~0,4°, bukan pengukuran alat di darat. Angka atas AQI, bawah µg/m³.",
-    "airValidAt": "Data berlaku:",
-    "airNoTime": "memuat…",
-    "airBlended": "Interpolasi kami dari langkah model",
     "airRun": "Run CAMS:",
     "aqiCategory": {
       "good": "Baik",

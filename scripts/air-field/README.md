@@ -52,8 +52,9 @@ small request per step rather than a megabyte up front.
 ## Local run
 
 Dry run — no credentials, nothing published, files written where you can read
-them. `--steps 2` keeps the Open-Meteo fallback cheap while testing (each step
-is charged per location; the CAMS path costs the same whatever you ask for):
+them. `--steps` only limits how many step files are written; it does not make
+the run cheaper, because both sources are fetched once as an hourly series and
+then sliced. A full 17-step build costs exactly what a 1-step build does.
 
     pip install -r requirements.txt
     python build_air_field.py --out /tmp/airfield --steps 2

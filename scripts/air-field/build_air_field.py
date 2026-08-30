@@ -352,8 +352,9 @@ def main():
         "--steps",
         type=int,
         default=len(LEAD_HOURS),
-        help="how many 3-hourly steps to build; fewer costs less upstream "
-        "when the PM2.5 fallback is in use (default: all)",
+        help="how many 3-hourly steps to publish (default: all). This does NOT "
+        "change upstream cost: both sources are fetched once as a series and "
+        "sliced per step. Use it to keep a test's output small, not cheap.",
     )
     args = ap.parse_args()
 

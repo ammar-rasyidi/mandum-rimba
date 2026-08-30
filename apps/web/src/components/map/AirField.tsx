@@ -153,26 +153,72 @@ export default function AirField({
       const idx = (await idxRes.json()) as AirIndex;
       if (!idx?.times?.length) return false;
 
-      // times are UTC wall-clock without a zone suffix
+      // The series is 3-hourly, so no step is "now". Picking the nearest one
+      // meant the map could show a step up to 1.5 h AHEAD and label it as
+      // current — a forecast presented as an observation. Instead, take the two
+      // steps that bracket now and blend them, which is what every weather
+      // viewer does and what makes the label honest: the field really is valid
+      // at the moment it claims.
       const now = Date.now();
-      let best = idx.times[0];
-      let bestGap = Infinity;
-      for (const t of idx.times) {
-        const gap = Math.abs(Date.parse(`${t}:00Z`) - now);
-        if (gap < bestGap) {
-          bestGap = gap;
-          best = t;
+      const ms = (t: string) => Date.parse(`${t}:00Z`);
+      const sorted = [...idx.times].sort((a, b) => ms(a) - ms(b));
+
+      let before = sorted[0];
+      let after = sorted[0];
+      for (const t of sorted) {
+        if (ms(t) <= now) before = t;
+        if (ms(t) >= now) {
+          after = t;
+          break;
         }
       }
+      // now beyond the last published step: hold the last one rather than
+      // extrapolating off the end of the forecast
+      if (ms(after) < now) after = sorted[sorted.length - 1];
 
-      // the index names the immutable prefix for this build; never guess it
+      const span = ms(after) - ms(before);
+      const frac =
+        span > 0 ? Math.min(1, Math.max(0, (now - ms(before)) / span)) : 0;
+
       const prefix = idx.steps ?? "air/t";
-      const stepRes = await fetch(
-        `/${prefix}/${encodeURIComponent(best)}.json`.replace("//", "/"),
-      );
-      if (!stepRes.ok) return false;
-      const step = (await stepRes.json()) as AirStep;
+      const load = async (t: string) => {
+        const r = await fetch(
+          `/${prefix}/${encodeURIComponent(t)}.json`.replace("//", "/"),
+        );
+        return r.ok ? ((await r.json()) as AirStep) : null;
+      };
+      const [a, bStep] = await Promise.all([
+        load(before),
+        before === after ? Promise.resolve(null) : load(after),
+      ]);
+      if (!a) return false;
       if (cancelled) return true;
+
+      /** blend two value arrays; a gap in either stays a gap */
+      const mix = (
+        p1: (number | null)[],
+        p2: (number | null)[] | undefined,
+      ): (number | null)[] =>
+        p2 && frac > 0
+          ? p1.map((v, i) => {
+              const w = p2[i];
+              return v == null || w == null
+                ? null
+                : Math.round(v + frac * (w - v));
+            })
+          : p1;
+
+      const step: AirStep = bStep
+        ? {
+            pm25: mix(a.pm25, bStep.pm25),
+            u: mix(a.u, bStep.u),
+            v: mix(a.v, bStep.v),
+            maxSpeed: a.maxSpeed + frac * (bStep.maxSpeed - a.maxSpeed),
+          }
+        : a;
+
+      // the hour the blend actually represents: now, to the minute
+      const validNow = new Date(now).toISOString().slice(0, 16);
 
       const expected = idx.pm.nx * idx.pm.ny;
       if (step.pm25?.length !== expected) {
@@ -190,7 +236,7 @@ export default function AirField({
         u: { ...idx.wind, values: step.u },
         v: { ...idx.wind, values: step.v },
         maxSpeed: step.maxSpeed,
-        validAt: best,
+        validAt: validNow,
         attribution: idx.attribution,
       });
       return true;

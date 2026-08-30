@@ -23,17 +23,20 @@
  * paints the whole of "Sedang" and half of "Baik" yellow, which reads as an
  * alarm over air that is merely ordinary.
  *
- * EPA paints all of 0–50 one green. Over an ocean that flattens genuinely
- * clean air and merely acceptable air together, so the bottom of the range runs
- * blue → green, the way the wind maps people compare this to do it. Category
- * boundaries above 50 match PM25_BREAKPOINTS in @mandumrimba/shared exactly.
+ * EPA paints all of 0–50 one green, which flattens genuinely clean air and
+ * merely acceptable air into one colour. Open ocean here sits at 7–11 µg/m³
+ * (AQI 41–54), so the whole "Baik" band runs blue → green instead, the way the
+ * wind maps this is compared against do it. That is a purely cosmetic choice
+ * inside a single category — the hues from 100 up still sit exactly on the EPA
+ * boundaries (yellow at 100, orange at 150, red at 200), so the legend's ticks
+ * remain literally readable off the map.
  */
 export const AQI_RAMP: { aqi: number; rgb: [number, number, number] }[] = [
-  { aqi: 0, rgb: [45, 90, 190] }, // blue — cleaner than the EPA scale bothers to
-  { aqi: 25, rgb: [0, 153, 102] }, // green, well inside "Baik"
-  { aqi: 80, rgb: [128, 190, 70] }, // green holds through most of "Sedang"
+  { aqi: 0, rgb: [38, 74, 178] }, // deep blue — genuinely clean air
+  { aqi: 45, rgb: [40, 130, 190] }, // still blue through most of "Baik"
+  { aqi: 60, rgb: [0, 158, 110] }, // green
   { aqi: 100, rgb: [255, 222, 51] }, // top of Sedang: yellow
-  { aqi: 150, rgb: [255, 140, 40] }, // top of Tidak Sehat bagi kel. sensitif
+  { aqi: 150, rgb: [255, 150, 40] }, // top of Tidak Sehat bagi kel. sensitif
   { aqi: 200, rgb: [204, 0, 51] }, // top of Tidak Sehat: red
   { aqi: 300, rgb: [102, 0, 153] }, // top of Sangat Tidak Sehat: purple
   { aqi: 500, rgb: [110, 0, 30] }, // Berbahaya, to the end of the scale

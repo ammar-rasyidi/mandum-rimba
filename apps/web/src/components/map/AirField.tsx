@@ -51,6 +51,8 @@ interface AirIndex {
   wind: { nx: number; ny: number; step: number };
   /** UTC wall-clock hours, e.g. "2026-08-30T09:00" */
   times: string[];
+  /** immutable path prefix holding this build's step files */
+  steps?: string;
   attribution: string;
 }
 
@@ -157,10 +159,24 @@ export default function AirField({
         }
       }
 
-      const stepRes = await fetch(`/air/t/${encodeURIComponent(best)}.json`);
+      // the index names the immutable prefix for this build; never guess it
+      const prefix = idx.steps ?? "air/t";
+      const stepRes = await fetch(
+        `/${prefix}/${encodeURIComponent(best)}.json`.replace("//", "/"),
+      );
       if (!stepRes.ok) return false;
       const step = (await stepRes.json()) as AirStep;
       if (cancelled) return true;
+
+      const expected = idx.pm.nx * idx.pm.ny;
+      if (step.pm25?.length !== expected) {
+        // a mismatch here means a stale file against a fresh index; rendering
+        // it would silently misplace every row rather than fail
+        console.warn(
+          `[air] step has ${step.pm25?.length} values, index expects ${expected} — ignoring`,
+        );
+        return false;
+      }
 
       setGrid({
         bbox: idx.bbox,
@@ -256,7 +272,7 @@ export default function AirField({
               // ONE dial, in the alpha channel. A second global multiplier here
               // would fight the per-pixel severity ramp and make the result
               // impossible to reason about.
-              "raster-opacity": 1,
+              "raster-opacity": 0.45,
               "raster-fade-duration": 0,
             },
           },

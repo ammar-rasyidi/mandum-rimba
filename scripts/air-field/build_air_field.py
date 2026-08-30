@@ -17,6 +17,7 @@ Env: R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET.
 
 import argparse
 import gzip
+import hashlib
 import json
 import math
 import os
@@ -491,6 +492,26 @@ def main():
     else:
         s3 = r2_client()
         bucket = os.environ["R2_BUCKET"]
+
+    # Step files are IMMUTABLE, and their path says so.
+    #
+    # They used to be keyed on the timestamp alone and served with a day's
+    # max-age. Republishing a run with a different grid then reused the same
+    # keys, so a browser holding yesterday's file read its 7,881 values against
+    # an index announcing 12,144 — rows landed in the wrong places and the
+    # field rendered as stripes that stopped halfway up the map. Only clients
+    # with a warm cache saw it, which is why it survived a screenshot.
+    #
+    # The build id covers everything a reader must agree with us about: the
+    # grid shape, the box, and the hours. Change any of them and the path
+    # changes, so a stale file can never be read against a fresh index.
+    build_id = hashlib.sha256(
+        json.dumps(
+            [pm_nx, pm_ny, pm_step, wind_nx, wind_ny, list(box), times],
+            separators=(",", ":"),
+        ).encode()
+    ).hexdigest()[:12]
+    step_prefix = f"{PREFIX}/t/{build_id}"
     total = 0
     for iso in times:
         u_row, v_row = wind_frames[iso]
@@ -502,7 +523,7 @@ def main():
         total += put_json(
             s3,
             bucket,
-            f"{PREFIX}/t/{iso}.json",
+            f"{step_prefix}/{iso}.json",
             {
                 "pm25": pm_frames[iso],
                 "u": u_row,
@@ -518,12 +539,15 @@ def main():
         "pm": {"nx": pm_nx, "ny": pm_ny, "step": pm_step},
         "wind": {"nx": wind_nx, "ny": wind_ny, "step": round(wind_step, 4)},
         "times": times,
+        # where the step files for THIS build live
+        "steps": step_prefix,
         "source": "cams-ads" if pm_step != PM_STEP_FALLBACK else "open-meteo",
         "attribution": ATTRIBUTION,
         "generatedAt": datetime.now(timezone.utc).isoformat(),
     }
-    # short max-age: this is the file that tells clients a newer run exists
-    total += put_json(s3, bucket, f"{PREFIX}/index.json", index, max_age=900)
+    # The index is the only mutable object, so it gets a short life. Everything
+    # it points at is immutable and can be cached hard.
+    total += put_json(s3, bucket, f"{PREFIX}/index.json", index, max_age=60)
 
     print(
         f"[air] published {len(times)} steps ({total/1024:.0f} kB gzipped) "

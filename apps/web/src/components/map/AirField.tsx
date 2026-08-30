@@ -79,6 +79,26 @@ export interface AirFieldProps {
   ) => void;
 }
 
+/**
+ * The id of the first symbol (label) layer in the current style, so the field
+ * can be inserted beneath it. Falls back to the caller's beforeId, then to
+ * undefined (top of stack) if the style has no labels at all.
+ */
+function labelAnchor(
+  map: maplibregl.Map,
+  beforeId?: string,
+): string | undefined {
+  if (beforeId && map.getLayer(beforeId)) return beforeId;
+  try {
+    const first = map
+      .getStyle()
+      .layers.find((l) => l.type === "symbol" && !l.id.startsWith("lyr-air"));
+    return first?.id;
+  } catch {
+    return undefined;
+  }
+}
+
 export default function AirField({
   map,
   container,
@@ -222,13 +242,19 @@ export default function AirField({
             type: "raster",
             source: FIELD_SRC,
             paint: {
-              // the raster carries its own severity-driven alpha; this keeps
-              // coastlines and labels legible underneath it
-              "raster-opacity": 0.9,
+              // the raster carries its own severity-driven alpha on top of
+              // this; labels are handled by layer order, not by fading the
+              // field into uselessness
+              "raster-opacity": 0.72,
               "raster-fade-duration": 0,
             },
           },
-          beforeId && map.getLayer(beforeId) ? beforeId : undefined,
+          // Under the basemap's labels, not on top of everything. Added with
+          // no beforeId the raster lands at the top of the stack and buries
+          // every place name — which is what it did. Anchoring to the first
+          // symbol layer keeps city names crisp at any opacity, so the field's
+          // strength and the map's legibility stop competing.
+          labelAnchor(map, beforeId),
         );
       }
       map.setLayoutProperty(

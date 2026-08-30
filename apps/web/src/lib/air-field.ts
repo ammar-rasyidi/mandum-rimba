@@ -71,8 +71,10 @@ export interface FieldBox {
 const SUBSAMPLE = 10;
 /** AQI at which the field reaches full strength. */
 const SEVERITY_FULL_AQI = 110;
-/** clean air is tinted, not erased: the basemap shows through it */
-const MIN_ALPHA = 0.55;
+/** Clean air is tinted, not erased. Low enough that the basemap's terrain and
+ *  coastline read through ordinary air, high enough that the field stays one
+ *  continuous surface rather than a scatter of disconnected blobs. */
+const MIN_ALPHA = 0.42;
 /** grid cells of fade at the field's border */
 const EDGE_FADE_CELLS = 2;
 

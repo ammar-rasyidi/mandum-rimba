@@ -37,8 +37,14 @@ WEST, SOUTH, EAST, NORTH = 90.0, -13.0, 145.0, 22.0
 
 # CAMS is native ~0.4°; 0.5° keeps a plume's shape while halving the payload.
 PM_STEP = 0.5
-# The Open-Meteo fallback is charged per location, so it gets a coarser grid.
-PM_STEP_FALLBACK = 1.0
+# The Open-Meteo fallback is charged per location, so its resolution is a quota
+# decision, not a taste one. At 0.75° the region is 74×48 = 3,552 locations;
+# with wind's 345 that is 3,897 a run and 7,794 a day at two runs, inside the
+# 10,000 ceiling and under the 5,000/hour one. 0.5° would be 7,881 a run and
+# does not fit. This is an interim: once ADS_API_KEY is set, PM2.5 comes from
+# CAMS at 0.5° for ONE request and Open-Meteo drops to just the 345 wind nodes,
+# at which point this constant stops mattering.
+PM_STEP_FALLBACK = 0.75
 # Wind is genuinely smooth at continental scale and the client interpolates
 # between nodes, so finer would cost quota and buy nothing visible.
 WIND_STEP = 2.5

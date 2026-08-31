@@ -462,6 +462,52 @@ def previous_wind(s3, bucket, times, nx, ny):
     return out
 
 
+
+def prune_old_builds(s3, bucket, keep_prefixes):
+    """
+    Delete step files from builds we no longer point at.
+
+    Every run writes 17 immutable objects under a fresh build id, so without
+    this the bucket grows by ~280 kB twice a day forever, and the flat
+    `air/t/<iso>.json` keys from before build ids existed linger as well.
+
+    One older build is kept on purpose: a browser that fetched the index a
+    moment before we replaced it is still about to ask for that build's steps,
+    and a 404 there would blank the layer for them.
+    """
+    keep = {f"{PREFIX}/index.json"}
+    try:
+        stale = []
+        token = None
+        while True:
+            kw = {"Bucket": bucket, "Prefix": f"{PREFIX}/"}
+            if token:
+                kw["ContinuationToken"] = token
+            page = s3.list_objects_v2(**kw)
+            for obj in page.get("Contents", []):
+                key = obj["Key"]
+                if key in keep:
+                    continue
+                if any(key.startswith(f"{p}/") for p in keep_prefixes):
+                    continue
+                stale.append(key)
+            if not page.get("IsTruncated"):
+                break
+            token = page["NextContinuationToken"]
+
+        # never let a bug here reach outside our own prefix
+        stale = [k for k in stale if k.startswith(f"{PREFIX}/")]
+        for i in range(0, len(stale), 900):
+            s3.delete_objects(
+                Bucket=bucket,
+                Delete={"Objects": [{"Key": k} for k in stale[i : i + 900]]},
+            )
+        if stale:
+            print(f"[air] pruned {len(stale)} objects from older builds", flush=True)
+    except Exception as exc:  # noqa: BLE001 — tidying must never fail a publish
+        print(f"[air] prune skipped ({exc})", flush=True)
+
+
 def r2_client():
     return boto3.client(
         "s3",
@@ -578,6 +624,20 @@ def main():
     # The build id covers everything a reader must agree with us about: the
     # grid shape, the box, and the hours. Change any of them and the path
     # changes, so a stale file can never be read against a fresh index.
+    previous_prefix = None
+    if not args.out:
+        try:
+            prev = json.loads(
+                gzip.decompress(
+                    s3.get_object(Bucket=bucket, Key=f"{PREFIX}/index.json")[
+                        "Body"
+                    ].read()
+                )
+            )
+            previous_prefix = prev.get("steps")
+        except Exception:  # noqa: BLE001 — first ever run has no index
+            previous_prefix = None
+
     build_id = hashlib.sha256(
         json.dumps(
             [pm_nx, pm_ny, pm_step, wind_nx, wind_ny, list(box), times],
@@ -632,6 +692,13 @@ def main():
         f"from {index['source']}",
         flush=True,
     )
+
+    if not args.out:
+        prune_old_builds(
+            s3,
+            bucket,
+            {p for p in (step_prefix, previous_prefix) if p},
+        )
 
 
 if __name__ == "__main__":

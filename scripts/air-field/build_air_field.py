@@ -31,10 +31,17 @@ import boto3
 import requests
 
 # ── Region ──────────────────────────────────────────────────────────────────
-# Southeast Asia, not Indonesia alone: haze does not stop at the border. Riau's
-# smoke reaches Kuala Lumpur and Singapore, and Indochina's burning season blows
-# south, so a map cropped to the coastline hides half of what it explains.
-WEST, SOUTH, EAST, NORTH = 90.0, -13.0, 145.0, 22.0
+# Asia and Australasia, not Indonesia alone: haze does not stop at the border.
+# Riau's smoke reaches Kuala Lumpur and Singapore, Indochina's burning season
+# blows south, and Australian bushfire smoke crosses the Timor and Arafura seas
+# — a map cropped to the coastline hides half of what it explains. The box
+# covers Southeast, East and South Asia plus Australia, New Zealand and PNG.
+#
+# 0.4° over this window is 301x276 = 83,076 nodes, ~87 kB gzipped per step,
+# measured not estimated. Wider (to Turkey and Siberia) adds regions whose
+# smoke never reaches here and pushes the client's raster past the usual 4096
+# WebGL texture limit.
+WEST, SOUTH, EAST, NORTH = 60.0, -50.0, 180.0, 60.0
 
 # CAMS is native ~0.4°; 0.5° keeps a plume's shape while halving the payload.
 PM_STEP = 0.5

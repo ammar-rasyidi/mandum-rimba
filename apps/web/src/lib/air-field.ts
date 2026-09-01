@@ -67,11 +67,29 @@ export interface FieldBox {
   north: number;
 }
 
-/** Output pixels per grid cell. The interpolation is bicubic either way; this
- *  only decides how finely it is sampled before the GPU scales the image up.
- *  10 keeps a 1° grid's raster at 550×350 — cheap to build, fine enough that
- *  the GPU's own upscale adds nothing. */
-const SUBSAMPLE = 10;
+/**
+ * Output pixels per grid cell, chosen from the grid's size rather than fixed.
+ *
+ * Rasterising is bicubic — 16 lookups per output pixel, single-threaded — so
+ * cost is (cells x subsample^2). A constant that is comfortable for a regional
+ * box becomes seconds of frozen main thread when the box grows: at 10 px/cell
+ * an Asia-wide grid is 8.2 Mpx and ~132 million operations, and the canvas also
+ * approaches the 4096 px WebGL texture limit.
+ *
+ * Holding the CANVAS roughly constant instead keeps the work flat whatever the
+ * extent. Nothing is lost from the data: the grid stays at CAMS's own 0.4°, and
+ * the bicubic curve between nodes is simply sampled less densely before the GPU
+ * scales it up — which it does smoothly anyway.
+ */
+const TARGET_CANVAS_PX = 1_400_000;
+const SUBSAMPLE_MIN = 2;
+const SUBSAMPLE_MAX = 10;
+
+function subsampleFor(nx: number, ny: number): number {
+  const cells = Math.max(1, (nx - 1) * (ny - 1));
+  const ideal = Math.round(Math.sqrt(TARGET_CANVAS_PX / cells));
+  return Math.min(SUBSAMPLE_MAX, Math.max(SUBSAMPLE_MIN, ideal));
+}
 /**
  * Opacity: rich, the way the reference wind maps render this, and it can be
  * rich *because* the field now sits beneath `basemap-labels` (see
@@ -199,8 +217,9 @@ export function rasteriseGrid(
 ): RasterResult | null {
   if (pm.values.length === 0 || pm.nx < 2 || pm.ny < 2) return null;
 
-  const w = (pm.nx - 1) * SUBSAMPLE;
-  const h = (pm.ny - 1) * SUBSAMPLE;
+  const sub = subsampleFor(pm.nx, pm.ny);
+  const w = (pm.nx - 1) * sub;
+  const h = (pm.ny - 1) * sub;
   if (w <= 0 || h <= 0) return null;
 
   const canvas = document.createElement("canvas");
@@ -241,7 +260,7 @@ export function rasteriseGrid(
       const [r, g, bl] = aqiColor(aqi);
       const sev = Math.min(1, Math.max(0, aqi / SEVERITY_FULL_AQI));
       // soften the rectangle the model's own box ends on
-      const edgeCells = Math.min(px, w - 1 - px, py, h - 1 - py) / SUBSAMPLE;
+      const edgeCells = Math.min(px, w - 1 - px, py, h - 1 - py) / sub;
       const edge = Math.max(0, Math.min(1, edgeCells / EDGE_FADE_CELLS));
       const a =
         (MIN_ALPHA + (MAX_ALPHA - MIN_ALPHA) * Math.pow(sev, SEVERITY_GAMMA)) *

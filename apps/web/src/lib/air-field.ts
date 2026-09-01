@@ -210,6 +210,25 @@ function sampleBicubic(
   return lerp(lerp(c00, c10, tx), lerp(c01, c11, tx), ty);
 }
 
+/**
+ * Web Mercator vertical coordinate. MapLibre stretches an ImageSource linearly
+ * in THIS, not in latitude — so a raster whose rows are evenly spaced in
+ * latitude lands in the wrong place, by more the taller the box is.
+ *
+ * Over the old Southeast Asia box (13S-22N) the error peaked at 0.3 deg and was
+ * invisible. Over Asia and Australasia (50S-60N) it reaches 3.5 deg at Borneo
+ * and 6.2 deg at 22N — the whole field drawn several hundred kilometres north
+ * of where its values belong. Rows are therefore spaced in Mercator and the
+ * latitude for each row is recovered by inverting it.
+ */
+function mercY(lat: number): number {
+  return Math.log(Math.tan(Math.PI / 4 + (lat * Math.PI) / 360));
+}
+
+function invMercY(y: number): number {
+  return ((2 * Math.atan(Math.exp(y)) - Math.PI / 2) * 180) / Math.PI;
+}
+
 export function rasteriseGrid(
   pm: GridLayer,
   box: FieldBox,
@@ -237,11 +256,15 @@ export function rasteriseGrid(
     return v == null ? null : v / 10;
   };
 
+  // rows are laid out in Mercator so the image lands where its values belong
+  const yTop = mercY(box.north);
+  const yBot = mercY(box.south);
+  const latStep = (box.north - box.south) / (pm.ny - 1);
+
   for (let py = 0; py < h; py++) {
-    // canvas rows run top-down (north first); the grid runs south-up. Map the
-    // full pixel span onto the full cell span, so the last row/column is not
-    // quietly dropped the way `py / SUBSAMPLE` does.
-    const gy = ((h - 1 - py) / (h - 1)) * (pm.ny - 1);
+    // canvas rows run top-down (north first); the grid runs south-up
+    const lat = invMercY(yTop + (py / (h - 1)) * (yBot - yTop));
+    const gy = Math.min(pm.ny - 1, Math.max(0, (lat - box.south) / latStep));
     const y0 = Math.min(pm.ny - 2, Math.floor(gy));
     const ty = gy - y0;
     for (let px = 0; px < w; px++) {

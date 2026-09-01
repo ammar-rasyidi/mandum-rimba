@@ -298,7 +298,20 @@ def fetch_points(base, query, lats, lons):
             f"{base}?latitude={','.join(str(v) for v in la)}"
             f"&longitude={','.join(str(v) for v in lo)}&{query}"
         )
-        res = requests.get(url, timeout=120, headers={"User-Agent": UA})
+        # A read timeout used to abort the whole wind fetch, discarding an
+        # eight-minute build over one slow request out of twelve. Transient
+        # network trouble deserves a retry; a quota refusal does not.
+        res = None
+        for attempt in range(3):
+            try:
+                res = requests.get(url, timeout=120, headers={"User-Agent": UA})
+                break
+            except requests.RequestException as exc:
+                if attempt == 2:
+                    raise
+                print(f"[air] {type(exc).__name__} on batch, retrying", flush=True)
+                time.sleep(5 * (attempt + 1))
+        assert res is not None
         if res.status_code == 429:
             reason = ""
             try:

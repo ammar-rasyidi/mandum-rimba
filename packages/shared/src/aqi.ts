@@ -20,10 +20,10 @@
  *     identical to the merely terrible ones. Above 325.4 µg/m³ we continue the
  *     Hazardous segment's slope; every such value carries extrapolated=true,
  *     because it sits outside the range EPA actually defined.
- *  2. The caller decides the averaging window. Hourly PM2.5 gives a responsive
- *     "right now" number; nowcastPm25() gives EPA's own weighted 12-hour method,
- *     which is what AirNow reports. They disagree by a lot in fast-moving smoke,
- *     so /v1/air publishes both instead of picking a flattering one.
+ *  2. Hourly values, not a 24-hour average. The map shows air as it is now, so
+ *     a plume arriving this hour has to read as one. (EPA's NowCast, the
+ *     weighted 12-hour method AirNow reports, lived here until the endpoint
+ *     that used it was removed; git has it if it is ever wanted again.)
  */
 
 export type AqiCategory =
@@ -118,46 +118,4 @@ export function pm25FromUsAqi(aqi: number): number | null {
     }
   }
   return Math.round((TOP.cHi + (aqi - TOP.iHi) / TOP_SLOPE) * 10) / 10;
-}
-
-/**
- * EPA NowCast for PM2.5 — the weighted average AirNow reports in real time.
- *
- * `hours` is up to 12 hourly concentrations, MOST RECENT FIRST; null for a
- * missing hour. Recent hours are weighted more heavily when the air is changing
- * fast, so a plume arriving now is not buried under 11 clean hours.
- *
- * Returns null when fewer than 2 of the 3 most recent hours are available —
- * EPA's own validity rule, and the point at which a NowCast stops meaning
- * anything.
- */
-export function nowcastPm25(
-  hours: (number | null | undefined)[],
-): number | null {
-  const c = hours
-    .slice(0, 12)
-    .map((v) => (v != null && Number.isFinite(v) && v >= 0 ? v : null));
-  if (c.slice(0, 3).filter((v) => v !== null).length < 2) return null;
-
-  const valid = c.filter((v): v is number => v !== null);
-  if (valid.length === 0) return null;
-
-  const max = Math.max(...valid);
-  const min = Math.min(...valid);
-  if (max <= 0) return 0;
-
-  // weight factor = 1 - (rate of change), floored at 0.5 so the window never
-  // collapses onto a single hour
-  const w = Math.min(1, Math.max(0.5, 1 - (max - min) / max));
-
-  let num = 0;
-  let den = 0;
-  for (let i = 0; i < c.length; i++) {
-    const v = c[i];
-    if (v === null) continue;
-    num += Math.pow(w, i) * v;
-    den += Math.pow(w, i);
-  }
-  if (den === 0) return null;
-  return truncate1(num / den);
 }

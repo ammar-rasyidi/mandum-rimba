@@ -60,10 +60,9 @@ export const LAYERS: LayerDef[] = [
   // ---- fills (drawn first, under the points) ----
   {
     // Udara & asap: the PM2.5 colour field with the 10 m wind blown through it
-    // as moving particles. Neither half is a tileset — the field is rasterised
-    // in the browser from /v1/air's 502 district readings, the wind comes from
-    // /v1/air/field. Both are models, not ground measurements; the field goes
-    // transparent where no district is near enough to justify a colour.
+    // as moving particles. Not a tileset — both come from static JSON on R2,
+    // rebuilt twice a day by scripts/air-field and rasterised in the browser
+    // (see components/map/AirField). Both are models, not ground measurements.
     id: "air",
     tile: "air",
     kind: "raster",
@@ -104,7 +103,7 @@ export const LAYERS: LayerDef[] = [
     sourceName: "NASA Worldview / GIBS — Thermal Anomalies (FIRMS)",
     sourceUrl: "https://worldview.earthdata.nasa.gov/",
     dataYear: "per hari, 2002-kini",
-  },  
+  },
   {
     // Peta Sebaran Satwa: threatened wildlife (all classes) occurrence density,
     // smoothed into organic contour bands (not dots, not a grid). Loaded from a

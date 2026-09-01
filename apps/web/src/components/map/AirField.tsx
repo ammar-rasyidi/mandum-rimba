@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import type maplibregl from "maplibre-gl";
 import { usAqiFromPm25 } from "@mandumrimba/shared";
-import { API_BASE } from "@/lib/api";
 import {
   rasteriseGrid,
   sampleLayer,
@@ -177,8 +176,9 @@ export default function AirField({
      * nearest to now, which keeps the payload at tens of kB rather than the
      * megabyte a full time cube would cost.
      *
-     * The old /v1/air/field endpoint stays as a fallback for the window before
-     * the first Modal run has published anything.
+     * There is no API fallback: the field only ever comes from R2. An endpoint
+     * that rebuilt it on demand would need thousands of upstream locations per
+     * request, which is what made it a scheduled job in the first place.
      */
     const loadFromCdn = async (): Promise<boolean> => {
       const idxRes = await fetch("/air/index.json", { cache: "no-cache" });
@@ -282,23 +282,13 @@ export default function AirField({
     const loadGrid = async () => {
       try {
         if (await loadFromCdn()) return;
+        // R2 has no field yet (a fresh bucket, or the first scheduled build has
+        // not run). Retry rather than failing for good: the layer simply stays
+        // off until the data exists, which is a visible absence rather than a
+        // wrong picture.
+        gridRetry = setTimeout(loadGrid, 15000);
       } catch {
-        // fall through to the API
-      }
-      try {
-        const res = await fetch(`${API_BASE}/v1/air/field`);
-        const json = (await res.json()) as
-          (AirGridData & { warming?: boolean }) | null;
-        if (cancelled) return;
-        // a cold backend answers `warming` rather than holding the connection
-        // open past the function timeout; come back for it
-        if (!json || json.warming) {
-          gridRetry = setTimeout(loadGrid, 8000);
-          return;
-        }
-        setGrid(json);
-      } catch {
-        /* the colour field and particles simply do not start */
+        gridRetry = setTimeout(loadGrid, 15000);
       }
     };
 

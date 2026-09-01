@@ -160,8 +160,12 @@ def pipeline() -> None:
 
 
 # ── Air field: the only thing here that runs often ─────────────────────────
-# 09:00 and 21:00 UTC (16:00 and 04:00 WIB). CAMS runs at 00 and 12 UTC and
-# publishes several hours later, so this picks up each cycle once it is ready.
+# 11:00 and 23:00 UTC (18:00 and 06:00 WIB). CAMS runs at 00 and 12 UTC and is
+# published about ten hours later — the 00Z cycle by 10:00 UTC, the 12Z cycle by
+# 22:00 UTC (ECMWF's documented timing, and 00Z was observed landing at 10:03).
+# An hour of slack after each, because firing before publication does not fail
+# loudly: the builder just falls back to the previous run and produces a
+# plausible, quietly stale field.
 #
 # It is separate from `pipeline` above on purpose: the ingest sources refresh on
 # the order of months, air quality on the order of hours. Sharing one schedule
@@ -171,7 +175,7 @@ def pipeline() -> None:
 # web fetches straight from the CDN — no Vercel function, no browser-side
 # weather API call, and no per-request upstream cost. See
 # scripts/air-field/README.md for why a gridded source replaced point queries.
-@app.function(secrets=[env_secret], schedule=modal.Cron("0 9,21 * * *"), timeout=45 * 60)
+@app.function(secrets=[env_secret], schedule=modal.Cron("0 11,23 * * *"), timeout=45 * 60)
 def air_field() -> None:
     print("[mandumrimba] ▶ job: air-field", flush=True)
     subprocess.run(

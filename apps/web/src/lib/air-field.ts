@@ -169,9 +169,11 @@ function cubic(p0: number, p1: number, p2: number, p3: number, t: number) {
  * replaced. Catmull-Rom is smooth across boundaries, which costs 16 lookups
  * instead of 4 and buys an organic edge.
  *
- * It can overshoot near a sharp gradient, so the result is clamped at zero: a
- * negative concentration is meaningless and would render as the cleanest
- * possible air right beside a plume.
+ * It overshoots either side of a sharp gradient, so the result is bounded by
+ * the samples that bracket it. Clamping at zero instead — the obvious first
+ * guess — leaves the overshoot above and turns the undershoot into a hard
+ * straight edge where it crosses zero, drawing a moat of clean air around
+ * every fire cell.
  *
  * Falls back to bilinear when the 4×4 neighbourhood has a gap, and to
  * transparent when even the inner 2×2 does — a hole in the model is not clean air.
@@ -195,10 +197,30 @@ function sampleBicubic(
       }
       p.push(v);
     }
-    if (complete) rows.push(cubic(p[0], p[1], p[2], p[3], tx));
+    if (complete) {
+      // same bracket in the x direction, before the rows are combined
+      const v = cubic(p[0], p[1], p[2], p[3], tx);
+      rows.push(
+        Math.min(Math.max(p[1], p[2]), Math.max(Math.min(p[1], p[2]), v)),
+      );
+    }
   }
   if (complete && rows.length === 4) {
-    return Math.max(0, cubic(rows[0], rows[1], rows[2], rows[3], ty));
+    const v = cubic(rows[0], rows[1], rows[2], rows[3], ty);
+    // Clamp to the four samples that bracket this point, not to zero.
+    //
+    // Catmull-Rom overshoots either side of a steep step, and CAMS produces
+    // very steep ones — a fire cell at 380 ug/m3 beside neighbours under 10.
+    // The undershoot went negative, `Math.max(0, ...)` flattened it, and the
+    // contour where it crossed zero rendered as a hard straight edge cutting
+    // across the plume: a moat of clean air that does not exist.
+    //
+    // Bounding by the surrounding values removes overshoot in both directions
+    // while leaving the curve untouched wherever it stays between them, which
+    // is everywhere the field is smooth.
+    const lo = Math.min(rows[1], rows[2]);
+    const hi = Math.max(rows[1], rows[2]);
+    return Math.min(hi, Math.max(lo, v));
   }
 
   const c00 = at(x0, y0);

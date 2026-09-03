@@ -390,8 +390,24 @@ def wind_from_open_meteo(run_times, box):
     return nx, ny, sx, frames
 
 
+# Open-Meteo is charged per location, so a fallback only exists if the grid is
+# small enough to pay for. Over the Asia/Australasia box, 0.75 deg is 23,828
+# locations — twice the DAILY allowance in one run.
+FALLBACK_MAX_LOCATIONS = 3000
+
+
 def pm25_from_open_meteo(run_times):
     nx, ny, plat, plon = grid_points(PM_STEP_FALLBACK)
+    if len(plat) > FALLBACK_MAX_LOCATIONS:
+        # Refusing beats publishing. The field already on R2 is CAMS at 0.4 deg;
+        # replacing it with whatever Open-Meteo could afford here would be a
+        # visible downgrade, and attempting it just burns the day's quota and
+        # stalls for however long the pacing takes.
+        raise RuntimeError(
+            f"Open-Meteo fallback needs {len(plat):,} locations for this box "
+            f"at {PM_STEP_FALLBACK} deg, over the {FALLBACK_MAX_LOCATIONS:,} "
+            "budget. Not attempting it: the published CAMS field stays."
+        )
     rows = fetch_points(
         OPEN_METEO_AIR,
         "hourly=pm2_5&domains=cams_global&forecast_days=4&timezone=UTC",
@@ -591,6 +607,11 @@ def main():
             print("[air] CAMS returned no steps covering now, falling back", flush=True)
             pm = None
     if not pm:
+        print(
+            "[air] no CAMS run could be retrieved — this is normally an ADS "
+            "outage, since the run walk-back covers two days",
+            flush=True,
+        )
         base = now - timedelta(hours=now.hour % 3)
         times = [
             (base + timedelta(hours=h)).strftime("%Y-%m-%dT%H:%M")

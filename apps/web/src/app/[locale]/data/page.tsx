@@ -12,7 +12,6 @@ export async function generateMetadata({
 }
 
 const EXPORTS = [
-  { dataset: "alerts", formats: ["csv", "geojson"] },
   { dataset: "disasters", formats: ["csv", "geojson"] },
   { dataset: "forest-loss", formats: ["csv"] },
 ];

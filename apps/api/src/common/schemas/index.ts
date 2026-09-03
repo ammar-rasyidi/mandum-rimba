@@ -1,7 +1,6 @@
 export * from "./region.schema";
 export * from "./concession.schema";
 export * from "./forest-loss.schema";
-export * from "./alert.schema";
 export * from "./disaster.schema";
 export * from "./watershed.schema";
 export * from "./company.schema";

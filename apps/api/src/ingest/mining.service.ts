@@ -4,8 +4,6 @@ import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import type { MultiPolygon, Polygon } from "geojson";
 import {
-  Alert,
-  AlertDocument,
   Concession,
   ConcessionDocument,
 } from "../common/schemas";
@@ -55,7 +53,6 @@ export class MiningService implements OnModuleInit {
   constructor(
     @InjectModel(Concession.name)
     private concessionModel: Model<ConcessionDocument>,
-    @InjectModel(Alert.name) private alertModel: Model<AlertDocument>,
     private readonly locks: JobLockService,
     private readonly archiver: ArchiverService,
     private readonly http: HttpService,

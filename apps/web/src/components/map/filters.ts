@@ -12,8 +12,6 @@ export interface MapFilters {
   basemap: Basemap;
   viewMode: ViewMode;
   layers: string[];
-  days: number; // alert window, 7..90
-  systems: string[]; // radd | glad_l | glad_s2
   disasterTypes: string[]; // flood | flash_flood | landslide | other
   concessionTypes: string[]; // palm_hgu | pulp_hti | logging | mining
   protectedCategories: string[]; // TN | HL | CA | SM | other | moratorium
@@ -31,7 +29,6 @@ export interface MapFilters {
   karhutlaHotspot: string;
 }
 
-export const ALERT_SYSTEMS = ["radd", "glad_l", "glad_s2"];
 export const DISASTER_TYPES = ["flood", "flash_flood", "landslide", "other"];
 // "mining" here is the Maus satellite footprint (real mined land, all-mineral,
 // Aceh→Papua) carried as a concession type. Official IUP permit *boundaries*
@@ -55,8 +52,6 @@ export const DEFAULT_FILTERS: MapFilters = {
   basemap: "dark",
   viewMode: "flat",
   layers: LAYERS.filter((l) => l.defaultOn).map((l) => l.id),
-  days: 90,
-  systems: [...ALERT_SYSTEMS],
   disasterTypes: [...DISASTER_TYPES],
   concessionTypes: [...CONCESSION_TYPES],
   protectedCategories: [...PROTECTED_CATEGORIES],

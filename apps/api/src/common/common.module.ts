@@ -1,8 +1,6 @@
 import { Global, Module } from "@nestjs/common";
 import { MongooseModule } from "@nestjs/mongoose";
 import {
-  Alert,
-  AlertSchema,
   Company,
   CompanySchema,
   Concession,
@@ -33,7 +31,6 @@ const models = MongooseModule.forFeature([
   { name: Region.name, schema: RegionSchema },
   { name: Concession.name, schema: ConcessionSchema },
   { name: ForestLossAnnual.name, schema: ForestLossAnnualSchema },
-  { name: Alert.name, schema: AlertSchema },
   { name: Disaster.name, schema: DisasterSchema },
   { name: Watershed.name, schema: WatershedSchema },
   { name: Company.name, schema: CompanySchema },

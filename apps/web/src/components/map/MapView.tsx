@@ -83,10 +83,6 @@ function useSiteTheme(): "light" | "dark" {
   return theme;
 }
 
-function isoDaysAgo(days: number): string {
-  return new Date(Date.now() - days * 86_400_000).toISOString().slice(0, 10);
-}
-
 function readUrlState(): { filters: MapFilters } {
   const filters = { ...DEFAULT_FILTERS };
   if (typeof window === "undefined") return { filters };
@@ -101,8 +97,6 @@ function readUrlState(): { filters: MapFilters } {
       ? (p.get("view") as MapFilters["viewMode"])
       : "flat";
   filters.layers = list("layers") ?? filters.layers;
-  filters.days = Number(p.get("days")) || filters.days;
-  filters.systems = list("sys") ?? filters.systems;
   filters.disasterTypes = list("dis") ?? filters.disasterTypes;
   filters.concessionTypes = list("con") ?? filters.concessionTypes;
   filters.protectedCategories = list("pro") ?? filters.protectedCategories;
@@ -453,8 +447,6 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
       if (f.viewMode === "flat") p.delete("view");
       else p.set("view", f.viewMode);
       p.set("layers", f.layers.join(","));
-      p.set("days", String(f.days));
-      p.set("sys", f.systems.join(","));
       p.set("dis", f.disasterTypes.join(","));
       p.set("con", f.concessionTypes.join(","));
       p.set("pro", f.protectedCategories.join(","));
@@ -1154,16 +1146,7 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
     }
 
     // per-layer attribute filters
-    const dateFilter = [">=", ["get", "date"], isoDaysAgo(filters.days)];
-    const systemFilter = [
-      "in",
-      ["get", "system"],
-      ["literal", filters.systems],
-    ];
 
-    if (map.getLayer("lyr-alerts")) {
-      map.setFilter("lyr-alerts", ["all", dateFilter, systemFilter] as never);
-    }
     if (map.getLayer("lyr-disasters")) {
       map.setFilter("lyr-disasters", [
         "in",

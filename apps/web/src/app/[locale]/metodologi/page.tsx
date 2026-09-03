@@ -12,7 +12,7 @@ export async function generateMetadata({
 
 const SOURCES = [
   {
-    name: "Global Forest Watch, RADD / GLAD alerts, and UMD/Hansen tree cover loss (2001–2025, >30% canopy, live encoded raster tiles)",
+    name: "Global Forest Watch, UMD/Hansen tree cover loss (2001–2025, >30% canopy, live encoded raster tiles)",
     url: "https://data-api.globalforestwatch.org",
     license: "CC BY 4.0",
   },
@@ -121,7 +121,7 @@ const CHANGELOG = [
   },
   {
     version: "2026.06.0",
-    note: "Initial data pipeline: ingest and publish deforestation alerts, concessions, protected & moratorium areas, disasters, wildlife habitat and occurrences.",
+    note: "Initial data pipeline: ingest and publish tree cover loss, concessions, protected & moratorium areas, disasters, wildlife habitat and occurrences.",
   },
 ];
 

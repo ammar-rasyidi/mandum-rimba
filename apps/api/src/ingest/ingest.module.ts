@@ -1,5 +1,4 @@
 import { Module } from "@nestjs/common";
-import { GfwAlertsService } from "./gfw-alerts.service";
 import { GfwAnnualService } from "./gfw-annual.service";
 import { BnpbDibiService } from "./bnpb-dibi.service";
 import { ConcessionsService } from "./concessions.service";
@@ -13,7 +12,6 @@ import { WetlandsService } from "./wetlands.service";
 
 @Module({
   providers: [
-    GfwAlertsService,
     GfwAnnualService,
     BnpbDibiService,
     ConcessionsService,

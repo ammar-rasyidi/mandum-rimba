@@ -10,8 +10,6 @@ import { Model } from "mongoose";
 import { area as turfArea, feature, featureCollection, intersect } from "@turf/turf";
 import type { Feature, MultiPolygon, Polygon } from "geojson";
 import {
-  Alert,
-  AlertDocument,
   Concession,
   ConcessionDocument,
   Disaster,
@@ -77,7 +75,6 @@ export class AreaReportController {
     @InjectModel(Region.name) private regionModel: Model<RegionDocument>,
     @InjectModel(ForestLossAnnual.name)
     private lossModel: Model<ForestLossAnnualDocument>,
-    @InjectModel(Alert.name) private alertModel: Model<AlertDocument>,
     @InjectModel(Disaster.name) private disasterModel: Model<DisasterDocument>,
     @InjectModel(Concession.name)
     private concessionModel: Model<ConcessionDocument>,

@@ -25,7 +25,7 @@
     "whyBody": "Every time forest turns into plantations, mines, or cleared land, elephants, tigers, and orangutans lose their home, and conflict with humans almost always ends badly for them. Many people don't know what is actually happening around where they live. Mandum Rimba assembles scattered data so anyone can see, understand, and act.",
     "whatTitle": "What's on the map",
     "whatBody": "We gather data from credible sources and show it as it is:",
-    "layer1": "Near-real-time deforestation alerts (RADD & GLAD, 10–30 m)",
+    "layer1": "Annual tree cover loss (Hansen/UMD, 30 m resolution)",
     "layer2": "Palm, pulpwood, logging concessions, and the mining footprint",
     "layer3": "Protected & moratorium areas, National Parks, Wildlife Reserves, Nature Reserves, and more",
     "layer4": "Flood and landslide events (BNPB DIBI)",
@@ -162,7 +162,6 @@
     "retrieved": "Retrieved",
     "legend": "Legend",
     "noData": "no data yet",
-    "daysBack": "Alert day range",
     "reset": "Reset",
     "minimize": "Minimize",
     "searchPlace": "Search a place or paste coordinates…",
@@ -224,9 +223,6 @@
     "rotateHint": "Tap to turn, hold to spin",
     "resetNorth": "Reset to north",
     "filterValues": {
-      "radd": "RADD (10m)",
-      "glad_l": "GLAD-L (30m)",
-      "glad_s2": "GLAD-S2",
       "flood": "Flood",
       "flash_flood": "Flash flood",
       "landslide": "Landslide",
@@ -296,7 +292,6 @@
     "reportError": "Failed to load report. Try again.",
     "reportBack": "Another area",
     "rptLoss": "Tree cover loss",
-    "rptAlerts": "Deforestation alerts",
     "rptDays": "days",
     "rptConcessions": "Concession areas",
     "rptTotal": "Total",
@@ -391,7 +386,6 @@
       "LIVING_SPECIMEN": "Living specimen"
     },
     "layerNames": {
-      "alerts": "Deforestation alerts (90 days)",
       "concessions": "Concession areas",
       "protected": "Protected & moratorium areas",
       "mangrove": "Mangroves",

@@ -9,8 +9,6 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
-  Alert,
-  AlertDocument,
   Concession,
   ConcessionDocument,
   Disaster,
@@ -53,7 +51,6 @@ export class TilesService implements OnModuleInit {
 
   constructor(
     @InjectModel(Region.name) private regionModel: Model<RegionDocument>,
-    @InjectModel(Alert.name) private alertModel: Model<AlertDocument>,
     @InjectModel(Concession.name)
     private concessionModel: Model<ConcessionDocument>,
     @InjectModel(ProtectedArea.name)
@@ -136,7 +133,6 @@ export class TilesService implements OnModuleInit {
   }
 
   private layerSpecs(): LayerSpec[] {
-    const alertsSince = new Date(Date.now() - 90 * 86_400_000);
     return [
       {
         name: "regions",
@@ -162,38 +158,6 @@ export class TilesService implements OnModuleInit {
             }),
           ),
         tippecanoeArgs: ["-zg", "--coalesce-densest-as-needed"],
-      },
-      {
-        name: "alerts",
-        changeKey: async () =>
-          this.alertModel.countDocuments({
-            alertDate: { $gte: alertsSince },
-          }),
-        export: (path) =>
-          this.streamCursor(
-            path,
-            this.alertModel
-              .find({ alertDate: { $gte: alertsSince } })
-              .lean()
-              .cursor(),
-            (d: Record<string, any>) => ({
-              type: "Feature",
-              geometry: d.geom,
-              properties: {
-                id: String(d._id),
-                date: d.alertDate?.toISOString().slice(0, 10),
-                system: d.system,
-                confidence: d.confidence,
-              },
-            }),
-          ),
-        tippecanoeArgs: [
-          "-zg",
-          "--drop-densest-as-needed",
-          "--extend-zooms-if-still-dropping",
-          "-r1",
-          "--cluster-distance=10",
-        ],
       },
       {
         name: "concessions",

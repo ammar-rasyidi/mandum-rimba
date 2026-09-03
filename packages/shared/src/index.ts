@@ -55,17 +55,6 @@ export interface ForestLossAnnual {
   source: string;
 }
 
-export type AlertSystem = "radd" | "glad_l" | "glad_s2";
-
-export interface Alert {
-  _id: string;
-  alertDate: string;
-  system: AlertSystem;
-  confidence: string;
-  geom: Point;
-  regionId: string | null;
-}
-
 export type DisasterType = "flood" | "landslide" | "flash_flood" | "other";
 
 export interface Disaster extends SourceMeta {
@@ -143,7 +132,6 @@ export interface PipelineStatus {
 export interface RegionSummary {
   region: Region;
   lossByYear: ForestLossAnnual[];
-  alertCount90d: number;
   disasterCount: number;
   concessionCount: number;
 }

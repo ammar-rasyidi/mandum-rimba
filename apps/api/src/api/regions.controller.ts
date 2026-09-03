@@ -9,8 +9,6 @@ import {
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import {
-  Alert,
-  AlertDocument,
   Concession,
   ConcessionDocument,
   Disaster,
@@ -29,7 +27,6 @@ export class RegionsController {
     @InjectModel(Region.name) private regionModel: Model<RegionDocument>,
     @InjectModel(ForestLossAnnual.name)
     private lossModel: Model<ForestLossAnnualDocument>,
-    @InjectModel(Alert.name) private alertModel: Model<AlertDocument>,
     @InjectModel(Disaster.name) private disasterModel: Model<DisasterDocument>,
     @InjectModel(Concession.name)
     private concessionModel: Model<ConcessionDocument>,
@@ -58,29 +55,22 @@ export class RegionsController {
       .select("-geom -geomSimplified");
     if (!region) throw new NotFoundException();
 
-    // alerts/disasters are stored against kabupaten; a province summary
+    // disasters are stored against kabupaten; a province summary
     // must include its children
     const children = await this.regionModel
       .find({ parentId: region._id })
       .select("_id");
     const regionIds = [region._id, ...children.map((c) => c._id)];
 
-    const since90d = new Date(Date.now() - 90 * 86_400_000);
-    const [lossByYear, alertCount90d, disasterCount, concessionCount] =
-      await Promise.all([
-        this.lossModel.find({ regionId: region._id }).sort({ year: 1 }),
-        this.alertModel.countDocuments({
-          regionId: { $in: regionIds },
-          alertDate: { $gte: since90d },
-        }),
-        this.disasterModel.countDocuments({ regionId: { $in: regionIds } }),
-        this.countConcessions(region),
-      ]);
+    const [lossByYear, disasterCount, concessionCount] = await Promise.all([
+      this.lossModel.find({ regionId: region._id }).sort({ year: 1 }),
+      this.disasterModel.countDocuments({ regionId: { $in: regionIds } }),
+      this.countConcessions(region),
+    ]);
 
     return {
       region,
       lossByYear,
-      alertCount90d,
       disasterCount,
       concessionCount,
     };

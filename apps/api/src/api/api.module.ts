@@ -1,7 +1,6 @@
 import { Module } from "@nestjs/common";
 import { StatusModule } from "../status/status.module";
 import { RegionsController } from "./regions.controller";
-import { AlertsController } from "./alerts.controller";
 import { ConcessionsController } from "./concessions.controller";
 import { DisastersController } from "./disasters.controller";
 import { FiresController } from "./fires.controller";
@@ -18,7 +17,6 @@ import { AdminController } from "./admin.controller";
   imports: [StatusModule],
   controllers: [
     RegionsController,
-    AlertsController,
     ConcessionsController,
     DisastersController,
     FiresController,

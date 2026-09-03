@@ -178,16 +178,6 @@ export const LAYERS: LayerDef[] = [
   },
   // ---- circles (drawn on top) ----
   {
-    id: "alerts",
-    tile: "alerts",
-    kind: "circle",
-    color: "#ffee58", // yellow 400
-    strokeColor: "#263238",
-    defaultOn: false,
-    sourceName: "GFW, RADD / GLAD (UMD, WUR)",
-    sourceUrl: "https://www.globalforestwatch.org/map/",
-  },
-  {
     id: "disasters",
     tile: "disasters",
     kind: "circle",

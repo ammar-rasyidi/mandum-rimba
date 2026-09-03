@@ -82,8 +82,8 @@ export const DATA_ACKNOWLEDGEMENTS: CreditItem[] = [
   {
     name: "Global Forest Watch (WRI)",
     what: {
-      id: "Peringatan deforestasi, kehilangan tutupan pohon, konsesi",
-      en: "Deforestation alerts, tree cover loss, concessions",
+      id: "Kehilangan tutupan pohon, konsesi",
+      en: "Tree cover loss, concessions",
     },
     url: "https://www.globalforestwatch.org",
   },

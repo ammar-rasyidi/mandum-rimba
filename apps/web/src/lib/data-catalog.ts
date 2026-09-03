@@ -24,23 +24,6 @@ export interface DatasetEntry {
 
 export const DATA_CATALOG: DatasetEntry[] = [
   {
-    layer: "alerts",
-    name: {
-      id: "Peringatan deforestasi (RADD, GLAD-L, GLAD-S2)",
-      en: "Deforestation alerts (RADD, GLAD-L, GLAD-S2)",
-    },
-    org: "Global Forest Watch, Wageningen University & University of Maryland",
-    url: "https://data-api.globalforestwatch.org",
-    license: "CC BY 4.0",
-    updated: "Harian / Daily",
-    coverage: { id: "Indonesia (per kabupaten)", en: "Indonesia (by district)" },
-    description: {
-      id: "Titik peringatan pembukaan hutan hampir waktu-nyata dari radar dan optik satelit, resolusi 10–30 m.",
-      en: "Near-real-time forest-clearing alert points from satellite radar and optical sensors, 10–30 m resolution.",
-    },
-    status: "active",
-  },
-  {
     layer: "forestloss",
     name: {
       id: "Kehilangan tutupan pohon (Hansen/UMD, 2001–2025)",

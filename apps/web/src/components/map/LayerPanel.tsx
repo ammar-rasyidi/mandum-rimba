@@ -21,7 +21,6 @@ import {
   worldviewUrl,
 } from "@/lib/gibs";
 import {
-  ALERT_SYSTEMS,
   CONCESSION_TYPES,
   DISASTER_TYPES,
   FIRE_CONFIDENCE,
@@ -104,7 +103,6 @@ const SUB_FILTERS: Record<
   string,
   | {
       key:
-        | "systems"
         | "disasterTypes"
         | "concessionTypes"
         | "protectedCategories"
@@ -114,7 +112,6 @@ const SUB_FILTERS: Record<
     }
   | undefined
 > = {
-  alerts: { key: "systems", options: ALERT_SYSTEMS },
   disasters: { key: "disasterTypes", options: DISASTER_TYPES },
   concessions: { key: "concessionTypes", options: CONCESSION_TYPES },
   protected: { key: "protectedCategories", options: PROTECTED_CATEGORIES },
@@ -122,10 +119,11 @@ const SUB_FILTERS: Record<
   fires: { key: "fireConfidence", options: FIRE_CONFIDENCE },
 };
 
-// TEMP (2026-06): hidden from the filter menu until their data is ready:
-// "alerts" (deforestasi) and "disasters" (banjir/longsor). To bring them back,
-// remove the id(s) below. Nothing else (layer registry, map, ingest) changed.
-const HIDDEN_LAYERS = new Set(["alerts", "disasters"]);
+// TEMP (2026-06): "disasters" (banjir/longsor) is hidden from the filter menu
+// until its data is ready. To bring it back, remove the id below; nothing else
+// (layer registry, map, ingest) changed. "alerts" was hidden here too and has
+// since been removed entirely — see the GFW alerts removal commit.
+const HIDDEN_LAYERS = new Set(["disasters"]);
 
 export default function LayerPanel({
   layers,
@@ -624,29 +622,6 @@ export default function LayerPanel({
                         </a>
                       </>
                     )}
-                  </div>
-                )}
-
-                {active && def.id === "alerts" && (
-                  <div className={subFilters}>
-                    <div className="w-full">
-                      <label
-                        className="mb-[0.3rem] block text-[0.78rem] text-muted"
-                        htmlFor="days-back"
-                      >
-                        {t("daysBack")}: {filters.days}
-                      </label>
-                      <input
-                        id="days-back"
-                        type="range"
-                        min={7}
-                        max={90}
-                        step={1}
-                        value={filters.days}
-                        onChange={(e) => set("days", Number(e.target.value))}
-                        className="w-full"
-                      />
-                    </div>
                   </div>
                 )}
 

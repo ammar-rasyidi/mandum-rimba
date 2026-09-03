@@ -9,7 +9,6 @@ export const revalidate = 3600;
 interface RegionSummary {
   region: { name: string; nameEn: string; level: string; slug: string };
   lossByYear: { year: number; lossHa: number }[];
-  alertCount90d: number;
   disasterCount: number;
   concessionCount: number;
 }
@@ -39,7 +38,6 @@ export default async function RegionPage({
 
       <div className="my-6 grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(180px,1fr))]">
         {[
-          [summary.alertCount90d, t("alerts90d")],
           [summary.disasterCount, t("disasters")],
           [summary.concessionCount, t("concessions")],
         ].map(([value, label]) => (

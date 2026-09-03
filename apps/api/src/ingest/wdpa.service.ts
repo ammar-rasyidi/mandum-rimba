@@ -3,8 +3,6 @@ import { Cron } from "@nestjs/schedule";
 import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import {
-  Alert,
-  AlertDocument,
   ProtectedArea,
   ProtectedAreaDocument,
 } from "../common/schemas";
@@ -144,7 +142,6 @@ export class WdpaService implements OnModuleInit {
   constructor(
     @InjectModel(ProtectedArea.name)
     private protectedModel: Model<ProtectedAreaDocument>,
-    @InjectModel(Alert.name) private alertModel: Model<AlertDocument>,
     private readonly locks: JobLockService,
     private readonly archiver: ArchiverService,
     private readonly http: HttpService,

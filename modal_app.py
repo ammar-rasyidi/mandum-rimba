@@ -100,7 +100,6 @@ env_secret = modal.Secret.from_name("mandumrimba-env")
 # The data-ingest jobs (order among them is not significant). Mirrors the
 # staggered WIB cron times in the NestJS services.
 INGEST_JOBS = [
-    "gfw-alerts",
     "gfw-annual",
     "bnpb-dibi",
     "concessions",

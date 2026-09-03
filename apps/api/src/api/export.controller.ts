@@ -10,8 +10,6 @@ import { InjectModel } from "@nestjs/mongoose";
 import { Model } from "mongoose";
 import type { Response } from "express";
 import {
-  Alert,
-  AlertDocument,
   Disaster,
   DisasterDocument,
   ForestLossAnnual,
@@ -30,7 +28,6 @@ export class ExportController {
   private static readonly MAX_ROWS = 50_000;
 
   constructor(
-    @InjectModel(Alert.name) private alertModel: Model<AlertDocument>,
     @InjectModel(Disaster.name) private disasterModel: Model<DisasterDocument>,
     @InjectModel(ForestLossAnnual.name)
     private lossModel: Model<ForestLossAnnualDocument>,
@@ -81,15 +78,13 @@ export class ExportController {
     const limit = ExportController.MAX_ROWS;
 
     switch (dataset) {
-      case "alerts":
-        return this.alertModel.find(regionFilter).limit(limit).lean();
       case "disasters":
         return this.disasterModel.find(regionFilter).limit(limit).lean();
       case "forest-loss":
         return this.lossModel.find(regionFilter).limit(limit).lean();
       default:
         throw new BadRequestException(
-          "dataset must be one of: alerts, disasters, forest-loss",
+          "dataset must be one of: disasters, forest-loss",
         );
     }
   }

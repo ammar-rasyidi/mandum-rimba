@@ -2,8 +2,9 @@
 
 Builds the gridded field behind the "Udara & asap" map layer and publishes it
 to Cloudflare R2 as static JSON. Run twice a day by Modal
-(`modal_app.py::air_field`); the web fetches the result straight from the CDN,
-so neither Vercel nor the browser ever talks to a weather API.
+(`modal_air.py::air_field`, its own app — see that file for why it is not part
+of the ingest pipeline); the web fetches the result straight from the CDN, so
+neither Vercel nor the browser ever talks to a weather API.
 
 ## Why this exists
 

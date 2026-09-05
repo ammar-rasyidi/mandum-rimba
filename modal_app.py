@@ -13,8 +13,11 @@ Run everything: modal run modal_app.py::run_job --job all      (ingest+tiles+sta
 Secrets:       a Modal secret named "mandumrimba-env" holding MONGODB_URI,
                R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET,
                R2_PUBLIC_BASE_URL, GFW_API_KEY, TRASE_CSV_URL, MODI_CSV_URL,
-               MINING_IUP_GEOJSON_URL, ADMIN_API_KEY, and (optional but
-               wanted) ADS_API_KEY for the Copernicus CAMS download.
+               MINING_IUP_GEOJSON_URL, ADMIN_API_KEY.
+
+The "Udara & asap" field is NOT here — it lives in modal_air.py as its own app,
+because it runs twice a day against these jobs' twice a year and needs none of
+this image. See that file's docstring.
 """
 
 import subprocess
@@ -39,22 +42,6 @@ image = (
         "make -C /tmp/tippecanoe -j4",
         "make -C /tmp/tippecanoe install",
         "rm -rf /tmp/tippecanoe",
-    )
-    # PM2.5 comes from Copernicus ADS as NetCDF, which xarray reads without the
-    # eccodes/GRIB toolchain — that is precisely why ADS was chosen over a GRIB
-    # product. boto3 writes the result to R2.
-    .pip_install(
-        "xarray>=2024.6.0",
-        "h5netcdf>=1.3.0",
-        # h5netcdf no longer depends on h5py itself; without it xarray fails to
-        # open the CAMS NetCDF *after* downloading it
-        "h5py>=3.11",
-        # xarray's .interp() regrids CAMS onto our axes and needs scipy
-        "scipy>=1.13",
-        "numpy>=1.26",
-        "cdsapi>=0.7.2",
-        "boto3>=1.34",
-        "requests>=2.32",
     )
     # Node 22 + pnpm (matches the repo's packageManager)
     .run_commands(
@@ -156,32 +143,6 @@ def _run_many(jobs: list[str]) -> None:
 @app.function(secrets=[env_secret], schedule=modal.Cron("0 18 1 1,7 *"), timeout=6 * 3600)
 def pipeline() -> None:
     _run_many(JOB_ORDER)
-
-
-# ── Air field: the only thing here that runs often ─────────────────────────
-# 11:00 and 23:00 UTC (18:00 and 06:00 WIB). CAMS runs at 00 and 12 UTC and is
-# published about ten hours later — the 00Z cycle by 10:00 UTC, the 12Z cycle by
-# 22:00 UTC (ECMWF's documented timing, and 00Z was observed landing at 10:03).
-# An hour of slack after each, because firing before publication does not fail
-# loudly: the builder just falls back to the previous run and produces a
-# plausible, quietly stale field.
-#
-# It is separate from `pipeline` above on purpose: the ingest sources refresh on
-# the order of months, air quality on the order of hours. Sharing one schedule
-# would mean either stale air or pointlessly re-pulling GBIF twice a day.
-#
-# Output is static JSON on R2 (`air/index.json` + `air/t/<iso>.json`), which the
-# web fetches straight from the CDN — no Vercel function, no browser-side
-# weather API call, and no per-request upstream cost. See
-# scripts/air-field/README.md for why a gridded source replaced point queries.
-@app.function(secrets=[env_secret], schedule=modal.Cron("0 11,23 * * *"), timeout=45 * 60)
-def air_field() -> None:
-    print("[mandumrimba] ▶ job: air-field", flush=True)
-    subprocess.run(
-        ["python", "-u", "/repo/scripts/air-field/build_air_field.py"],
-        check=True,
-    )
-    print("[mandumrimba] ✓ job: air-field", flush=True)
 
 
 # On-demand job(s):

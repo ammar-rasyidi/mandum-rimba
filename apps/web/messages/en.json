@@ -425,7 +425,6 @@
   },
   "region": {
     "lossPerYear": "Tree cover loss per year (ha)",
-    "alerts90d": "Alerts in the last 90 days",
     "disasters": "Recorded disasters",
     "concessions": "Intersecting concessions",
     "notFound": "Region not found, or the API could not be reached.",
@@ -442,7 +441,7 @@
     "intro": "Every layer in Mandum Rimba has a source, a retrieval date, and a methodology. This page explains where the data comes from, how it is processed, and its limitations.",
     "sourcesTitle": "Data sources",
     "limitsTitle": "Limitations",
-    "limitsBody": "Satellite alerts have false positives; pixel resolution is 10-30 m; public concession boundaries can be outdated; watershed aggregation approximates by intersecting administrative regions. The methodology version is stamped on every derived record and every change is noted in this changelog.",
+    "limitsBody": "Satellite tree-cover-loss detection has false positives and is not always deforestation; pixel resolution is 10-30 m; public concession boundaries can be outdated. The methodology version is stamped on every derived record and every change is noted in this changelog.",
     "disclaimerTitle": "Legal note",
     "disclaimerBody": "Mandum Rimba assembles public third-party data and presents it as-is; it draws no conclusions, accuses no one, and does not assert that any party has broken the law. Names of companies, concessions, and places come from the source datasets, not from us. Overlaps between layers are context, not verdicts, and tree cover loss is not always illegal deforestation. We honour the presumption of innocence, and we welcome correction requests, which we review and fix.",
     "changelogTitle": "Methodology changelog"

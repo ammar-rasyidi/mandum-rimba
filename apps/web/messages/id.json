@@ -425,7 +425,6 @@
   },
   "region": {
     "lossPerYear": "Kehilangan tutupan pohon per tahun (ha)",
-    "alerts90d": "Peringatan 90 hari terakhir",
     "disasters": "Bencana tercatat",
     "concessions": "Konsesi beririsan",
     "notFound": "Wilayah tidak ditemukan, atau API tidak dapat dihubungi.",
@@ -442,7 +441,7 @@
     "intro": "Setiap lapisan di Mandum Rimba memiliki sumber, tanggal pengambilan, dan metodologi. Halaman ini menjelaskan dari mana data berasal, bagaimana diolah, serta batasannya.",
     "sourcesTitle": "Sumber data",
     "limitsTitle": "Batasan",
-    "limitsBody": "Peringatan satelit memiliki false positive; resolusi piksel 10–30 m; batas konsesi publik bisa kedaluwarsa; agregasi DAS adalah pendekatan berbasis wilayah administratif yang beririsan. Versi metodologi dicatat pada setiap rekaman turunan dan setiap perubahan dicatat di changelog ini.",
+    "limitsBody": "Deteksi kehilangan tutupan pohon dari satelit memiliki false positive dan tidak selalu berarti deforestasi; resolusi piksel 10–30 m; batas konsesi publik bisa kedaluwarsa. Versi metodologi dicatat pada setiap rekaman turunan dan setiap perubahan dicatat di changelog ini.",
     "disclaimerTitle": "Catatan hukum",
     "disclaimerBody": "Mandum Rimba menghimpun data publik pihak ketiga dan menampilkannya apa adanya; kami tidak menyimpulkan, tidak menuduh, dan tidak menyatakan bahwa pihak mana pun melanggar hukum. Nama perusahaan, konsesi, dan lokasi berasal langsung dari dataset sumbernya, bukan dari kami. Irisan antar-lapisan adalah konteks, bukan vonis, dan kehilangan tutupan pohon tidak selalu berarti deforestasi ilegal. Kami menghormati asas praduga tak bersalah, dan terbuka atas permintaan koreksi untuk kami tinjau dan perbaiki.",
     "changelogTitle": "Changelog metodologi"

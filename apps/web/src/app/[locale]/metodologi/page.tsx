@@ -57,6 +57,16 @@ const SOURCES = [
     license: "CC BY 4.0",
   },
   {
+    name: "RESOLVE Ecoregions 2017, terrestrial ecoregions of the archipelago (coloured by RESOLVE's own per-ecoregion palette)",
+    url: "https://ecoregions.appspot.com/",
+    license: "CC BY 4.0",
+  },
+  {
+    name: "Biogeographic transition lines (Wallace 1863, Weber, Lydekker), drawn by us from the published historical descriptions, approximate as these lines always are",
+    url: "https://en.wikipedia.org/wiki/Wallace_Line",
+    license: "Our own rendering of historical descriptions",
+  },
+  {
     name: "Protected Planet (WDPA), protected areas (UNEP-WCMC & IUCN)",
     url: "https://www.protectedplanet.net",
     license: "WDPA terms: non-commercial display with attribution + link, no downloads/redistribution",
@@ -77,6 +87,21 @@ const SOURCES = [
     license: "CC BY 4.0",
   },
   {
+    name: "Copernicus CAMS global atmospheric composition forecasts, surface PM2.5 (the Udara & asap colour field), with NOAA GFS 10 m wind for the animated streamlines",
+    url: "https://ads.atmosphere.copernicus.eu/datasets/cams-global-atmospheric-composition-forecasts",
+    license: "Copernicus & NOAA, free with attribution",
+  },
+  {
+    name: "NASA Worldview / GIBS, Corrected Reflectance (True Color) daily imagery, streamed keyless for the karhutla day view",
+    url: "https://worldview.earthdata.nasa.gov/",
+    license: "Public domain (NASA)",
+  },
+  {
+    name: "NASA FIRMS thermal anomalies via EOSDIS GIBS, archived daily hotspots (a hotspot is an unverified heat detection, not a confirmed fire)",
+    url: "https://worldview.earthdata.nasa.gov/",
+    license: "Public domain (NASA)",
+  },
+  {
     name: "Trase, palm exporter ↔ deforestation linkage",
     url: "https://trase.earth",
     license: "CC BY 4.0",
@@ -92,9 +117,9 @@ const SOURCES = [
     license: "Academic / non-commercial use",
   },
   {
-    name: "HydroBASINS, watersheds",
-    url: "https://www.hydrosheds.org/products/hydrobasins",
-    license: "HydroSHEDS license",
+    name: "NASA EOSDIS GIBS reference overlays (place names, borders, roads, coastlines, from OpenStreetMap), shown with the satellite imagery to restore locational context, never used in any calculation",
+    url: "https://worldview.earthdata.nasa.gov/",
+    license: "OpenStreetMap ODbL",
   },
 ];
 

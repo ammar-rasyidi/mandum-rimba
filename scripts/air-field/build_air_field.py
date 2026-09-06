@@ -57,11 +57,26 @@ PM_STEP_FALLBACK = 0.75
 # between nodes, so finer would cost quota and buy nothing visible.
 WIND_STEP = 2.5
 
-# 3-hourly out to 48 h from NOW — which is not the same as 48 h of lead time.
+# HOURLY out to 48 h from NOW — which is not the same as 48 h of lead time.
 # A CAMS run is published hours after its reference time, so by the time we can
 # fetch it the run is already 8-20 h old and lead 0 is yesterday. Ask far enough
 # ahead that "now" is inside the window, then keep only the steps that are.
-LEAD_HOURS = list(range(0, 73, 3))
+#
+# Hourly, not 3-hourly, because the map shows "now" by blending the two steps
+# that bracket it, and haze moves fast enough that a 3 h gap is guesswork:
+# Palangka Raya went 96 -> 295 -> 553 ug/m3 in two 3 h intervals, so the blend
+# was interpolating across swings of 200-260. CAMS publishes every lead hour
+# 0..120 for surface PM2.5 (verified against the dataset's own constraints and
+# by retrieving leads 1,2,3,4 of a 12:00Z run), so the finer axis is free at
+# the source: still ONE request, just a larger file.
+#
+# It costs the reader nothing either. The client fetches only the two steps
+# bracketing now, never the series, so page weight is unchanged; only R2
+# storage grows (~1.6 -> ~4.7 MB per build, pruned to two builds).
+#
+# This buys accuracy of the hour shown, NOT freshness. The 10-22 h wait for
+# Copernicus to publish a cycle is unchanged and cannot be shortened here.
+LEAD_HOURS = list(range(0, 73))
 
 
 PREFIX = "air"
@@ -580,7 +595,7 @@ def main():
         "--steps",
         type=int,
         default=len(LEAD_HOURS),
-        help="how many 3-hourly steps to publish (default: all). This does NOT "
+        help="how many hourly steps to publish (default: all). This does NOT "
         "change upstream cost: both sources are fetched once as a series and "
         "sliced per step. Use it to keep a test's output small, not cheap.",
     )
@@ -612,13 +627,24 @@ def main():
             "outage, since the run walk-back covers two days",
             flush=True,
         )
-        base = now - timedelta(hours=now.hour % 3)
+        base = now  # already truncated to the hour; the axis is hourly
         times = [
             (base + timedelta(hours=h)).strftime("%Y-%m-%dT%H:%M")
             for h in LEAD_HOURS[: max(1, args.steps)]
             if base + timedelta(hours=h) <= horizon
         ]
         pm_step, pm_nx, pm_ny, pm_frames, box, run_at = pm25_from_open_meteo(times)
+
+    # The real spacing of what we are about to publish. CAMS decides its own
+    # valid times, so this is measured, not assumed; the smallest gap is the
+    # honest answer when a series is ever uneven.
+    _ts = [_parse(t) for t in times]
+    step_hours = (
+        min((b - a).total_seconds() for a, b in zip(_ts, _ts[1:])) / 3600
+        if len(_ts) > 1
+        else 1
+    )
+    step_hours = int(step_hours) if step_hours == int(step_hours) else round(step_hours, 2)
 
     print(
         f"[air] time axis: {len(times)} steps, {times[0]} -> {times[-1]} "
@@ -719,8 +745,11 @@ def main():
         # model run these steps come from (UTC), so the display can say where
         # its numbers came from instead of only when they are meant to apply
         "runAt": run_at,
-        # hours between published steps; anything shown between them is ours
-        "stepHours": 3,
+        # hours between published steps; anything shown between them is ours.
+        # Derived from the axis actually published rather than written by hand:
+        # it was hardcoded to 3 and would have silently lied the moment
+        # LEAD_HOURS changed.
+        "stepHours": step_hours,
         "attribution": ATTRIBUTION,
         "generatedAt": datetime.now(timezone.utc).isoformat(),
     }

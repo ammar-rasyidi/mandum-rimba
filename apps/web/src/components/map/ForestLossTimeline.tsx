@@ -17,6 +17,7 @@ export default function ForestLossTimeline({
   playing,
   onPlayToggle,
   mobile = false,
+  stacked = false,
 }: {
   years: number[];
   idx: number;
@@ -24,6 +25,8 @@ export default function ForestLossTimeline({
   playing: boolean;
   onPlayToggle: () => void;
   mobile?: boolean;
+  /** let the parent position this, so two timelines can share one column */
+  stacked?: boolean;
 }) {
   const t = useTranslations("map");
   const year = years[idx];
@@ -43,13 +46,19 @@ export default function ForestLossTimeline({
 
   return (
     <div
-      className={`glass absolute left-1/2 z-[5] -translate-x-1/2 animate-[rise-in_0.24s_ease] rounded-[18px] ${
-        mobile
-          ? "w-[calc(100%-1rem)] p-3"
-          : "bottom-6 w-[min(560px,calc(100%-1.5rem))] p-3.5"
-      }`}
-      // on mobile, ride just above the peeking sheet (SHEET peek = 22dvh)
-      style={mobile ? { bottom: "calc(22dvh + 0.6rem)" } : undefined}
+      className={
+        stacked
+          ? "glass w-full animate-[rise-in_0.24s_ease] rounded-[18px] p-3"
+          : `glass absolute left-1/2 z-[5] -translate-x-1/2 animate-[rise-in_0.24s_ease] rounded-[18px] ${
+              mobile
+                ? "w-[calc(100%-1rem)] p-3"
+                : "bottom-6 w-[min(560px,calc(100%-1.5rem))] p-3.5"
+            }`
+      }
+      // on mobile the parent owns the position: the two timelines share one
+      // bottom-anchored column, because guessing this card's height to offset
+      // the other one is wrong the moment its wording or the viewport changes
+      style={!stacked && mobile ? { bottom: "calc(22dvh + 0.6rem)" } : undefined}
       aria-label={t("lossTimelineTitle")}
     >
       <div className="mb-2 flex items-center justify-between gap-3">

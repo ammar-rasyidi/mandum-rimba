@@ -1,12 +1,13 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { LAYER_SUBCOLORS, swatchColor, type LayerDef } from "@/lib/layers";
 import PlaceSearch from "./PlaceSearch";
 import SpeciesSearch from "./SpeciesSearch";
 import BoundaryUpload from "./BoundaryUpload";
 import GibsProductSelect from "./GibsProductSelect";
 import AirLegend from "./AirLegend";
+import AirTimeline from "./AirTimeline";
 import MeasureTool from "./MeasureTool";
 import type { FamilyStat } from "@/lib/species";
 import type { ImportResult } from "@/lib/geo-import";
@@ -43,6 +44,13 @@ interface Props {
     runAt: string | null;
     attribution: string;
   } | null;
+  /** the published hourly axis, so the air player can be drawn for it */
+  airAxis?: { stepsMs: number[]; runAt: string | null } | null;
+  /** the moment the air field is showing */
+  airAtMs?: number;
+  onAirAt?: (ms: number) => void;
+  airPlaying?: boolean;
+  onAirPlayToggle?: () => void;
   filters: MapFilters;
   onChange: (next: MapFilters) => void;
   onReset: () => void;
@@ -129,6 +137,11 @@ export default function LayerPanel({
   layers,
   availableTiles,
   airStatus,
+  airAxis,
+  airAtMs,
+  onAirAt,
+  airPlaying = false,
+  onAirPlayToggle,
   filters,
   onChange,
   onReset,
@@ -158,6 +171,7 @@ export default function LayerPanel({
   variant = "float",
 }: Props) {
   const t = useTranslations("map");
+  const locale = useLocale();
 
   if (minimized && variant === "float") {
     return (
@@ -539,6 +553,35 @@ export default function LayerPanel({
                     }}
                   />
                 )}
+
+                {/* the hour player, directly under the scale it is read with.
+                    Only once the axis is in: a slider with nothing to slide
+                    over is worse than no slider. */}
+                {/* desktop only: on a phone MapView floats this above the
+                    sheet, where it can actually be reached */}
+                {active &&
+                  def.id === "air" &&
+                  variant !== "sheet" &&
+                  airAxis &&
+                  airAxis.stepsMs.length > 1 &&
+                  onAirAt && (
+                    <AirTimeline
+                      stepsMs={airAxis.stepsMs}
+                      atMs={airAtMs ?? Date.now()}
+                      onAt={onAirAt}
+                      playing={airPlaying}
+                      onPlayToggle={onAirPlayToggle ?? (() => {})}
+                      locale={locale}
+                      labels={{
+                        title: t("airTimeTitle"),
+                        forecast: t("airForecast"),
+                        play: t("airPlay"),
+                        pause: t("airPause"),
+                        toNow: t("airToNow"),
+                        ahead: t("airAhead"),
+                      }}
+                    />
+                  )}
 
                 {/* karhutla: pick the Worldview product, then scrub the day. The
                 product is shown by its exact NASA Worldview / GIBS layer name,

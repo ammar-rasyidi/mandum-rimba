@@ -85,7 +85,7 @@ const TARGET_CANVAS_PX = 1_400_000;
 const SUBSAMPLE_MIN = 2;
 const SUBSAMPLE_MAX = 10;
 
-function subsampleFor(nx: number, ny: number): number {
+export function subsampleFor(nx: number, ny: number): number {
   const cells = Math.max(1, (nx - 1) * (ny - 1));
   const ideal = Math.round(Math.sqrt(TARGET_CANVAS_PX / cells));
   return Math.min(SUBSAMPLE_MAX, Math.max(SUBSAMPLE_MIN, ideal));
@@ -255,10 +255,19 @@ export function rasteriseGrid(
   pm: GridLayer,
   box: FieldBox,
   aqiOf: (pm25: number) => number,
+  /**
+   * Override the samples-per-cell. Bicubic sampling is the single most
+   * expensive thing this layer does — 54 ms for the default 1200x1100, measured
+   * — so playback drops it and pausing restores it. A caller that omits this
+   * gets the full-detail field, which is what a still image should be.
+   */
+  subOverride?: number,
 ): RasterResult | null {
   if (pm.values.length === 0 || pm.nx < 2 || pm.ny < 2) return null;
 
-  const sub = subsampleFor(pm.nx, pm.ny);
+  const sub = subOverride
+    ? Math.min(SUBSAMPLE_MAX, Math.max(SUBSAMPLE_MIN, Math.round(subOverride)))
+    : subsampleFor(pm.nx, pm.ny);
   const w = (pm.nx - 1) * sub;
   const h = (pm.ny - 1) * sub;
   if (w <= 0 || h <= 0) return null;

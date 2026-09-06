@@ -161,7 +161,7 @@ export default function AirLegend({
         <span>{labels.hazardous}</span>
       </div>
 
-      {/* Which hour is on screen. The field is a 3-hourly series and the client
+      {/* Which hour is on screen. The field is an hourly series and the client
           picks the step nearest to now, so without this a reader cannot tell
           what they are looking at — or line it up against the CAMS viewer. */}
       {runLabel && (

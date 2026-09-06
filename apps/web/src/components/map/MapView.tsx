@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import maplibregl from "maplibre-gl";
 import { Protocol } from "pmtiles";
 import { LAYERS, colorExpression, type LayerDef } from "@/lib/layers";
@@ -14,6 +14,7 @@ import MobilePanelSheet, {
   type SheetSnap,
 } from "./MobilePanelSheet";
 import AirField from "./AirField";
+import AirTimeline from "./AirTimeline";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import DetailDrawer, { type SelectedFeature } from "./DetailDrawer";
 import SpeciesInfo from "./SpeciesInfo";
@@ -167,10 +168,51 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
     runAt: string | null;
     attribution: string;
   } | null>(null);
+  /**
+   * The air field's published hourly axis, and which hour is on screen.
+   * `airAtMs` null means "follow the clock" — the live view. Scrubbing pins it
+   * to a moment; "Sekarang" un-pins it. Playback advances inside AirField, so
+   * this only holds the label's value, updated a few times a second.
+   */
+  const [airAxis, setAirAxis] = useState<{
+    stepsMs: number[];
+    runAt: string | null;
+  } | null>(null);
+  const [airAtMs, setAirAtMs] = useState<number | null>(null);
+  const [airPlaying, setAirPlaying] = useState(false);
+  /** the layer set as it was last render, to spot what the reader just added */
+  const prevLayersRef = useRef<string[]>([]);
+
+
   const [availableTiles, setAvailableTiles] = useState<string[]>([]);
   const [filters, setFilters] = useState<MapFilters>(
     () => readUrlState().filters,
   );
+
+  /**
+   * Stop the hour player on either of two things happening.
+   *
+   * Switching the air layer OFF is the obvious one: the control disappears
+   * with it, and a clock still running behind a hidden layer is invisible work
+   * that also resumes mid-flight when the layer comes back.
+   *
+   * Switching some OTHER layer ON is the second. Turning on concessions or
+   * protected areas is a request to look at something, and an animating field
+   * underneath pulls the eye away from whatever that was. So the animation
+   * yields. Note it fires on the TRANSITION, not on the state: once stopped,
+   * the reader can press play again and keep both layers on.
+   */
+  useEffect(() => {
+    const prev = prevLayersRef.current;
+    const now = filters.layers;
+    prevLayersRef.current = now;
+    if (!now.includes("air")) {
+      setAirPlaying(false);
+      return;
+    }
+    const added = now.filter((l) => l !== "air" && !prev.includes(l));
+    if (added.length > 0) setAirPlaying(false);
+  }, [filters.layers]);
   const [selected, setSelected] = useState<SelectedFeature | null>(null);
   const [shareOpen, setShareOpen] = useState(false);
   // when sharing from a Place Story, the beat's facts to bake into the card
@@ -239,6 +281,7 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
   const [lossYearIdx, setLossYearIdx] = useState(LOSS_YEARS.length - 1);
   const [lossPlaying, setLossPlaying] = useState(false);
   const showLoss = filters.layers.includes("forestloss");
+  const showAirPlayer = filters.layers.includes("air");
   // The UTC day both NASA Worldview / GIBS layers are actually drawn at, and the
   // single source of truth for it. filters.karhutlaDate is "" until the effect
   // below resolves it (filters.ts explains why it cannot be defaulted at module
@@ -255,6 +298,7 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
   );
   const theme = useSiteTheme();
   const locale = useLocale();
+  const tMap = useTranslations("map");
 
   // Pin the karhutla date to a real day as soon as we're on the client. Doing it
   // here (rather than in DEFAULT_FILTERS) keeps the server-rendered markup free of
@@ -1739,6 +1783,10 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
           map={mapRef.current}
           container={mapHost}
           visible={filters.layers.includes("air")}
+          atMs={airAtMs}
+          playing={airPlaying}
+          onAxis={setAirAxis}
+          onTick={setAirAtMs}
           onStatus={setAirStatus}
         />
       )}
@@ -1760,6 +1808,16 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
           layers={groupLayers}
           availableTiles={availableTiles}
           airStatus={airStatus}
+          airAxis={airAxis}
+          airAtMs={airAtMs ?? undefined}
+          onAirAt={(ms) => {
+            // scrubbing is a deliberate choice of hour, so it stops playback —
+            // otherwise the thumb fights the clock under the reader's finger
+            setAirPlaying(false);
+            setAirAtMs(ms);
+          }}
+          airPlaying={airPlaying}
+          onAirPlayToggle={() => setAirPlaying((v) => !v)}
           filters={filters}
           onChange={setFilters}
           onShare={() => setShareOpen(true)}
@@ -1898,21 +1956,72 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
       {/* gate on `ready` (false on the server and the first client render) so
           showLoss — which derives from URL-seeded filters — can't mismatch
           during hydration when the URL has forestloss on */}
+      {ready && showLoss && !storyId && !isMobile && (
+        <ForestLossTimeline
+          years={LOSS_YEARS}
+          idx={lossYearIdx}
+          onIdx={(i) => {
+            setLossPlaying(false);
+            setLossYearIdx(i);
+          }}
+          playing={lossPlaying}
+          onPlayToggle={toggleLossPlay}
+        />
+      )}
+
+      {/* PHONES: one bottom-anchored column above the peeking sheet.
+          On desktop the air player lives inside the layer panel, under the
+          scale it is read with. On a phone that panel is a sheet that spends
+          most of its life peeking, so a control inside it is out of reach —
+          it floats here instead, the same glass as the loss timeline.
+          They share a column rather than each guessing the other's height:
+          the loss card is 14.4rem tall today and would change with its own
+          wording, the locale, or the viewport. */}
       {ready &&
-        showLoss &&
+        isMobile &&
         !storyId &&
-        !(isMobile && sheetSnap === SHEET_FULL) && (
-          <ForestLossTimeline
-            years={LOSS_YEARS}
-            idx={lossYearIdx}
-            onIdx={(i) => {
-              setLossPlaying(false);
-              setLossYearIdx(i);
-            }}
-            playing={lossPlaying}
-            onPlayToggle={toggleLossPlay}
-            mobile={isMobile}
-          />
+        sheetSnap !== SHEET_FULL &&
+        (showLoss || (showAirPlayer && airAxis && airAxis.stepsMs.length > 1)) && (
+          <div
+            className="absolute left-1/2 z-[5] flex w-[calc(100%-1rem)] -translate-x-1/2 flex-col gap-2"
+            style={{ bottom: "calc(22dvh + 0.6rem)" }}
+          >
+            {showAirPlayer && airAxis && airAxis.stepsMs.length > 1 && (
+              <AirTimeline
+                mobile
+                stepsMs={airAxis.stepsMs}
+                atMs={airAtMs ?? Date.now()}
+                onAt={(ms) => {
+                  setAirPlaying(false);
+                  setAirAtMs(ms);
+                }}
+                playing={airPlaying}
+                onPlayToggle={() => setAirPlaying((v) => !v)}
+                locale={locale}
+                labels={{
+                  title: tMap("airTimeTitle"),
+                  forecast: tMap("airForecast"),
+                  play: tMap("airPlay"),
+                  pause: tMap("airPause"),
+                  toNow: tMap("airToNow"),
+                  ahead: tMap("airAhead"),
+                }}
+              />
+            )}
+            {showLoss && (
+              <ForestLossTimeline
+                stacked
+                years={LOSS_YEARS}
+                idx={lossYearIdx}
+                onIdx={(i) => {
+                  setLossPlaying(false);
+                  setLossYearIdx(i);
+                }}
+                playing={lossPlaying}
+                onPlayToggle={toggleLossPlay}
+              />
+            )}
+          </div>
         )}
     </div>
   );

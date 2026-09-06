@@ -410,6 +410,13 @@
     "airHazardous": "Hazardous",
     "airNote": "CAMS model at ~0.4°, not ground measurements. Top row AQI, bottom µg/m³.",
     "airRun": "CAMS run:",
+    "airTimeTitle": "Hour shown",
+    "airNow": "Now",
+    "airForecast": "forecast",
+    "airAhead": "h",
+    "airPlay": "Play",
+    "airPause": "Pause",
+    "airToNow": "Now",
     "aqiCategory": {
       "good": "Good",
       "moderate": "Moderate",

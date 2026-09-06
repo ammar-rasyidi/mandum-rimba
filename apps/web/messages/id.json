@@ -410,6 +410,13 @@
     "airHazardous": "Berbahaya",
     "airNote": "Model CAMS ~0,4°, bukan pengukuran alat di darat. Angka atas AQI, bawah µg/m³.",
     "airRun": "Run CAMS:",
+    "airTimeTitle": "Jam yang ditampilkan",
+    "airNow": "Sekarang",
+    "airForecast": "prakiraan",
+    "airAhead": "jam",
+    "airPlay": "Putar",
+    "airPause": "Jeda",
+    "airToNow": "Sekarang",
     "aqiCategory": {
       "good": "Baik",
       "moderate": "Sedang",

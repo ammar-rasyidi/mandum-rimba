@@ -369,6 +369,11 @@ export default function AirField({
           cv = document.createElement("canvas");
           cv.width = w;
           cv.height = h;
+          // Touch it once. A canvas source builds its texture from the canvas,
+          // and a context that has never been used is not guaranteed to give
+          // one — the raster draw then reaches for tile.texture.bind() on an
+          // undefined texture and takes the whole map down.
+          cv.getContext("2d")?.clearRect(0, 0, w, h);
           ref.current = cv;
         }
         if (m.getLayer(layerId)) return;
@@ -385,6 +390,13 @@ export default function AirField({
             id: layerId,
             type: "raster",
             source: srcId,
+            // Born HIDDEN, always. Both layers were added with the default
+            // visibility, i.e. visible, and only hidden a moment later once
+            // renderFrame had decided which one was live — so for however many
+            // frames fell in between, the map was asked to draw a raster whose
+            // canvas had nothing in it yet. renderFrame reveals the right one
+            // after it has drawn into it.
+            layout: { visibility: "none" },
             paint: {
               // ONE dial. Per-pixel alpha already encodes severity, so a second
               // multiplier here would fight it. It is constant: the dissolve

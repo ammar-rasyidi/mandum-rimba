@@ -180,6 +180,18 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
   } | null>(null);
   const [airAtMs, setAirAtMs] = useState<number | null>(null);
   const [airPlaying, setAirPlaying] = useState(false);
+  /**
+   * Which source id the GIBS imagery layer is on right now.
+   *
+   * A product change that moves the zoom ceiling has to rebuild the source,
+   * and the first version did that by removing and re-adding the SAME id in
+   * one tick. That is the pattern behind "Cannot read properties of undefined
+   * (reading 'bind')" out of MapLibre's raster draw: the renderer asks the
+   * source cache for a tile, gets one left over from the old cache, and finds
+   * tile.texture undefined. Each rebuild now takes a FRESH id, and the old
+   * source is dropped only once nothing points at it any more.
+   */
+  const gibsImgSrcRef = useRef("src-gibs-image-0");
   /** the layer set as it was last render, to spot what the reader just added */
   const prevLayersRef = useRef<string[]>([]);
 
@@ -544,19 +556,24 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
     // so the mosaic keeps its place at the bottom of the stack.
     const imgUrl = gibsImageryTiles(filters.karhutlaImagery, karhutlaDate);
     const imgMax = gibsImageryMaxZoom(filters.karhutlaImagery);
-    const imgSrc = map.getSource("src-gibs-image") as
+    const imgSrc = map.getSource(gibsImgSrcRef.current) as
       maplibregl.RasterTileSource | undefined;
     if (imgSrc && imgSrc.maxzoom !== imgMax) {
       const arr = map.getStyle().layers;
       const beforeId =
         arr[arr.findIndex((l) => l.id === "lyr-karhutla-image") + 1]?.id;
-      const visibility = map.getLayoutProperty(
-        "lyr-karhutla-image",
-        "visibility",
-      );
+      const visibility =
+        map.getLayoutProperty("lyr-karhutla-image", "visibility") ?? "visible";
+      const oldId = gibsImgSrcRef.current;
+      const nextId = `src-gibs-image-${Date.now().toString(36)}`;
+
+      // Order matters. Drop the layer first so the old source has no consumer,
+      // stand the new source and layer up, and only then remove the old one —
+      // so the layer is never pointing at a source that is being torn down,
+      // and the new source starts with an empty cache of its own rather than
+      // inheriting tiles whose textures belong to the previous pyramid.
       map.removeLayer("lyr-karhutla-image");
-      map.removeSource("src-gibs-image");
-      map.addSource("src-gibs-image", {
+      map.addSource(nextId, {
         type: "raster",
         tiles: [imgUrl],
         tileSize: 256,
@@ -568,14 +585,16 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
         {
           id: "lyr-karhutla-image",
           type: "raster",
-          source: "src-gibs-image",
+          source: nextId,
           layout: { visibility },
           paint: { "raster-opacity": 1 },
         },
         beforeId,
       );
+      gibsImgSrcRef.current = nextId;
+      if (map.getSource(oldId)) map.removeSource(oldId);
     } else {
-      retile("src-gibs-image", imgUrl);
+      retile(gibsImgSrcRef.current, imgUrl);
     }
     retile(
       "src-gibs-hotspot",
@@ -745,7 +764,7 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
       // everything else so the day's mosaic paints under the loss raster and all
       // the data layers. Live from GIBS, keyless — nothing to probe on R2.
       if (hasGibs) {
-        map.addSource("src-gibs-image", {
+        map.addSource(gibsImgSrcRef.current, {
           type: "raster",
           tiles: [gibsImageryTiles(filters.karhutlaImagery, karhutlaDate)],
           tileSize: 256,
@@ -758,7 +777,7 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
         map.addLayer({
           id: "lyr-karhutla-image",
           type: "raster",
-          source: "src-gibs-image",
+          source: gibsImgSrcRef.current,
           layout: {
             visibility: filters.layers.includes("karhutla-image")
               ? "visible"

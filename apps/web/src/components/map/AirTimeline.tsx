@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 /**
  * The hour player for "Udara & asap", inside the layer panel under the AQI
  * legend rather than floating over the map. The field is one setting among the
@@ -88,6 +90,9 @@ export default function AirTimeline({
     ahead: string;
   };
 }) {
+  // shown while the thumb is being dragged or the slider has keyboard focus
+  const [scrubbing, setScrubbing] = useState(false);
+
   if (stepsMs.length < 2) return null;
 
   const first = stepsMs[0];
@@ -168,7 +173,10 @@ export default function AirTimeline({
           )}
         </button>
 
-        <div className="relative min-w-0 flex-1 py-[0.35rem]">
+        {/* No padding here. The track is positioned against this box while the
+            thumb is positioned against the INPUT's box, so any padding puts one
+            3.3px below the other — which is exactly what it did. */}
+        <div className="relative min-w-0 flex-1">
           {/* past: solid. forecast: hatched, so the two are not read as the
               same kind of statement even before the labels are read. */}
           <div className="pointer-events-none absolute inset-x-0 top-1/2 h-[5px] -translate-y-1/2 overflow-hidden rounded-full bg-[var(--glass-highlight)]">
@@ -207,6 +215,20 @@ export default function AirTimeline({
             aria-hidden="true"
           />
 
+          {/* Where the thumb is, while it is being moved. The readout above
+              says the same thing, but the eye is down here on the track and a
+              value you have to look away to read is a value you lose.
+              It sits BELOW the track: above, it landed on the readout line and
+              covered the very figure it was echoing. */}
+          {scrubbing && (
+            <div
+              className="glass pointer-events-none absolute top-full z-10 mt-[0.25rem] -translate-x-1/2 whitespace-nowrap rounded-[8px] px-[0.4rem] py-[0.12rem] text-[0.66rem] tabular-nums text-foreground"
+              style={{ left: `clamp(2.2rem, ${atPct}%, calc(100% - 2.2rem))` }}
+            >
+              {dayLabel(atMs, locale)} · {timeLabel(atMs, locale)}
+            </div>
+          )}
+
           <input
             type="range"
             min={first}
@@ -214,6 +236,11 @@ export default function AirTimeline({
             step={900000}
             value={atMs}
             onChange={(e) => onAt(Number(e.target.value))}
+            onPointerDown={() => setScrubbing(true)}
+            onPointerUp={() => setScrubbing(false)}
+            onPointerCancel={() => setScrubbing(false)}
+            onFocus={() => setScrubbing(true)}
+            onBlur={() => setScrubbing(false)}
             aria-label={labels.title}
             aria-valuetext={`${dayLabel(atMs, locale)} ${timeLabel(atMs, locale)}`}
             className="air-scrub relative w-full cursor-pointer appearance-none bg-transparent"
@@ -234,12 +261,23 @@ export default function AirTimeline({
 
       {/* The native range thumb cannot be styled cross-browser without this. */}
       <style jsx>{`
+        /* The thumb is centred by the browser on the RUNNABLE TRACK, not on
+           the input box. Leaving that track at its default height is what put
+           the circle above the line. Give it the input's own height and the
+           two references become one. */
         .air-scrub {
-          height: 1.05rem;
+          display: block;
+          height: 1.15rem;
           margin: 0;
+          padding: 0;
+        }
+        .air-scrub::-webkit-slider-runnable-track {
+          height: 1.15rem;
         }
         .air-scrub::-webkit-slider-thumb {
           -webkit-appearance: none;
+          /* (track 1.15rem - thumb 0.85rem) / 2 */
+          margin-top: 0.15rem;
           height: 0.85rem;
           width: 0.85rem;
           border-radius: 50%;

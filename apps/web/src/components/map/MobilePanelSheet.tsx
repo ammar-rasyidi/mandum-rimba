@@ -7,10 +7,25 @@ export type SheetSnap = number | string | null;
 export const SHEET_PEEK = 0.22;
 export const SHEET_FULL = 0.86;
 
-/** Sheet height and how much of it shows at peek, in dvh. Full stops at
- *  86dvh so the top edge stays clear of the site header. */
+/** Full height stops at 86dvh so the top edge stays clear of the site header. */
 const FULL_DVH = 86;
-const PEEK_DVH = 22;
+
+/**
+ * How much of the sheet shows at peek — a FIXED height, not a fraction of the
+ * viewport.
+ *
+ * What has to be visible is the drag handle and the title row, and that is
+ * fixed content: 114px measured, on a 844px screen and on a 667px one alike.
+ * Expressing it as 22dvh gave 186px on the tall phone (72px of it wasted map)
+ * and 147px on the short one — most generous exactly where the screen could
+ * least afford it. A fixed height gives every phone the same small peek and
+ * hands the difference back to the map.
+ *
+ * Exported because the floating timelines sit just above it. That offset used
+ * to be written out as "22dvh" in two other files, which would have quietly
+ * detached from the sheet the moment this changed.
+ */
+export const SHEET_PEEK_PX = 105;
 
 const isFormField = (el: EventTarget | null): el is HTMLElement =>
   el instanceof HTMLElement &&
@@ -80,7 +95,7 @@ export default function MobilePanelSheet({
   const full = snap === SHEET_FULL;
   /** translateY between fully open (0) and peek, in px. */
   const maxOffset = () =>
-    ((FULL_DVH - PEEK_DVH) / 100) * window.innerHeight;
+    (FULL_DVH / 100) * window.innerHeight - SHEET_PEEK_PX;
 
   const onPointerDown = (e: React.PointerEvent<HTMLButtonElement>) => {
     e.currentTarget.setPointerCapture(e.pointerId);
@@ -118,7 +133,7 @@ export default function MobilePanelSheet({
 
   const restingTransform = full
     ? "translateY(0)"
-    : `translateY(${FULL_DVH - PEEK_DVH}dvh)`;
+    : `translateY(calc(${FULL_DVH}dvh - ${SHEET_PEEK_PX}px))`;
 
   return (
     <div

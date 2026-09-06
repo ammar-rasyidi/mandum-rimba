@@ -11,6 +11,7 @@ import LayerPanel from "./LayerPanel";
 import MobilePanelSheet, {
   SHEET_FULL,
   SHEET_PEEK,
+  SHEET_PEEK_PX,
   type SheetSnap,
 } from "./MobilePanelSheet";
 import AirField from "./AirField";
@@ -2003,7 +2004,7 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
         (showLoss || (showAirPlayer && airAxis && airAxis.stepsMs.length > 1)) && (
           <div
             className="absolute left-1/2 z-[5] flex w-[calc(100%-1rem)] -translate-x-1/2 flex-col gap-2"
-            style={{ bottom: "calc(22dvh + 0.6rem)" }}
+            style={{ bottom: `calc(${SHEET_PEEK_PX}px + 0.6rem)` }}
           >
             {showAirPlayer && airAxis && airAxis.stepsMs.length > 1 && (
               <AirTimeline

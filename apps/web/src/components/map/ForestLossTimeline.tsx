@@ -2,13 +2,14 @@
 
 import { useTranslations } from "next-intl";
 import { LOSS_CANOPY, LOSS_RAMP } from "@/lib/forest-loss";
+import { SHEET_PEEK_PX } from "./MobilePanelSheet";
 
 /**
  * Timeline for the GFW tree-cover-loss raster. Scrub or press play to reveal
  * loss cumulatively from 2001 up to the chosen year (like GFW's own map). On
  * desktop it floats bottom-centre; on mobile it sits just ABOVE the peeking
- * layer sheet (22dvh) so the sheet never covers it, and MapView hides it while
- * the sheet is dragged full. Purely presentational.
+ * layer sheet (SHEET_PEEK_PX) so the sheet never covers it, and MapView hides
+ * it while the sheet is dragged full. Purely presentational.
  */
 export default function ForestLossTimeline({
   years,
@@ -58,7 +59,11 @@ export default function ForestLossTimeline({
       // on mobile the parent owns the position: the two timelines share one
       // bottom-anchored column, because guessing this card's height to offset
       // the other one is wrong the moment its wording or the viewport changes
-      style={!stacked && mobile ? { bottom: "calc(22dvh + 0.6rem)" } : undefined}
+      style={
+        !stacked && mobile
+          ? { bottom: `calc(${SHEET_PEEK_PX}px + 0.6rem)` }
+          : undefined
+      }
       aria-label={t("lossTimelineTitle")}
     >
       <div className="mb-2 flex items-center justify-between gap-3">

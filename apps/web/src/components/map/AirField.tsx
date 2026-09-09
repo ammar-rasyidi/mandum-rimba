@@ -206,6 +206,30 @@ export interface AirFieldProps {
 }
 
 /**
+ * Is this map still usable, i.e. not remove()d?
+ *
+ * A removed MapLibre map is still a live JS object with all its methods; what
+ * it has lost is `style`, so every accessor that reaches through it
+ * (getLayer, getSource, setLayoutProperty) throws "Cannot read properties of
+ * undefined". `if (map)` cannot see that, which is how a callback that
+ * outlived its map got to take the page down.
+ *
+ * isStyleLoaded() is the one public method that distinguishes the two states:
+ * it returns a boolean whenever a style is present (loaded or not) and
+ * undefined only once the style is gone. That distinction matters here. This
+ * must NEVER become "wait until the style has loaded": gating the air field on
+ * that is exactly what once left the layer never appearing, because a single
+ * 404ing tile source keeps the map from settling (see CLAUDE.md).
+ *
+ * Written as a type predicate so `if (!mapAlive(m)) return;` also narrows the
+ * nullable prop away for everything below it.
+ */
+function mapAlive(m?: maplibregl.Map | null): m is maplibregl.Map {
+  return !!m && m.isStyleLoaded() !== undefined;
+}
+
+
+/**
  * Where to insert the field so the map stays readable underneath it.
  *
  * The Esri basemaps carry no text — place names arrive as a SEPARATE raster
@@ -376,7 +400,7 @@ export default function AirField({
           cv.getContext("2d")?.clearRect(0, 0, w, h);
           ref.current = cv;
         }
-        if (m.getLayer(layerId)) return;
+        if (!mapAlive(m) || m.getLayer(layerId)) return;
         m.addSource(srcId, {
           type: "canvas",
           canvas: cv,
@@ -500,7 +524,7 @@ export default function AirField({
       ctx.globalAlpha = 1;
 
       const m = map;
-      if (!m) return;
+      if (!mapAlive(m)) return;
       const activeLayer = usePlay ? LAYER_PLAY : LAYER_STILL;
       const idleLayer = usePlay ? LAYER_STILL : LAYER_PLAY;
       const src = m.getSource(usePlay ? SRC_PLAY : SRC_STILL) as
@@ -763,7 +787,8 @@ export default function AirField({
         fetchStep(pair.before),
         pair.after === pair.before ? null : fetchStep(pair.after),
       ]);
-      if (cancelled || !a) return;
+      // the map can have been removed while those fetches were in flight
+      if (cancelled || !a || !mapAlive(map)) return;
 
       // The picture. Rasterising is the expensive step and happens once per
       // model hour; from here on the dissolve is a blit between two canvases
@@ -911,7 +936,7 @@ export default function AirField({
   // Hiding is unconditional; showing goes through renderFrame, which knows
   // which of the two detail layers is the live one.
   useEffect(() => {
-    if (!map) return;
+    if (!mapAlive(map)) return;
     if (!visible) {
       for (const id of [LAYER_STILL, LAYER_PLAY]) {
         if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", "none");
@@ -926,8 +951,11 @@ export default function AirField({
     return () => {
       const m = map;
 
-      // Map instance may still exist while its style is being torn down.
-      if (!m || !m.isStyleLoaded()) return;
+      // The map object outlives its style, so a plain `if (m)` is not enough.
+      // Note this asks whether the style is GONE, not whether it has finished
+      // loading: unmounting mid-load must still remove the layers, which is the
+      // whole point of this cleanup.
+      if (!mapAlive(m)) return;
 
       try {
         for (const [layerId, srcId] of [

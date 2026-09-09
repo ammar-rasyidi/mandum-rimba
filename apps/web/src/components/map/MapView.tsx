@@ -193,6 +193,9 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
    * source is dropped only once nothing points at it any more.
    */
   const gibsImgSrcRef = useRef("src-gibs-image-0");
+  const gibsHotSrcRef = useRef("src-gibs-hotspot-0");
+  /** monotonic, so two rebuilds in the same millisecond cannot collide on an id */
+  const gibsSeqRef = useRef(0);
   /** the layer set as it was last render, to spot what the reader just added */
   const prevLayersRef = useRef<string[]>([]);
 
@@ -542,64 +545,72 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !ready) return;
-    // only re-point when the URL genuinely changed: setTiles drops the tile cache
-    // and refetches, and the day resolves to the same value on mount
-    const retile = (sourceId: string, url: string) => {
-      const src = map.getSource(sourceId) as
-        maplibregl.RasterTileSource | undefined;
-      if (!src || src.tiles?.[0] === url) return;
-      src.setTiles([url]);
+    // Both GIBS sources are REBUILT whenever their tile URL changes, product or
+    // date alike, never re-pointed with setTiles.
+    //
+    // setTiles keeps the existing tile cache and refetches into it, which is
+    // where "Cannot read properties of undefined (reading 'bind')" came from:
+    // the renderer asks that cache for a tile mid-swap, is handed one from
+    // before the change, and finds its texture gone. A fresh source id starts
+    // an empty cache that cannot hand anything stale back.
+    //
+    // This deliberately replaces a narrower earlier fix that only rebuilt when
+    // the imagery CEILING moved (maxZoom 7 for PACE/OCI against 9 for the
+    // rest). That left every same-ceiling product switch, and every date
+    // change, on the unsafe path, which is exactly where the crash kept
+    // turning up. Date changes are user-driven one at a time here, so the cost
+    // of always rebuilding is a source object, and setTiles was refetching the
+    // tiles anyway.
+    const apply = (
+      layerId: string,
+      srcRef: { current: string },
+      prefix: string,
+      url: string,
+      spec: Omit<maplibregl.RasterSourceSpecification, "type" | "tiles">,
+    ) => {
+      const src = map.getSource(srcRef.current) as
+        | maplibregl.RasterTileSource
+        | undefined;
+      // the day resolves to the same value on mount, so this is the common case
+      if (src && src.tiles?.[0] === url) return;
+      const nextId = `${prefix}-${++gibsSeqRef.current}`;
+      if (
+        swapRasterSource(map, layerId, srcRef.current, nextId, {
+          ...spec,
+          type: "raster",
+          tiles: [url],
+        })
+      ) {
+        srcRef.current = nextId;
+      }
     };
-    // Imagery products do NOT share a tile pyramid (PACE/OCI tops out one level
-    // below the rest), and a raster source's maxzoom is fixed at creation — so a
-    // product change that moves the ceiling means rebuilding the source rather
-    // than just re-pointing it. Re-added before whatever currently sits above it
-    // so the mosaic keeps its place at the bottom of the stack.
-    const imgUrl = gibsImageryTiles(filters.karhutlaImagery, karhutlaDate);
-    const imgMax = gibsImageryMaxZoom(filters.karhutlaImagery);
-    const imgSrc = map.getSource(gibsImgSrcRef.current) as
-      maplibregl.RasterTileSource | undefined;
-    if (imgSrc && imgSrc.maxzoom !== imgMax) {
-      const arr = map.getStyle().layers;
-      const beforeId =
-        arr[arr.findIndex((l) => l.id === "lyr-karhutla-image") + 1]?.id;
-      const visibility =
-        map.getLayoutProperty("lyr-karhutla-image", "visibility") ?? "visible";
-      const oldId = gibsImgSrcRef.current;
-      const nextId = `src-gibs-image-${Date.now().toString(36)}`;
 
-      // Order matters. Drop the layer first so the old source has no consumer,
-      // stand the new source and layer up, and only then remove the old one —
-      // so the layer is never pointing at a source that is being torn down,
-      // and the new source starts with an empty cache of its own rather than
-      // inheriting tiles whose textures belong to the previous pyramid.
-      map.removeLayer("lyr-karhutla-image");
-      map.addSource(nextId, {
-        type: "raster",
-        tiles: [imgUrl],
+    apply(
+      "lyr-karhutla-image",
+      gibsImgSrcRef,
+      "src-gibs-image",
+      gibsImageryTiles(filters.karhutlaImagery, karhutlaDate),
+      {
         tileSize: 256,
         minzoom: 0,
-        maxzoom: imgMax,
+        // imagery products do NOT share a pyramid, and a raster source's
+        // maxzoom is fixed at creation, so it is set per rebuild
+        maxzoom: gibsImageryMaxZoom(filters.karhutlaImagery),
         attribution: GIBS_ATTRIBUTION,
-      });
-      map.addLayer(
-        {
-          id: "lyr-karhutla-image",
-          type: "raster",
-          source: nextId,
-          layout: { visibility },
-          paint: { "raster-opacity": 1 },
-        },
-        beforeId,
-      );
-      gibsImgSrcRef.current = nextId;
-      if (map.getSource(oldId)) map.removeSource(oldId);
-    } else {
-      retile(gibsImgSrcRef.current, imgUrl);
-    }
-    retile(
+      },
+    );
+    apply(
+      "lyr-karhutla-hotspot",
+      gibsHotSrcRef,
       "src-gibs-hotspot",
       gibsHotspotTiles(filters.karhutlaHotspot, karhutlaDate),
+      {
+        tileSize: 512,
+        minzoom: 0,
+        // the detections are 375 m–1 km; past z12 a finer request buys nothing
+        maxzoom: 12,
+        attribution: GIBS_ATTRIBUTION,
+      },
     );
   }, [ready, karhutlaDate, filters.karhutlaImagery, filters.karhutlaHotspot]);
 
@@ -869,7 +880,7 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
       // lib/gibs.ts). So it is deliberately absent from the click handler below;
       // the FIRMS `fires` layer is the clickable one.
       if (hasGibs) {
-        map.addSource("src-gibs-hotspot", {
+        map.addSource(gibsHotSrcRef.current, {
           type: "raster",
           tiles: [gibsHotspotTiles(filters.karhutlaHotspot, karhutlaDate)],
           tileSize: 512,
@@ -881,7 +892,7 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
         map.addLayer({
           id: "lyr-karhutla-hotspot",
           type: "raster",
-          source: "src-gibs-hotspot",
+          source: gibsHotSrcRef.current,
           layout: {
             visibility: filters.layers.includes("karhutla-hotspot")
               ? "visible"
@@ -890,6 +901,7 @@ export default function MapView({ group }: { group?: "biodiversity" } = {}) {
           paint: { "raster-opacity": 1 },
         });
         avail.add("karhutla-hotspot"); // live GIBS raster, always available
+
 
         // Karhutla reference overlays: labels / borders+roads / coastlines. These
         // are not a layer the user toggles — they ride automatically with the
@@ -2074,6 +2086,51 @@ function geojsonBounds(
     if (f.geometry && "coordinates" in f.geometry)
       walk((f.geometry as { coordinates: unknown }).coordinates);
   return Number.isFinite(w) ? [w, s, e, n] : null;
+}
+
+/**
+ * Rebuild a raster layer onto a brand new source, and drop the old one.
+ *
+ * This exists because of one crash: "Cannot read properties of undefined
+ * (reading 'bind')" thrown from deep inside MapLibre's raster draw. The
+ * renderer asks the source cache for a tile, is handed one left over from
+ * before the change, and finds its texture gone. setTiles() reuses the cache,
+ * so it can leave exactly that stale tile behind; a fresh source id starts an
+ * empty cache that cannot.
+ *
+ * Order matters and is the whole trick. Drop the layer first so the old source
+ * has no consumer, stand the new source and layer up, and only then remove the
+ * old source, so the layer is never pointing at something being torn down.
+ * `beforeId` is captured first so the rebuilt layer keeps its exact depth in
+ * the stack, and the visibility is carried across so a rebuild never
+ * un-hides a layer the reader had switched off.
+ */
+function swapRasterSource(
+  map: maplibregl.Map,
+  layerId: string,
+  oldSourceId: string,
+  nextSourceId: string,
+  source: maplibregl.RasterSourceSpecification,
+): boolean {
+  if (!map.getLayer(layerId)) return false;
+  const arr = map.getStyle().layers;
+  const beforeId = arr[arr.findIndex((l) => l.id === layerId) + 1]?.id;
+  const visibility =
+    map.getLayoutProperty(layerId, "visibility") ?? "visible";
+  map.removeLayer(layerId);
+  map.addSource(nextSourceId, source);
+  map.addLayer(
+    {
+      id: layerId,
+      type: "raster",
+      source: nextSourceId,
+      layout: { visibility },
+      paint: { "raster-opacity": 1 },
+    },
+    beforeId,
+  );
+  if (map.getSource(oldSourceId)) map.removeSource(oldSourceId);
+  return true;
 }
 
 function buildLayer(

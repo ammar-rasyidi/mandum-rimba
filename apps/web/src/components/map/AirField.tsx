@@ -932,6 +932,7 @@ export default function AirField({
 
       // The map object outlives its style, so a plain `if (m)` is not enough.
       // Note this asks whether the style is GONE, not whether it has finished
+      
       // loading: unmounting mid-load must still remove the layers, which is the
       // whole point of this cleanup.
       if (!mapAlive(m)) return;

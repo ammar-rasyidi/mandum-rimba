@@ -924,13 +924,26 @@ export default function AirField({
   // remove the layer on unmount, so a style change cannot orphan it
   useEffect(() => {
     return () => {
-      if (!map) return;
-      for (const [layerId, srcId] of [
-        [LAYER_STILL, SRC_STILL],
-        [LAYER_PLAY, SRC_PLAY],
-      ]) {
-        if (map.getLayer(layerId)) map.removeLayer(layerId);
-        if (map.getSource(srcId)) map.removeSource(srcId);
+      const m = map;
+
+      // Map instance may still exist while its style is being torn down.
+      if (!m || !m.isStyleLoaded()) return;
+
+      try {
+        for (const [layerId, srcId] of [
+          [LAYER_STILL, SRC_STILL],
+          [LAYER_PLAY, SRC_PLAY],
+        ] as const) {
+          if (m.getLayer(layerId)) {
+            m.removeLayer(layerId);
+          }
+
+          if (m.getSource(srcId)) {
+            m.removeSource(srcId);
+          }
+        }
+      } catch {
+        // Map/style was destroyed or replaced during cleanup.
       }
     };
   }, [map]);

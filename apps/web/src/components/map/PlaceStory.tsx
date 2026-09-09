@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { mapAlive } from "@/lib/map-alive";
 import { type Map as MapLibreMap } from "maplibre-gl";
 import { useLocale, useTranslations } from "next-intl";
 import { LAYERS } from "@/lib/layers";
@@ -1345,7 +1346,8 @@ export default function PlaceStory({
     if (!map) return;
     const dim = !!story.chapters[idx].animateLoss;
     const set = () => {
-      if (map.getLayer("lyr-protected"))
+      // fires again from a timer 800 ms later, by which time the map may be gone
+      if (mapAlive(map) && map.getLayer("lyr-protected"))
         map.setPaintProperty("lyr-protected", "fill-opacity", dim ? 0.12 : 0.45);
     };
     set();
@@ -1353,10 +1355,16 @@ export default function PlaceStory({
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [idx]);
+  // Restore the protected-area opacity when the story closes.
+  //
+  // `map?.` was not enough here and this was the crash: a removed map is still
+  // an object, so optional chaining sails straight through and getLayer throws
+  // on the style that is no longer there. Unmount-only, anonymous and
+  // uncaught, which is exactly the shape the production stack showed.
   useEffect(
     () => () => {
       const map = mapRef.current;
-      if (map?.getLayer("lyr-protected"))
+      if (mapAlive(map) && map.getLayer("lyr-protected"))
         map.setPaintProperty("lyr-protected", "fill-opacity", 0.45);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps

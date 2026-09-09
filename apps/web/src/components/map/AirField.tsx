@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type maplibregl from "maplibre-gl";
+import { mapAlive } from "@/lib/map-alive";
 import { usAqiFromPm25 } from "@mandumrimba/shared";
 import {
   rasteriseGrid,
@@ -205,28 +206,6 @@ export interface AirFieldProps {
   ) => void;
 }
 
-/**
- * Is this map still usable, i.e. not remove()d?
- *
- * A removed MapLibre map is still a live JS object with all its methods; what
- * it has lost is `style`, so every accessor that reaches through it
- * (getLayer, getSource, setLayoutProperty) throws "Cannot read properties of
- * undefined". `if (map)` cannot see that, which is how a callback that
- * outlived its map got to take the page down.
- *
- * isStyleLoaded() is the one public method that distinguishes the two states:
- * it returns a boolean whenever a style is present (loaded or not) and
- * undefined only once the style is gone. That distinction matters here. This
- * must NEVER become "wait until the style has loaded": gating the air field on
- * that is exactly what once left the layer never appearing, because a single
- * 404ing tile source keeps the map from settling (see CLAUDE.md).
- *
- * Written as a type predicate so `if (!mapAlive(m)) return;` also narrows the
- * nullable prop away for everything below it.
- */
-function mapAlive(m?: maplibregl.Map | null): m is maplibregl.Map {
-  return !!m && m.isStyleLoaded() !== undefined;
-}
 
 
 /**

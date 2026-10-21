@@ -554,30 +554,9 @@
   "support": {
     "title": "Dukung Rimba Universe",
     "whitepaper": "Baca white paper lengkapnya",
-    "intro": "Mandum Rimba punya saudara: Lam Rimba, sebuah game konservasi 3D tempat kamu masuk ke dalam rimba Indonesia, menyelamatkan satwa, merawatnya sampai pulih, memulangkannya ke alam, lalu menyembuhkan habitatnya. Keduanya satu dunia, The Rimba Universe, dengan satu misi sederhana: tak kenal, maka tak sayang.",
-    "freeTitle": "Lam Rimba akan gratis",
-    "freeBody": "Game ini dibangun dengan Godot dan, di fase pertama, bisa dimainkan langsung di ponsel, baik iOS maupun Android. Gratis, supaya bisa sampai ke tangan sebanyak mungkin orang.",
-    "whyTitle": "Kenapa saya buka pintu dukungan",
-    "whyBody": "Mandum Rimba, peta yang sedang kamu buka, perlu server, domain, dan pipeline data yang menjaganya tetap hidup dan terus diperbarui tiap hari. Lam Rimba, game-nya, dunia yang lebih besar lagi: penuh aset 3D, suara, animasi, dan banyak hal yang butuh waktu sekaligus biaya. Untuk pertama kalinya saya memberanikan diri membuka pintu dukungan, supaya keduanya bisa terus tumbuh.",
-    "useTitle": "Ke mana dukunganmu pergi",
-    "useItems": [
-      {
-        "title": "Aset & produksi",
-        "body": "model 3D satwa dan hutannya, animasi, musik, dan efek suara, sampai detail kecil yang membuat rimbanya terasa hidup. Sebagian saya buat sendiri, sebagian perlu dibeli atau dikerjakan dengan alat berbayar."
-      },
-      {
-        "title": "Rilis ke toko aplikasi",
-        "body": "akun developer App Store dan Play Store punya biaya pendaftarannya sendiri. Ini yang membuat Lam Rimba bisa sampai langsung ke ponselmu dan tetap gratis diunduh."
-      },
-      {
-        "title": "Operasional & perawatan",
-        "body": "server, domain, dan pipeline data yang menjaga Mandum Rimba dan Lam Rimba tetap berjalan serta terus diperbarui, hari demi hari."
-      },
-      {
-        "title": "Waktu untuk mengerjakannya",
-        "body": "sebagian besar waktu dan fokus saya kini tercurah di sini, merawat rimba kecil ini pelan-pelan sampai benar-benar jadi."
-      }
-    ],
+    "intro": "Lam Rimba adalah game petualangan konservasi 3D yang mengajakmu mengenal hutan dan satwa Indonesia dari dekat. Kamu ikut menolong Maya, orangutan yang terjerat, merawatnya sampai pulih, dan mengantarnya kembali ke rumah. Di sepanjang perjalanan, ada jejak satwa untuk diikuti dan habitat yang perlahan bisa kamu bantu pulihkan. Bersama Mandum Rimba, ia tumbuh dari satu keyakinan sederhana: tak kenal, maka tak sayang.",
+    "freeTitle": "Rimbanya terbuka untuk semua",
+    "freeBody": "Lam Rimba bisa kamu mainkan gratis langsung di browser, lewat ponsel atau komputer. Datang, jelajahi, dan kenali penghuninya dengan ritmemu sendiri.",
     "freeHelpTitle": "Cara lain untuk membantu",
     "freeHelpBody": "Dukungan tidak harus berupa uang. Yang ini sama berartinya:",
     "freeHelpItems": [
@@ -587,8 +566,8 @@
     ],
     "noteTitle": "Tanpa merasa wajib",
     "noteBody": "Sungguh, jangan merasa wajib. Kamu yang mampir, membaca sampai sejauh ini, dan ikut peduli, itu saja sudah lebih dari cukup. Apa pun bentuk dukunganmu, saya tidak mengukurnya dari besar kecilnya.",
-    "ctaTitle": "Ikut mendukung",
-    "ctaBody": "Dukungan paling membantu lewat Trakteer (untuk di Indonesia) atau PayPal (untuk di luar negeri). Sekecil apa pun, berarti banget.",
+    "ctaTitle": "Cara lain untuk menemani rimba",
+    "ctaBody": "Kalau kamu lebih nyaman menitipkan dukungan lewat Trakteer atau PayPal, pintunya juga terbuka di sini. Terima kasih sudah ikut menemani, dengan cara yang paling nyaman buatmu.",
     "donate": "Dukung",
     "donateViaThreads": "Dukung lewat Threads",
     "paypalCta": "Dukung lewat PayPal",
@@ -606,7 +585,11 @@
     "donorsBody": "Terima kasih banyak buat kamu yang udah ikut mendukung lewat Trakteer atau PayPal. Sekecil apa pun, dukunganmu yang bikin perjalanan ini terus jalan. Nama cuma aku tampilkan kalau kamu mengizinkan, please DM me on thread.",
     "donorsEmpty": "Belum ada. Jadilah yang pertama menemani perjalanan ini.",
     "colName": "Nama",
-    "colSocial": "Akun"
+    "colSocial": "Akun",
+    "shopTitle": "Bawa sedikit rimba dalam perjalananmu",
+    "shopBody": "Di Shop Lam Rimba, ada teman penjelajah dan sentuhan kecil untuk menemani langkahmu di hutan. Kalau ada yang terasa cocok, pilihanmu juga menjadi cara untuk menemani pengembangan Lam Rimba. Dukungan kecil yang ikut merawat dunia ini agar terus tumbuh.",
+    "shopCta": "Singgah ke Shop Lam Rimba",
+    "shopNote": "Sepenuhnya pilihanmu. Rimbanya tetap bisa kamu jelajahi gratis."
   },
   "footer": {
     "license": "Kode sumber terbuka (AGPL-3.0). Data milik masing-masing sumber, lihat metodologi.",

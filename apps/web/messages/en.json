@@ -554,30 +554,9 @@
   "support": {
     "title": "Support the Rimba Universe",
     "whitepaper": "Read the full white paper",
-    "intro": "Mandum Rimba has a sibling: Lam Rimba, a 3D conservation game where you step into the Indonesian rimba, rescue wildlife, nurse them back to health, return them to the wild, then heal the habitat. Both share one world, The Rimba Universe, and one simple belief: we cannot love what we do not know.",
-    "freeTitle": "Lam Rimba will be free",
-    "freeBody": "It is built with Godot and, in its first phase, runs right on your phone, both iOS and Android. Free, so it can reach as many people as possible.",
-    "whyTitle": "Why I opened the door to support",
-    "whyBody": "Mandum Rimba, the map you are looking at, needs a server, a domain, and the data pipeline that keeps it alive and up to date every day. Lam Rimba, the game, is a bigger world still: full of 3D assets, sound, animation, and many things that take both time and money. For the first time I am opening the door to support, so both can keep growing.",
-    "useTitle": "Where your support goes",
-    "useItems": [
-      {
-        "title": "Assets and production",
-        "body": "3D models of the wildlife and its forest, animation, music, and sound, down to the small details that make the rimba feel alive. Some I build myself, some I have to buy or make with paid tools."
-      },
-      {
-        "title": "Releasing to the app stores",
-        "body": "the Apple App Store and Google Play developer accounts each carry their own registration fees. This is what lets Lam Rimba reach your phone, free to download."
-      },
-      {
-        "title": "Running and upkeep",
-        "body": "the servers, domains, and data pipeline that keep Mandum Rimba and Lam Rimba running and updated, day after day."
-      },
-      {
-        "title": "Time to build it",
-        "body": "most of my time and focus now goes here, tending this small rimba bit by bit until it is truly done."
-      }
-    ],
+    "intro": "Lam Rimba is a 3D conservation adventure that brings you closer to Indonesia’s forests and wildlife. Help Maya, an orangutan caught in a snare, care for her as she recovers, and guide her home. Along the way, follow animal tracks and help damaged habitats recover, one small step at a time. Together with Mandum Rimba, it grows from a simple belief: we cannot love what we do not know.",
+    "freeTitle": "A forest open to everyone",
+    "freeBody": "Play Lam Rimba for free in your browser, on your phone or computer. Come explore and get to know its inhabitants at your own pace.",
     "freeHelpTitle": "Other ways to help",
     "freeHelpBody": "Support does not have to be money. These matter just as much:",
     "freeHelpItems": [
@@ -587,8 +566,8 @@
     ],
     "noteTitle": "No obligation",
     "noteBody": "Truly, please do not feel obliged. That you stopped by, read this far, and care at all is already more than enough. Whatever shape your support takes, I will never measure it by its size.",
-    "ctaTitle": "Lend your support",
-    "ctaBody": "The most helpful way to support is via Trakteer (for Indonesia) or PayPal (international). Anything, however small, means a lot.",
+    "ctaTitle": "Another way to accompany the forest",
+    "ctaBody": "If Trakteer or PayPal feels more comfortable, you can also leave your support here. Thank you for being part of the journey, in whatever way feels right for you.",
     "donate": "Support",
     "donateViaThreads": "Support via Threads",
     "paypalCta": "Support via PayPal",
@@ -606,7 +585,11 @@
     "donorsBody": "A big thank you to everyone who chips in through Trakteer or PayPal. However small, your support is what keeps this going. Names are only shown with your permission, please DM me on thread.",
     "donorsEmpty": "None yet. Be the first to join this journey.",
     "colName": "Name",
-    "colSocial": "Account"
+    "colSocial": "Account",
+    "shopTitle": "A little forest to take along",
+    "shopBody": "The Lam Rimba Shop has explorer companions and little touches to accompany you through the forest. If something feels right for you, your choice also helps Lam Rimba’s development. A small way to care for this world as it grows.",
+    "shopCta": "Visit the Lam Rimba Shop",
+    "shopNote": "Entirely up to you. The forest is still free to explore."
   },
   "footer": {
     "license": "Open source (AGPL-3.0). Data belongs to its respective sources, see methodology.",

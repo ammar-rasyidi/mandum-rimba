@@ -3,6 +3,7 @@ import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import ThreadsEmbed from "@/components/ThreadsEmbed";
 import HomeHero from "@/components/HomeHero";
+import LamRimbaHero from "@/components/LamRimbaHero";
 import MapShowcase from "@/components/MapShowcase";
 import Spotlight from "@/components/Spotlight";
 
@@ -119,6 +120,7 @@ export default function HomePage() {
     <>
       {/* ============================ HERO ============================ */}
       <HomeHero />
+      <LamRimbaHero />
 
       <main className="relative z-10 mx-auto max-w-[1080px] px-5">
         {/* ==================== Quick actions ==================== */}

@@ -12,6 +12,7 @@ type StaticPath =
   | "/apresiasi"
   | "/proyek"
   | "/dukung"
+  | "/rakan-rimba"
   | "/ketentuan"
   | "/privasi";
 
@@ -34,6 +35,7 @@ export default async function SiteFooter({ locale }: { locale: string }) {
     { href: "/data", label: tNav("data") },
   ];
   const transparency: { href: StaticPath; label: string }[] = [
+    {href:"/rakan-rimba",label:"Rakan Rimba"},
     { href: "/sumber-data", label: tNav("sources") },
     { href: "/status", label: tNav("status") },
     { href: "/apresiasi", label: tNav("credits") },
